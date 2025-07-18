@@ -63,7 +63,13 @@ class DataProcessor:
             processed_data = self._merge_ml_results(processed_data, ml_results)
             
             # Save processed data to session
-            self.session_manager.update_session_data(session_id, processed_data)
+            self.logger.info(f"Saving {len(processed_data)} processed records to session {session_id}")
+            if processed_data:
+                self.logger.info(f"Sample processed record keys: {list(processed_data[0].keys())}")
+            
+            save_result = self.session_manager.update_session_data(session_id, processed_data)
+            if not save_result['success']:
+                self.logger.error(f"Failed to save processed data: {save_result.get('error')}")
             
             return {
                 'success': True,

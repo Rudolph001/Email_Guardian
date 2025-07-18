@@ -70,11 +70,33 @@ def dashboard(session_id):
     
     # Get processed data
     processed_data = session_manager.get_processed_data(session_id)
+    app.logger.info(f"Retrieved {len(processed_data) if processed_data else 0} processed records for session {session_id}")
+    
+    # Debug: Log first record if available
+    if processed_data:
+        app.logger.info(f"Sample record keys: {list(processed_data[0].keys()) if processed_data[0] else 'Empty record'}")
     
     # Get ML insights
     ml_engine = MLEngine()
     try:
-        ml_insights = ml_engine.get_insights(processed_data)
+        if processed_data:
+            ml_insights = ml_engine.get_insights(processed_data)
+            app.logger.info(f"ML insights generated: {ml_insights.get('total_emails', 0)} emails analyzed")
+        else:
+            ml_insights = {
+                'total_emails': 0,
+                'risk_distribution': {},
+                'anomaly_summary': {
+                    'high_anomaly_count': 0,
+                    'anomaly_percentage': 0
+                },
+                'pattern_summary': {
+                    'total_patterns': 0,
+                    'critical_patterns': 0,
+                    'high_patterns': 0
+                },
+                'recommendations': []
+            }
     except Exception as e:
         app.logger.error(f"Error getting ML insights: {str(e)}")
         ml_insights = {
@@ -94,7 +116,15 @@ def dashboard(session_id):
     
     # Get rule results
     rule_engine = RuleEngine()
-    rule_results = rule_engine.get_rule_results(session_id)
+    try:
+        rule_results = rule_engine.get_rule_results(session_id)
+    except Exception as e:
+        app.logger.error(f"Error getting rule results: {str(e)}")
+        rule_results = {}
+    
+    # Ensure processed_data is a list
+    if not isinstance(processed_data, list):
+        processed_data = []
     
     return render_template('dashboard.html', 
                          session=session_data,
