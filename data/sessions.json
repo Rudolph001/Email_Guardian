@@ -1,6 +1,6 @@
 {
-  "775e9fcd": {
-    "session_id": "775e9fcd",
+  "6d614efe": {
+    "session_id": "6d614efe",
     "filename": "dummy_email_data.csv",
     "csv_headers": [
       "_time",
@@ -22,8 +22,8 @@
       "final_outcome",
       "policy_name"
     ],
-    "created_at": "2025-07-18T13:57:03.372840",
-    "updated_at": "2025-07-18T13:57:03.617946",
+    "created_at": "2025-07-18T13:58:50.139055",
+    "updated_at": "2025-07-18T13:58:50.465135",
     "status": "active",
     "total_records": 10,
     "processed_records": 9,
@@ -70,7 +70,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:57:03.376573",
+        "processing_timestamp": "2025-07-18T13:58:50.143807",
         "dashboard_type": "escalation"
       },
       {
@@ -102,7 +102,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:57:03.375856",
+        "processing_timestamp": "2025-07-18T13:58:50.142889",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 1.0,
         "ml_risk_level": "Medium",
@@ -146,7 +146,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:57:03.376045",
+        "processing_timestamp": "2025-07-18T13:58:50.143145",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.9779914798037993,
         "ml_risk_level": "Medium",
@@ -190,7 +190,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:57:03.376399",
+        "processing_timestamp": "2025-07-18T13:58:50.143565",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.8818380179603895,
         "ml_risk_level": "Medium",
@@ -234,7 +234,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:57:03.376229",
+        "processing_timestamp": "2025-07-18T13:58:50.143331",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.6764489994208976,
         "ml_risk_level": "Low",
@@ -271,7 +271,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:57:03.374972",
+        "processing_timestamp": "2025-07-18T13:58:50.141895",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.3187588819038035,
         "ml_risk_level": "Low",
@@ -308,7 +308,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:57:03.375428",
+        "processing_timestamp": "2025-07-18T13:58:50.142453",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.25130150578862215,
         "ml_risk_level": "Low",
@@ -345,7 +345,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:57:03.375649",
+        "processing_timestamp": "2025-07-18T13:58:50.142685",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.17110616527988165,
         "ml_risk_level": "Low",
@@ -382,7 +382,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:57:03.375219",
+        "processing_timestamp": "2025-07-18T13:58:50.142216",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.0,
         "ml_risk_level": "Low",
