@@ -129,7 +129,7 @@ class DataProcessor:
             
             # Check recipients_email_domain
             if 'recipients_email_domain' in df.columns:
-                recipients_whitelist_mask = df['recipients_email_domain'].isin(whitelist_domains)
+                recipients_whitelist_mask = filtered_df['recipients_email_domain'].isin(whitelist_domains)
                 filtered_df = filtered_df[~recipients_whitelist_mask]
             
             self.logger.info(f"Filtered out {len(df) - len(filtered_df)} whitelisted records")
