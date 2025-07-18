@@ -285,10 +285,13 @@ def update_case_status(session_id, record_id):
     new_status = request.json.get('status')
     notes = request.json.get('notes', '')
     
-    # Find and update the record
+    # Find and update the record - try multiple ID formats
     updated = False
-    for record in processed_data:
-        if record.get('record_id') == record_id:
+    for i, record in enumerate(processed_data):
+        # Check various possible record ID formats
+        if (record.get('record_id') == record_id or 
+            str(record.get('record_id')) == record_id or
+            str(i) == record_id):
             record['status'] = new_status
             record['notes'] = notes
             record['updated_at'] = datetime.now().isoformat()
@@ -300,6 +303,8 @@ def update_case_status(session_id, record_id):
         session_manager.update_processed_data(session_id, processed_data)
         return jsonify({'success': True, 'message': 'Case updated successfully'})
     else:
+        app.logger.error(f"Record ID {record_id} not found in session {session_id}")
+        app.logger.error(f"Available record IDs: {[r.get('record_id') for r in processed_data]}")
         return jsonify({'error': 'Case not found'}), 404
 
 @app.route('/api/escalation/<session_id>/<record_id>/resolve', methods=['POST'])
@@ -315,10 +320,13 @@ def resolve_escalation(session_id, record_id):
     resolution_notes = request.json.get('resolution_notes', '')
     new_status = request.json.get('new_status', 'Resolved')
     
-    # Find and update the record
+    # Find and update the record - try multiple ID formats
     updated = False
-    for record in processed_data:
-        if record.get('record_id') == record_id:
+    for i, record in enumerate(processed_data):
+        # Check various possible record ID formats
+        if (record.get('record_id') == record_id or 
+            str(record.get('record_id')) == record_id or
+            str(i) == record_id):
             record['status'] = new_status
             record['resolution'] = resolution
             record['resolution_notes'] = resolution_notes
@@ -332,6 +340,8 @@ def resolve_escalation(session_id, record_id):
         session_manager.update_processed_data(session_id, processed_data)
         return jsonify({'success': True, 'message': 'Escalation resolved successfully'})
     else:
+        app.logger.error(f"Escalation ID {record_id} not found in session {session_id}")
+        app.logger.error(f"Available record IDs: {[r.get('record_id') for r in processed_data]}")
         return jsonify({'error': 'Escalation not found'}), 404
 
 @app.route('/admin')

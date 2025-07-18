@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Escalation Dashboard - {{ session.filename }}{% endblock %}
@@ -45,7 +44,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-3">
         <div class="card stats-card bg-warning text-white">
             <div class="card-body">
@@ -63,7 +62,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-3">
         <div class="card stats-card bg-info text-white">
             <div class="card-body">
@@ -81,7 +80,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-3">
         <div class="card stats-card bg-success text-white">
             <div class="card-body">
@@ -410,11 +409,11 @@ let currentSessionId = null;
 function viewEscalationDetails(sessionId, recordId) {
     currentSessionId = sessionId;
     currentEscalationId = recordId;
-    
+
     // Show modal
     const modal = new bootstrap.Modal(document.getElementById('escalationDetailsModal'));
     modal.show();
-    
+
     // Load escalation details
     fetch(`/api/case/${sessionId}/${recordId}`)
         .then(response => response.json())
@@ -445,7 +444,7 @@ function renderEscalationDetails(escalationData) {
                 </div>
             </div>
         </div>
-        
+
         <div class="row">
             <div class="col-md-6">
                 <div class="card">
@@ -512,7 +511,7 @@ function renderEscalationDetails(escalationData) {
                 </div>
             </div>
         </div>
-        
+
         <div class="row mt-3">
             <div class="col-md-6">
                 <div class="card">
@@ -566,7 +565,7 @@ function renderEscalationDetails(escalationData) {
                 </div>
             </div>
         </div>
-        
+
         ${escalationData.notes ? `
         <div class="row mt-3">
             <div class="col-12">
@@ -580,7 +579,7 @@ function renderEscalationDetails(escalationData) {
                 </div>
             </div>
         </div>` : ''}
-        
+
         ${escalationData.resolution ? `
         <div class="row mt-3">
             <div class="col-12">
@@ -597,7 +596,7 @@ function renderEscalationDetails(escalationData) {
             </div>
         </div>` : ''}
     `;
-    
+
     document.getElementById('escalationDetailsContent').innerHTML = content;
 }
 
@@ -609,7 +608,7 @@ function openResolutionModal() {
 function updateEscalationStatus(sessionId, recordId, newStatus) {
     currentSessionId = sessionId;
     currentEscalationId = recordId;
-    
+
     fetch(`/api/case/${sessionId}/${recordId}/update`, {
         method: 'POST',
         headers: {
@@ -636,7 +635,7 @@ function updateEscalationStatus(sessionId, recordId, newStatus) {
 function resolveEscalation(sessionId, recordId, resolution, notes) {
     currentSessionId = sessionId;
     currentEscalationId = recordId;
-    
+
     fetch(`/api/escalation/${sessionId}/${recordId}/resolve`, {
         method: 'POST',
         headers: {
@@ -665,12 +664,12 @@ function confirmResolution() {
     const resolutionType = document.getElementById('resolutionType').value;
     const newStatus = document.getElementById('newStatusResolution').value;
     const resolutionNotes = document.getElementById('resolutionNotes').value;
-    
+
     if (!resolutionType || !newStatus || !resolutionNotes) {
         alert('Please fill in all fields');
         return;
     }
-    
+
     fetch(`/api/escalation/${currentSessionId}/${currentEscalationId}/resolve`, {
         method: 'POST',
         headers: {
