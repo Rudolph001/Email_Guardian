@@ -133,10 +133,13 @@
                                                class="btn btn-outline-success">
                                                 <i class="fas fa-download"></i>
                                             </a>
-                                            <button class="btn btn-outline-danger" 
-                                                    onclick="confirmDelete('{{ session.session_id }}')">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            <form method="POST" action="{{ url_for('delete_session', session_id=session.session_id) }}" 
+                                                  style="display: inline;" 
+                                                  onsubmit="return confirm('Are you sure you want to delete session {{ session.session_id }}? This action cannot be undone.')">
+                                                <button type="submit" class="btn btn-outline-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
                                         </div>
                                     </td>
                                 </tr>

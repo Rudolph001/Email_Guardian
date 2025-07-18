@@ -280,6 +280,27 @@ Session: {session_id}
 
         return stats
 
+    def delete_session(self, session_id: str) -> Dict:
+        """Delete a processing session"""
+        try:
+            sessions = self.load_sessions()
+            
+            if session_id not in sessions:
+                return {'success': False, 'error': 'Session not found'}
+            
+            # Remove the session
+            del sessions[session_id]
+            
+            if self.save_sessions(sessions):
+                self.logger.info(f"Successfully deleted session {session_id}")
+                return {'success': True}
+            else:
+                return {'success': False, 'error': 'Failed to save sessions after deletion'}
+                
+        except Exception as e:
+            self.logger.error(f"Error deleting session {session_id}: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
     def export_session(self, session_id: str) -> Dict:
         """Export complete session data"""
         session = self.get_session(session_id)

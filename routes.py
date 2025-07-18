@@ -223,6 +223,19 @@ def update_whitelist():
     
     return redirect(url_for('admin'))
 
+@app.route('/delete_session/<session_id>', methods=['POST'])
+def delete_session(session_id):
+    """Delete a processing session"""
+    session_manager = SessionManager()
+    result = session_manager.delete_session(session_id)
+    
+    if result['success']:
+        flash(f'Session {session_id} deleted successfully', 'success')
+    else:
+        flash(f'Error deleting session: {result["error"]}', 'error')
+    
+    return redirect(url_for('admin'))
+
 @app.route('/export/<session_id>')
 def export_session(session_id):
     """Export session data as JSON"""
