@@ -1,0 +1,59 @@
+Replit Prompt: Tessian Email Exfiltration Detection & Escalation System
+Goal: Build a full-stack app to ingest Tessian email CSV exports, dynamically use column names from the import, detect possible data exfiltration, and manage/track escalations via Outlook.
+________________________________________
+✅ Core Workflow:
+1.	📥 CSV Import
+o	Upload a CSV file containing Tessian email data
+o	First row is treated as the header
+o	Store the structured data for processing
+o	All dashboard tables, filters, and field selection menus auto-generate from these headers
+2.	🚫 Whitelist Domain Filtering
+o	Load a trusted domain list
+o	Filter out all emails with recipients/senders in the whitelist
+o	Use the domain from relevant field (e.g., recipient_email, sender_domain) based on CSV headers
+3.	🔎 Dynamic Filtering
+o	Filters auto-adapt based on imported fields
+o	User can select:
+	Emails with/without attachments (based on has_attachments or similar field)
+	Wordlist matches in subject or attachment name (based on column names like subject, attachment_name)
+	Specific policies (e.g., policy_name, if present)
+	Any other field in the import for ad hoc filters
+4.	🌐 Domain Classification
+o	Analyze domains (sender/recipient) and assign risk level:
+	Trusted, Corporate, Personal, Public, Suspicious
+o	Use classified domain as an ML input and UI label
+5.	🧠 Machine Learning Classification
+o	Use domain type, keywords, policy, time of email, etc., to predict exfiltration risk
+o	Model categorizes emails into:
+	Critical, High, Medium, Low
+o	Focus is on detecting:
+	Personal data (IDs, contact info)
+	Business-sensitive data (client info, pricing)
+	Intellectual property (internal docs, source code)
+6.	💾 Save Processed Data
+o	Filtered + classified dataset saved to JSON
+o	JSON includes:
+	Original fields
+	Domain classification
+	ML label
+	Case state (cleared, escalated)
+7.	📁 Case Management UI
+o	Dashboard shows all filtered/classified email records
+o	All table columns are based on CSV headers
+o	Each row includes actions:
+	Clear
+	Escalate
+8.	🚨 Escalation Handling
+o	Escalated items are stored separately
+o	System generates a draft Outlook email
+	Populated with data from the email record
+	Manual review and send by analyst
+	Email body includes: user, subject, attachment name(s), risk reason
+9.	⚙️ Admin Controls
+o	Load/edit:
+	Whitelisted domains
+	Wordlists (subject/attachment match)
+	Domain reputation labels
+	Policies
+________________________________________
+
