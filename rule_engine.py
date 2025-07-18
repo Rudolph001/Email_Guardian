@@ -274,8 +274,8 @@ class RuleEngine:
         if isinstance(condition_value, list):
             return str(field_value).lower() in [str(v).lower() for v in condition_value]
         else:
-            # Assume comma-separated string
-            values = [v.strip().lower() for v in str(condition_value).split(',')]
+            # Handle comma-separated string values
+            values = [v.strip().lower() for v in str(condition_value).split(',') if v.strip()]
             return str(field_value).lower() in values
 
     def _greater_than(self, field_value: Any, condition_value: Any) -> bool:

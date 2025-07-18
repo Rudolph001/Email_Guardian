@@ -394,15 +394,16 @@ function addCondition() {
                 </select>
             </div>
             <div class="col-md-3">
-                <select class="form-select" name="condition_operator_${conditionCounter}">
+                <select class="form-select" name="condition_operator_${conditionCounter}" onchange="updateConditionOperator(this, ${conditionCounter})">
                     <option value="equals">Equals</option>
                     <option value="contains">Contains</option>
                     <option value="not_equals">Not Equals</option>
-                    <option value="in_list">In List</option>
+                    <option value="in_list">In List (comma-separated)</option>
                 </select>
             </div>
             <div class="col-md-4">
                 <input type="text" class="form-control" name="condition_value_${conditionCounter}" placeholder="Value" id="condition_value_${conditionCounter}">
+                <small class="text-muted" id="condition_value_help_${conditionCounter}">Enter a single value</small>
             </div>
             <div class="col-md-1">
                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeCondition(this)">
@@ -433,31 +434,64 @@ function updateConditionValue(selectElement, conditionId) {
 
     if (fieldType === 'leaver') {
         valueInput.placeholder = 'Yes or No';
-        valuesList.innerHTML = '<code>Yes</code>, <code>No</code>';
+        valuesList.innerHTML = '<code>Yes</code>, <code>No</code> or multiple: <code>Yes, No</code>';
         valuesDiv.style.display = 'block';
     } else if (fieldType === 'wordlist_subject' || fieldType === 'wordlist_attachment') {
         valueInput.placeholder = 'Yes or No';
-        valuesList.innerHTML = '<code>Yes</code>, <code>No</code>';
+        valuesList.innerHTML = '<code>Yes</code>, <code>No</code> or multiple: <code>Yes, No</code>';
         valuesDiv.style.display = 'block';
     } else if (fieldType === 'status') {
         valueInput.placeholder = 'Email status';
-        valuesList.innerHTML = '<code>Active</code>, <code>Blocked</code>, <code>Sent</code>, <code>Delivered</code>';
+        valuesList.innerHTML = '<code>Active</code>, <code>Blocked</code>, <code>Sent</code>, <code>Delivered</code> or multiple: <code>Active, Blocked</code>';
         valuesDiv.style.display = 'block';
     } else if (fieldType === 'sender') {
-        valueInput.placeholder = 'Email address (e.g., user@domain.com)';
-        valuesList.innerHTML = 'Any email address or domain pattern';
+        valueInput.placeholder = 'Email address or multiple addresses';
+        valuesList.innerHTML = 'Single: <code>user@domain.com</code> or multiple: <code>user1@domain.com, user2@domain.com</code>';
         valuesDiv.style.display = 'block';
     } else if (fieldType === 'subject') {
         valueInput.placeholder = 'Text to match in subject';
-        valuesList.innerHTML = 'Any text content or keywords';
+        valuesList.innerHTML = 'Single: <code>confidential</code> or multiple: <code>confidential, secret, private</code>';
         valuesDiv.style.display = 'block';
     } else if (fieldType === 'recipients_email_domain') {
-        valueInput.placeholder = 'Domain name (e.g., gmail.com)';
-        valuesList.innerHTML = '<code>gmail.com</code>, <code>outlook.com</code>, <code>company.com</code>';
+        valueInput.placeholder = 'Domain name or multiple domains';
+        valuesList.innerHTML = 'Single: <code>gmail.com</code> or multiple: <code>gmail.com, outlook.com, yahoo.com</code>';
         valuesDiv.style.display = 'block';
     } else {
         valueInput.placeholder = 'Value';
         valuesDiv.style.display = 'none';
+    }
+
+    // Update operator-specific help
+    updateConditionOperatorHelp(conditionId);
+}
+
+function updateConditionOperator(selectElement, conditionId) {
+    updateConditionOperatorHelp(conditionId);
+}
+
+function updateConditionOperatorHelp(conditionId) {
+    const operatorSelect = document.querySelector(`select[name="condition_operator_${conditionId}"]`);
+    const valueHelp = document.getElementById(`condition_value_help_${conditionId}`);
+    
+    if (!operatorSelect || !valueHelp) return;
+    
+    const operator = operatorSelect.value;
+    
+    switch (operator) {
+        case 'equals':
+            valueHelp.textContent = 'Enter a single value';
+            break;
+        case 'contains':
+            valueHelp.textContent = 'Enter text to search for within the field';
+            break;
+        case 'not_equals':
+            valueHelp.textContent = 'Enter a single value to exclude';
+            break;
+        case 'in_list':
+            valueHelp.textContent = 'Enter multiple values separated by commas (e.g., value1, value2, value3)';
+            break;
+        default:
+            valueHelp.textContent = 'Enter a value';
     }
 }
 
