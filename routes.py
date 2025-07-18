@@ -8,6 +8,7 @@ from rule_engine import RuleEngine
 from ml_engine import MLEngine
 import os
 import pandas as pd
+import numpy as np
 import json
 import uuid
 from datetime import datetime
@@ -307,7 +308,21 @@ def get_case_details(session_id, record_id):
         app.logger.error(f"Available record IDs: {[r.get('record_id', 'None') for r in processed_data[:5]]}")
         return jsonify({'error': 'Case not found'}), 404
     
-    return jsonify(case_data)
+    # Clean NaN values before JSON serialization
+    def clean_nan_values(data):
+        if isinstance(data, dict):
+            return {k: clean_nan_values(v) for k, v in data.items()}
+        elif isinstance(data, list):
+            return [clean_nan_values(item) for item in data]
+        elif isinstance(data, float) and (np.isnan(data) or pd.isna(data)):
+            return None
+        elif data is np.nan:
+            return None
+        else:
+            return data
+    
+    cleaned_case_data = clean_nan_values(case_data)
+    return jsonify(cleaned_case_data)
 
 @app.route('/api/case/<session_id>/<record_id>/update', methods=['POST'])
 def update_case_status(session_id, record_id):

@@ -152,8 +152,8 @@ class DataProcessor:
     def _process_email_record(self, record: Dict, record_index: int) -> Dict:
         """Process a single email record"""
         try:
-            # Start with original record
-            processed_record = record.copy()
+            # Start with original record and clean NaN values
+            processed_record = self._clean_nan_values(record.copy())
             processed_record['record_id'] = record_index
             
             # Apply domain classification
@@ -175,7 +175,7 @@ class DataProcessor:
             
         except Exception as e:
             self.logger.error(f"Error processing email record: {str(e)}")
-            return record
+            return self._clean_nan_values(record)
     
     def _classify_domain(self, recipient_domain: str, sender_email: str) -> str:
         """Classify domain as Trusted, Corporate, Personal, Public, or Suspicious"""
@@ -284,6 +284,20 @@ class DataProcessor:
         except Exception as e:
             self.logger.error(f"Error getting domain stats: {str(e)}")
             return {}
+    
+    def _clean_nan_values(self, data):
+        """Clean NaN values from data to prevent JSON serialization issues"""
+        if isinstance(data, dict):
+            cleaned = {}
+            for key, value in data.items():
+                cleaned[key] = self._clean_nan_values(value)
+            return cleaned
+        elif isinstance(data, list):
+            return [self._clean_nan_values(item) for item in data]
+        elif pd.isna(data):
+            return None
+        else:
+            return data
     
     def get_processing_summary(self, session_id: str) -> Dict:
         """Get processing summary for a session"""
