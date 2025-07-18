@@ -625,13 +625,20 @@ function viewRuleFromData(button) {
         const id = button.dataset.ruleId;
         const name = button.dataset.ruleName;
         const description = button.dataset.ruleDescription;
-        const conditions = JSON.parse(button.dataset.ruleConditions);
-        const actions = JSON.parse(button.dataset.ruleActions);
+        
+        // Decode HTML entities and parse JSON
+        const conditionsStr = decodeHTMLEntities(button.dataset.ruleConditions);
+        const actionsStr = decodeHTMLEntities(button.dataset.ruleActions);
+        
+        const conditions = JSON.parse(conditionsStr || '[]');
+        const actions = JSON.parse(actionsStr || '[]');
         const priority = button.dataset.rulePriority;
         
         viewRule(id, name, description, conditions, actions, priority);
     } catch (error) {
         console.error('Error viewing rule:', error);
+        console.error('Conditions data:', button.dataset.ruleConditions);
+        console.error('Actions data:', button.dataset.ruleActions);
         alert('Error viewing rule: ' + error.message);
     }
 }
@@ -641,14 +648,21 @@ function editRuleFromData(button) {
         const id = button.dataset.ruleId;
         const name = button.dataset.ruleName;
         const description = button.dataset.ruleDescription;
-        const conditions = JSON.parse(button.dataset.ruleConditions);
-        const actions = JSON.parse(button.dataset.ruleActions);
+        
+        // Decode HTML entities and parse JSON
+        const conditionsStr = decodeHTMLEntities(button.dataset.ruleConditions);
+        const actionsStr = decodeHTMLEntities(button.dataset.ruleActions);
+        
+        const conditions = JSON.parse(conditionsStr || '[]');
+        const actions = JSON.parse(actionsStr || '[]');
         const priority = button.dataset.rulePriority;
         const active = button.dataset.ruleActive === 'true';
         
         editRule(id, name, description, conditions, actions, priority, active);
     } catch (error) {
         console.error('Error editing rule:', error);
+        console.error('Conditions data:', button.dataset.ruleConditions);
+        console.error('Actions data:', button.dataset.ruleActions);
         alert('Error editing rule: ' + error.message);
     }
 }
@@ -696,6 +710,12 @@ function editRule(id, name, description, conditions, actions, priority, active) 
     // Show the modal
     const modal = new bootstrap.Modal(document.getElementById('editRuleModal'));
     modal.show();
+}
+
+function decodeHTMLEntities(text) {
+    const textArea = document.createElement('textarea');
+    textArea.innerHTML = text;
+    return textArea.value;
 }
 </script>
 {% endblock %}
