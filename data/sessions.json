@@ -1,1 +1,406 @@
-{}
+{
+  "65f2e0ae": {
+    "session_id": "65f2e0ae",
+    "filename": "dummy_email_data.csv",
+    "csv_headers": [
+      "_time",
+      "sender",
+      "subject",
+      "attachments",
+      "recipients",
+      "recipients_email_domain",
+      "leaver",
+      "Termination",
+      "time_month",
+      "account_type",
+      "wordlist_attachment",
+      "wordlist_subject",
+      "bunit",
+      "department",
+      "status",
+      "user_response",
+      "final_outcome",
+      "policy_name"
+    ],
+    "created_at": "2025-07-18T10:35:05.381066",
+    "updated_at": "2025-07-18T10:36:19.995899",
+    "status": "active",
+    "total_records": 0,
+    "processed_records": 9,
+    "filtered_records": 0,
+    "cases": {
+      "0": {
+        "status": "escalate",
+        "updated_at": "2025-07-18T10:36:19.995892"
+      }
+    },
+    "processed_data": [
+      {
+        "_time": "2025-07-14T08:24:12.280583",
+        "sender": "carol@company.com",
+        "subject": "Quarterly Report",
+        "attachments": "letter.docx",
+        "recipients": "dave@external.com",
+        "recipients_email_domain": "external.com",
+        "leaver": "YES",
+        "Termination": "2025-07",
+        "time_month": "2025-07",
+        "account_type": "contractor",
+        "wordlist_attachment": "resignation",
+        "wordlist_subject": "salary",
+        "bunit": "HR",
+        "department": "Recruitment",
+        "status": "Critical",
+        "user_response": "a",
+        "final_outcome": "f",
+        "policy_name": "policy_A",
+        "record_id": 0,
+        "domain_classification": "Corporate",
+        "rule_results": {
+          "matched_rules": [
+            {
+              "id": 1,
+              "name": "High Risk Leavers",
+              "description": "Flag emails from users marked as leavers"
+            }
+          ],
+          "actions": [
+            {
+              "type": "mark_priority",
+              "value": "High"
+            },
+            {
+              "type": "escalate",
+              "value": true
+            }
+          ],
+          "priority": "High",
+          "escalate": true,
+          "notifications": []
+        },
+        "has_attachments": true,
+        "processing_timestamp": "2025-07-18T10:35:05.387211",
+        "ml_anomaly_score": 0.6642795040426682,
+        "ml_risk_level": "Low",
+        "ml_cluster": -1
+      },
+      {
+        "_time": "2025-07-06T08:24:12.280656",
+        "sender": "alice@company.com",
+        "subject": "Resignation Letter",
+        "attachments": "report.pdf",
+        "recipients": "erin@partner.org",
+        "recipients_email_domain": "partner.org",
+        "leaver": "NO",
+        "Termination": "2025-08",
+        "time_month": "2025-07",
+        "account_type": "contractor",
+        "wordlist_attachment": "salary",
+        "wordlist_subject": "resignation",
+        "bunit": "Finance",
+        "department": "Accounting",
+        "status": "Low",
+        "user_response": "b",
+        "final_outcome": "g",
+        "policy_name": "Ploicy_B",
+        "record_id": 1,
+        "domain_classification": "Corporate",
+        "rule_results": {
+          "matched_rules": [],
+          "actions": [],
+          "priority": "Low",
+          "escalate": false,
+          "notifications": []
+        },
+        "has_attachments": true,
+        "processing_timestamp": "2025-07-18T10:35:05.387531",
+        "ml_anomaly_score": 0.2000287407706815,
+        "ml_risk_level": "Low",
+        "ml_cluster": -1
+      },
+      {
+        "_time": "2025-07-15T08:24:12.280685",
+        "sender": "carol@company.com",
+        "subject": "Confidential Proposal",
+        "attachments": "letter.docx",
+        "recipients": "erin@partner.org",
+        "recipients_email_domain": "partner.org",
+        "leaver": "NO",
+        "Termination": "2025-09",
+        "time_month": "2025-07",
+        "account_type": "employee",
+        "wordlist_attachment": "salary",
+        "wordlist_subject": "salary",
+        "bunit": "Finance",
+        "department": "Development",
+        "status": "Low",
+        "user_response": "c",
+        "final_outcome": "h",
+        "policy_name": "policy_A",
+        "record_id": 2,
+        "domain_classification": "Corporate",
+        "rule_results": {
+          "matched_rules": [],
+          "actions": [],
+          "priority": "Low",
+          "escalate": false,
+          "notifications": []
+        },
+        "has_attachments": true,
+        "processing_timestamp": "2025-07-18T10:35:05.387736",
+        "ml_anomaly_score": 0.8368553244130887,
+        "ml_risk_level": "Medium",
+        "ml_cluster": -1
+      },
+      {
+        "_time": "2025-07-07T08:24:12.280711",
+        "sender": "alice@company.com",
+        "subject": "Confidential Proposal",
+        "attachments": "letter.docx",
+        "recipients": "erin@partner.org",
+        "recipients_email_domain": "external.com",
+        "leaver": "YES",
+        "Termination": "2025-10",
+        "time_month": "2025-07",
+        "account_type": "contractor",
+        "wordlist_attachment": "resignation",
+        "wordlist_subject": "salary",
+        "bunit": "Finance",
+        "department": "Accounting",
+        "status": "High",
+        "user_response": "a",
+        "final_outcome": "f",
+        "policy_name": "Ploicy_B",
+        "record_id": 3,
+        "domain_classification": "Corporate",
+        "rule_results": {
+          "matched_rules": [
+            {
+              "id": 1,
+              "name": "High Risk Leavers",
+              "description": "Flag emails from users marked as leavers"
+            }
+          ],
+          "actions": [
+            {
+              "type": "mark_priority",
+              "value": "High"
+            },
+            {
+              "type": "escalate",
+              "value": true
+            }
+          ],
+          "priority": "High",
+          "escalate": true,
+          "notifications": []
+        },
+        "has_attachments": true,
+        "processing_timestamp": "2025-07-18T10:35:05.387907",
+        "ml_anomaly_score": 0.6129361618863017,
+        "ml_risk_level": "Low",
+        "ml_cluster": -1
+      },
+      {
+        "_time": "2025-07-10T08:24:12.280737",
+        "sender": "bob@company.com",
+        "subject": "Quarterly Report",
+        "attachments": "letter.docx",
+        "recipients": "erin@partner.org",
+        "recipients_email_domain": "external.com",
+        "leaver": "YES",
+        "Termination": "2025-11",
+        "time_month": "2025-07",
+        "account_type": "intern",
+        "wordlist_attachment": "resignation",
+        "wordlist_subject": "confidential",
+        "bunit": "HR",
+        "department": "Recruitment",
+        "status": "High",
+        "user_response": "b",
+        "final_outcome": "g",
+        "policy_name": "policy_A",
+        "record_id": 4,
+        "domain_classification": "Corporate",
+        "rule_results": {
+          "matched_rules": [
+            {
+              "id": 1,
+              "name": "High Risk Leavers",
+              "description": "Flag emails from users marked as leavers"
+            }
+          ],
+          "actions": [
+            {
+              "type": "mark_priority",
+              "value": "High"
+            },
+            {
+              "type": "escalate",
+              "value": true
+            }
+          ],
+          "priority": "High",
+          "escalate": true,
+          "notifications": []
+        },
+        "has_attachments": true,
+        "processing_timestamp": "2025-07-18T10:35:05.388075",
+        "ml_anomaly_score": 0.5789253321092007,
+        "ml_risk_level": "Low",
+        "ml_cluster": -1
+      },
+      {
+        "_time": "2025-07-02T08:24:12.280762",
+        "sender": "bob@company.com",
+        "subject": "Resignation Letter",
+        "attachments": "letter.docx",
+        "recipients": "frank@vendor.com",
+        "recipients_email_domain": "vendor.com",
+        "leaver": "NO",
+        "Termination": "2025-12",
+        "time_month": "2025-07",
+        "account_type": "employee",
+        "wordlist_attachment": "confidential",
+        "wordlist_subject": "confidential",
+        "bunit": "HR",
+        "department": "Accounting",
+        "status": "Medium",
+        "user_response": "c",
+        "final_outcome": "h",
+        "policy_name": "policy_A",
+        "record_id": 5,
+        "domain_classification": "Corporate",
+        "rule_results": {
+          "matched_rules": [],
+          "actions": [],
+          "priority": "Low",
+          "escalate": false,
+          "notifications": []
+        },
+        "has_attachments": true,
+        "processing_timestamp": "2025-07-18T10:35:05.388249",
+        "ml_anomaly_score": 0.17902954601857105,
+        "ml_risk_level": "Low",
+        "ml_cluster": -1
+      },
+      {
+        "_time": "2025-06-27T08:24:12.280787",
+        "sender": "carol@company.com",
+        "subject": "Quarterly Report",
+        "attachments": NaN,
+        "recipients": "dave@gmail.com",
+        "recipients_email_domain": "gmail.com",
+        "leaver": "NO",
+        "Termination": "2025-13",
+        "time_month": "2025-06",
+        "account_type": "employee",
+        "wordlist_attachment": "salary",
+        "wordlist_subject": "salary",
+        "bunit": "Engineering",
+        "department": "Recruitment",
+        "status": "Medium",
+        "user_response": "a",
+        "final_outcome": "f",
+        "policy_name": "policy_A",
+        "record_id": 6,
+        "domain_classification": "Personal",
+        "rule_results": {
+          "matched_rules": [],
+          "actions": [],
+          "priority": "Low",
+          "escalate": false,
+          "notifications": []
+        },
+        "has_attachments": true,
+        "processing_timestamp": "2025-07-18T10:35:05.388456",
+        "ml_anomaly_score": 0.0,
+        "ml_risk_level": "Low",
+        "ml_cluster": -1
+      },
+      {
+        "_time": "2025-06-17T08:24:12.280844",
+        "sender": "carol@company.com",
+        "subject": "Resignation Letter",
+        "attachments": "report.pdf",
+        "recipients": "erin@partner.org",
+        "recipients_email_domain": "partner.org",
+        "leaver": "NO",
+        "Termination": "2025-15",
+        "time_month": "2025-06",
+        "account_type": "contractor",
+        "wordlist_attachment": "confidential",
+        "wordlist_subject": "confidential",
+        "bunit": "Finance",
+        "department": "Accounting",
+        "status": "Low",
+        "user_response": "c",
+        "final_outcome": "h",
+        "policy_name": "policy_A",
+        "record_id": 8,
+        "domain_classification": "Corporate",
+        "rule_results": {
+          "matched_rules": [],
+          "actions": [],
+          "priority": "Low",
+          "escalate": false,
+          "notifications": []
+        },
+        "has_attachments": true,
+        "processing_timestamp": "2025-07-18T10:35:05.388661",
+        "ml_anomaly_score": 1.0,
+        "ml_risk_level": "Low",
+        "ml_cluster": -1
+      },
+      {
+        "_time": "2025-06-16T08:24:12.280868",
+        "sender": "bob@company.com",
+        "subject": "Confidential Proposal",
+        "attachments": "proposal.pptx",
+        "recipients": "frank@vendor.com",
+        "recipients_email_domain": "partner.org",
+        "leaver": "YES",
+        "Termination": "2025-16",
+        "time_month": "2025-06",
+        "account_type": "contractor",
+        "wordlist_attachment": "salary",
+        "wordlist_subject": "salary",
+        "bunit": "Engineering",
+        "department": "Accounting",
+        "status": "Critical",
+        "user_response": "a",
+        "final_outcome": "f",
+        "policy_name": "policy_A",
+        "record_id": 9,
+        "domain_classification": "Corporate",
+        "rule_results": {
+          "matched_rules": [
+            {
+              "id": 1,
+              "name": "High Risk Leavers",
+              "description": "Flag emails from users marked as leavers"
+            }
+          ],
+          "actions": [
+            {
+              "type": "mark_priority",
+              "value": "High"
+            },
+            {
+              "type": "escalate",
+              "value": true
+            }
+          ],
+          "priority": "High",
+          "escalate": true,
+          "notifications": []
+        },
+        "has_attachments": true,
+        "processing_timestamp": "2025-07-18T10:35:05.388838",
+        "ml_anomaly_score": 0.7928002800065553,
+        "ml_risk_level": "Low",
+        "ml_cluster": -1
+      }
+    ]
+  }
+}

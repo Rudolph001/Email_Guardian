@@ -1,0 +1,510 @@
+{% extends "base.html" %}
+
+{% block title %}Case Management - {{ session.filename }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-0">Case Management</h1>
+                <p class="text-muted">{{ session.filename }} - {{ cases|length }} cases</p>
+            </div>
+            <div class="btn-group">
+                <a href="{{ url_for('dashboard', session_id=session.session_id) }}" 
+                   class="btn btn-outline-primary">
+                    <i class="fas fa-chart-line me-2"></i>Dashboard
+                </a>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Sessions
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-filter me-2"></i>Filters & Search
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="risk_filter" class="form-label">Risk Level</label>
+                <select name="risk_filter" id="risk_filter" class="form-select">
+                    <option value="all" {{ 'selected' if current_filters.risk_filter == 'all' }}>All Risk Levels</option>
+                    {% for level in risk_levels %}
+                    <option value="{{ level }}" {{ 'selected' if current_filters.risk_filter == level }}>{{ level }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="rule_filter" class="form-label">Rule Matches</label>
+                <select name="rule_filter" id="rule_filter" class="form-select">
+                    <option value="all" {{ 'selected' if current_filters.rule_filter == 'all' }}>All Cases</option>
+                    <option value="matched" {{ 'selected' if current_filters.rule_filter == 'matched' }}>Rule Matched</option>
+                    <option value="unmatched" {{ 'selected' if current_filters.rule_filter == 'unmatched' }}>No Rules Matched</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="status_filter" class="form-label">Status</label>
+                <select name="status_filter" id="status_filter" class="form-select">
+                    <option value="all" {{ 'selected' if current_filters.status_filter == 'all' }}>All Statuses</option>
+                    {% for status in statuses %}
+                    <option value="{{ status }}" {{ 'selected' if current_filters.status_filter == status }}>{{ status }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="search" class="form-label">Search</label>
+                <div class="input-group">
+                    <input type="text" name="search" id="search" class="form-control" 
+                           placeholder="Search sender, subject, recipients..." 
+                           value="{{ current_filters.search }}">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Cases Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-envelope me-2"></i>Email Cases ({{ cases|length }})
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Date/Time</th>
+                        <th>Sender</th>
+                        <th>Subject</th>
+                        <th>Recipients</th>
+                        <th>Risk Level</th>
+                        <th>Rule Matches</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for case in cases %}
+                    <tr>
+                        <td>
+                            <small class="text-muted">
+                                {{ case.get('_time', 'N/A')[:19] if case.get('_time') else 'N/A' }}
+                            </small>
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm me-2">
+                                    <span class="avatar-title bg-primary rounded-circle">
+                                        {{ case.get('sender', 'N/A')[:1].upper() }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ case.get('sender', 'N/A') }}</div>
+                                    <small class="text-muted">{{ case.get('recipients_email_domain', 'N/A') }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <div class="fw-bold">{{ case.get('subject', 'N/A')[:50] }}{% if case.get('subject', '')|length > 50 %}...{% endif %}</div>
+                                {% if case.get('has_attachments') %}
+                                <small class="text-warning">
+                                    <i class="fas fa-paperclip me-1"></i>Has Attachments
+                                </small>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <div>{{ case.get('recipients', 'N/A')[:30] }}{% if case.get('recipients', '')|length > 30 %}...{% endif %}</div>
+                                <small class="text-muted">{{ case.get('department', 'N/A') }}</small>
+                            </div>
+                        </td>
+                        <td>
+                            {% set risk_level = case.get('ml_risk_level', 'Unknown') %}
+                            {% if risk_level == 'Critical' %}
+                            <span class="badge bg-danger">{{ risk_level }}</span>
+                            {% elif risk_level == 'High' %}
+                            <span class="badge bg-warning">{{ risk_level }}</span>
+                            {% elif risk_level == 'Medium' %}
+                            <span class="badge bg-info">{{ risk_level }}</span>
+                            {% elif risk_level == 'Low' %}
+                            <span class="badge bg-success">{{ risk_level }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ risk_level }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if case.get('rule_results', {}).get('matched_rules') %}
+                            <span class="badge bg-warning">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                {{ case.get('rule_results', {}).get('matched_rules')|length }} Rules
+                            </span>
+                            {% else %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check me-1"></i>Clean
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set status = case.get('status', 'Active') %}
+                            {% if status == 'Active' %}
+                            <span class="badge bg-primary">{{ status }}</span>
+                            {% elif status == 'Escalated' %}
+                            <span class="badge bg-danger">{{ status }}</span>
+                            {% elif status == 'Cleared' %}
+                            <span class="badge bg-success">{{ status }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary btn-sm" 
+                                        onclick="viewCaseDetails('{{ session.session_id }}', '{{ case.get('record_id', '') }}')"
+                                        title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
+                                            type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-cog"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="updateCaseStatus('{{ session.session_id }}', '{{ case.get('record_id', '') }}', 'Cleared')">
+                                            <i class="fas fa-check text-success me-2"></i>Mark as Cleared
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="updateCaseStatus('{{ session.session_id }}', '{{ case.get('record_id', '') }}', 'Escalated')">
+                                            <i class="fas fa-exclamation-triangle text-danger me-2"></i>Escalate
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="updateCaseStatus('{{ session.session_id }}', '{{ case.get('record_id', '') }}', 'Under Review')">
+                                            <i class="fas fa-clock text-warning me-2"></i>Under Review
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Case Details Modal -->
+<div class="modal fade" id="caseDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Case Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="caseDetailsContent">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Loading case details...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="exportCaseReport()">Export Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Status Modal -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Case Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="updateStatusForm">
+                    <div class="mb-3">
+                        <label for="newStatus" class="form-label">New Status</label>
+                        <select class="form-select" id="newStatus" required>
+                            <option value="">Select status...</option>
+                            <option value="Active">Active</option>
+                            <option value="Under Review">Under Review</option>
+                            <option value="Escalated">Escalated</option>
+                            <option value="Cleared">Cleared</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="statusNotes" class="form-label">Notes (Optional)</label>
+                        <textarea class="form-control" id="statusNotes" rows="3" 
+                                  placeholder="Add any notes about this status change..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="confirmStatusUpdate()">Update Status</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentCaseId = null;
+let currentSessionId = null;
+
+function viewCaseDetails(sessionId, recordId) {
+    currentSessionId = sessionId;
+    currentCaseId = recordId;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('caseDetailsModal'));
+    modal.show();
+    
+    // Load case details
+    fetch(`/api/case/${sessionId}/${recordId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            renderCaseDetails(data);
+        })
+        .catch(error => {
+            document.getElementById('caseDetailsContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error loading case details: ${error.message}
+                </div>
+            `;
+        });
+}
+
+function renderCaseDetails(caseData) {
+    const content = `
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Email Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Sender:</strong></td>
+                                <td>${caseData.sender || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Subject:</strong></td>
+                                <td>${caseData.subject || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Recipients:</strong></td>
+                                <td>${caseData.recipients || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Date/Time:</strong></td>
+                                <td>${caseData._time || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Attachments:</strong></td>
+                                <td>${caseData.has_attachments ? 
+                                     `<span class="badge bg-warning">Yes</span><br><small>${caseData.attachments || ''}</small>` : 
+                                     '<span class="badge bg-success">No</span>'}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Risk Assessment</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Risk Level:</strong></td>
+                                <td>
+                                    <span class="badge bg-${getRiskBadgeColor(caseData.ml_risk_level)}">
+                                        ${caseData.ml_risk_level || 'Unknown'}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Anomaly Score:</strong></td>
+                                <td>${caseData.ml_anomaly_score || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ML Cluster:</strong></td>
+                                <td>${caseData.ml_cluster || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Domain Classification:</strong></td>
+                                <td>${caseData.domain_classification || 'N/A'}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Rule Analysis</h6>
+                    </div>
+                    <div class="card-body">
+                        ${caseData.rule_results && caseData.rule_results.matched_rules ? 
+                            `<div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>${caseData.rule_results.matched_rules.length} Rule(s) Matched</strong>
+                                <ul class="mt-2 mb-0">
+                                    ${caseData.rule_results.matched_rules.map(rule => `<li>${rule}</li>`).join('')}
+                                </ul>
+                            </div>` :
+                            `<div class="alert alert-success">
+                                <i class="fas fa-check me-2"></i>No rules matched - email appears clean
+                            </div>`}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">User Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Department:</strong></td>
+                                <td>${caseData.department || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Business Unit:</strong></td>
+                                <td>${caseData.bunit || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Account Type:</strong></td>
+                                <td>${caseData.account_type || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    <span class="badge bg-${getStatusBadgeColor(caseData.status)}">
+                                        ${caseData.status || 'Active'}
+                                    </span>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        ${caseData.notes ? `
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Notes</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">${caseData.notes}</p>
+                    </div>
+                </div>
+            </div>
+        </div>` : ''}
+    `;
+    
+    document.getElementById('caseDetailsContent').innerHTML = content;
+}
+
+function getRiskBadgeColor(risk) {
+    switch(risk) {
+        case 'Critical': return 'danger';
+        case 'High': return 'warning';
+        case 'Medium': return 'info';
+        case 'Low': return 'success';
+        default: return 'secondary';
+    }
+}
+
+function getStatusBadgeColor(status) {
+    switch(status) {
+        case 'Active': return 'primary';
+        case 'Escalated': return 'danger';
+        case 'Cleared': return 'success';
+        case 'Under Review': return 'warning';
+        default: return 'secondary';
+    }
+}
+
+function updateCaseStatus(sessionId, recordId, newStatus) {
+    currentSessionId = sessionId;
+    currentCaseId = recordId;
+    
+    document.getElementById('newStatus').value = newStatus;
+    
+    const modal = new bootstrap.Modal(document.getElementById('updateStatusModal'));
+    modal.show();
+}
+
+function confirmStatusUpdate() {
+    const newStatus = document.getElementById('newStatus').value;
+    const notes = document.getElementById('statusNotes').value;
+    
+    if (!newStatus) {
+        alert('Please select a status');
+        return;
+    }
+    
+    fetch(`/api/case/${currentSessionId}/${currentCaseId}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            status: newStatus,
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal and reload page
+            bootstrap.Modal.getInstance(document.getElementById('updateStatusModal')).hide();
+            location.reload();
+        } else {
+            alert('Error updating status: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error updating status: ' + error.message);
+    });
+}
+
+function exportCaseReport() {
+    // This would export the current case details
+    const caseData = currentCaseId;
+    alert('Export functionality would be implemented here');
+}
+</script>
+{% endblock %}

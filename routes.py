@@ -132,6 +132,112 @@ def dashboard(session_id):
                          ml_insights=ml_insights,
                          rule_results=rule_results)
 
+@app.route('/cases/<session_id>')
+def case_management(session_id):
+    """Case management dashboard for detailed email event viewing"""
+    session_manager = SessionManager()
+    session_data = session_manager.get_session(session_id)
+    if not session_data:
+        flash('Session not found', 'error')
+        return redirect(url_for('index'))
+    
+    # Get processed data
+    processed_data = session_manager.get_processed_data(session_id)
+    
+    # Get filter parameters
+    risk_filter = request.args.get('risk_filter', 'all')
+    rule_filter = request.args.get('rule_filter', 'all')
+    status_filter = request.args.get('status_filter', 'all')
+    search_query = request.args.get('search', '')
+    
+    # Apply filters
+    filtered_data = processed_data if processed_data else []
+    
+    if risk_filter != 'all':
+        filtered_data = [d for d in filtered_data if d.get('ml_risk_level', '').lower() == risk_filter.lower()]
+    
+    if rule_filter != 'all':
+        if rule_filter == 'matched':
+            filtered_data = [d for d in filtered_data if d.get('rule_results', {}).get('matched_rules')]
+        elif rule_filter == 'unmatched':
+            filtered_data = [d for d in filtered_data if not d.get('rule_results', {}).get('matched_rules')]
+    
+    if status_filter != 'all':
+        filtered_data = [d for d in filtered_data if d.get('status', '').lower() == status_filter.lower()]
+    
+    if search_query:
+        search_lower = search_query.lower()
+        filtered_data = [d for d in filtered_data if 
+                        search_lower in d.get('sender', '').lower() or 
+                        search_lower in d.get('subject', '').lower() or 
+                        search_lower in d.get('recipients', '').lower()]
+    
+    # Get unique values for filter dropdowns
+    risk_levels = list(set(d.get('ml_risk_level', 'Unknown') for d in processed_data if processed_data))
+    statuses = list(set(d.get('status', 'Active') for d in processed_data if processed_data))
+    
+    return render_template('case_management.html', 
+                         session=session_data,
+                         cases=filtered_data,
+                         risk_levels=risk_levels,
+                         statuses=statuses,
+                         current_filters={
+                             'risk_filter': risk_filter,
+                             'rule_filter': rule_filter,
+                             'status_filter': status_filter,
+                             'search': search_query
+                         })
+
+@app.route('/api/case/<session_id>/<record_id>')
+def get_case_details(session_id, record_id):
+    """API endpoint to get detailed case information for popup"""
+    session_manager = SessionManager()
+    processed_data = session_manager.get_processed_data(session_id)
+    
+    if not processed_data:
+        return jsonify({'error': 'Session not found'}), 404
+    
+    # Find the specific record
+    case_data = None
+    for record in processed_data:
+        if record.get('record_id') == record_id:
+            case_data = record
+            break
+    
+    if not case_data:
+        return jsonify({'error': 'Case not found'}), 404
+    
+    return jsonify(case_data)
+
+@app.route('/api/case/<session_id>/<record_id>/update', methods=['POST'])
+def update_case_status(session_id, record_id):
+    """API endpoint to update case status"""
+    session_manager = SessionManager()
+    processed_data = session_manager.get_processed_data(session_id)
+    
+    if not processed_data:
+        return jsonify({'error': 'Session not found'}), 404
+    
+    new_status = request.json.get('status')
+    notes = request.json.get('notes', '')
+    
+    # Find and update the record
+    updated = False
+    for record in processed_data:
+        if record.get('record_id') == record_id:
+            record['status'] = new_status
+            record['notes'] = notes
+            record['updated_at'] = datetime.now().isoformat()
+            updated = True
+            break
+    
+    if updated:
+        # Save updated data back to session
+        session_manager.update_processed_data(session_id, processed_data)
+        return jsonify({'success': True, 'message': 'Case updated successfully'})
+    else:
+        return jsonify({'error': 'Case not found'}), 404
+
 @app.route('/admin')
 def admin():
     """Admin panel for managing whitelists and settings"""

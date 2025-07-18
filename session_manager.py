@@ -320,3 +320,24 @@ Session: {session_id}
             'csv_headers': session.get('csv_headers', []),
             'exported_at': datetime.now().isoformat()
         }
+    
+    def update_processed_data(self, session_id: str, processed_data: List[Dict]) -> Dict:
+        """Update processed data for a session"""
+        try:
+            sessions = self.load_sessions()
+            
+            if session_id not in sessions:
+                return {'success': False, 'error': 'Session not found'}
+            
+            sessions[session_id]['processed_data'] = processed_data
+            sessions[session_id]['updated_at'] = datetime.now().isoformat()
+            
+            if self.save_sessions(sessions):
+                self.logger.info(f"Updated processed data for session {session_id}")
+                return {'success': True}
+            else:
+                return {'success': False, 'error': 'Failed to save session data'}
+                
+        except Exception as e:
+            self.logger.error(f"Error updating processed data for session {session_id}: {str(e)}")
+            return {'success': False, 'error': str(e)}
