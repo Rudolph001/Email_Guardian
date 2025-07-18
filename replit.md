@@ -7,6 +7,13 @@ Email Guardian is a full-stack Flask application designed to ingest Tessian emai
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+Upload limit preference: High capacity (500MB) for large email data files.
+
+## Recent Changes
+
+- **Migration to Replit Environment** (July 18, 2025): Successfully migrated project from Replit Agent to standard Replit environment
+- **Upload Limit Increase** (July 18, 2025): Increased file upload limit from 16MB to 500MB to handle large email datasets
+- **Security Configuration** (July 18, 2025): Implemented proper client/server separation with robust security practices
 
 ## System Architecture
 
