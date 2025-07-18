@@ -189,7 +189,7 @@ class SessionManager:
             draft = {
                 'subject': f'Email Security Alert - Escalation Required',
                 'to': sender_email,
-                'cc': 'security@company.com',
+                'cc': '',
                 'body': f"""
 Dear {sender_email},
 
