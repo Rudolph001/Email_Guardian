@@ -137,7 +137,11 @@ class SessionManager:
     def create_session(self, session_id: str, filename: str, csv_headers: List[str]) -> Dict:
         """Create a new processing session"""
         try:
-            sessions = self.load_sessions()
+            # Always save new sessions to regular file first, not compressed
+            sessions = {}
+            if os.path.exists(self.sessions_file):
+                with open(self.sessions_file, 'r') as f:
+                    sessions = json.load(f)
 
             session_data = {
                 'session_id': session_id,
@@ -154,11 +158,13 @@ class SessionManager:
             }
 
             sessions[session_id] = session_data
-
-            if self.save_sessions(sessions):
-                return {'success': True, 'session': session_data}
-            else:
-                return {'success': False, 'error': 'Failed to save session'}
+            
+            # Save directly to regular sessions file
+            with open(self.sessions_file, 'w') as f:
+                json.dump(sessions, f, indent=2, default=str)
+            
+            self.logger.info(f"Created new session {session_id} and saved to regular sessions file")
+            return {'success': True, 'session': session_data}
 
         except Exception as e:
             self.logger.error(f"Error creating session: {str(e)}")
@@ -178,6 +184,17 @@ class SessionManager:
         """Update session with processed data and processing statistics"""
         try:
             sessions = self.load_sessions()
+            
+            # If session doesn't exist in loaded sessions, try to reload from file
+            if session_id not in sessions:
+                self.logger.warning(f"Session {session_id} not found in loaded sessions, reloading...")
+                # Try loading from regular file first (for new sessions)
+                if os.path.exists(self.sessions_file):
+                    with open(self.sessions_file, 'r') as f:
+                        regular_sessions = json.load(f)
+                    if session_id in regular_sessions:
+                        sessions.update(regular_sessions)
+                        self.logger.info(f"Found session {session_id} in regular sessions file")
 
             if session_id in sessions:
                 # Filter out None values from processed_data
@@ -196,23 +213,68 @@ class SessionManager:
 
                 self.logger.info(f"Updating session {session_id} with {len(processed_data)} processed records")
 
-                if self.save_sessions(sessions):
-                    # Verify the data was saved
-                    saved_session = self.get_session(session_id)
-                    if saved_session and 'processed_data' in saved_session:
-                        self.logger.info(f"Verified: {len(saved_session['processed_data'])} records saved to session {session_id}")
+                # For large datasets, use separate storage immediately
+                if len(json.dumps(sessions, default=str, separators=(',', ':'))) > 5 * 1024 * 1024:
+                    self.logger.info(f"Large session detected, using separate storage for {session_id}")
+                    success = self._save_large_session(session_id, sessions[session_id])
+                    if success:
+                        return {'success': True}
                     else:
-                        self.logger.error(f"Failed to verify saved data for session {session_id}")
-
-                    return {'success': True}
+                        return {'success': False, 'error': 'Failed to save large session'}
                 else:
-                     return {'success': False, 'error': 'Failed to save session'}
+                    if self.save_sessions(sessions):
+                        # Verify the data was saved
+                        saved_session = self.get_session(session_id)
+                        if saved_session and 'processed_data' in saved_session:
+                            self.logger.info(f"Verified: {len(saved_session['processed_data'])} records saved to session {session_id}")
+                        else:
+                            self.logger.error(f"Failed to verify saved data for session {session_id}")
+
+                        return {'success': True}
+                    else:
+                         return {'success': False, 'error': 'Failed to save session'}
 
             return {'success': False, 'error': 'Session not found'}
 
         except Exception as e:
             self.logger.error(f"Error updating session data: {str(e)}")
             return {'success': False, 'error': str(e)}
+    
+    def _save_large_session(self, session_id: str, session_data: Dict) -> bool:
+        """Save a single large session using separate storage"""
+        try:
+            import gzip
+            import os
+            
+            # Save processed_data separately
+            data_dir = 'data/session_data'
+            os.makedirs(data_dir, exist_ok=True)
+            
+            if 'processed_data' in session_data and session_data['processed_data']:
+                data_file = os.path.join(data_dir, f"{session_id}_data.json.gz")
+                with gzip.open(data_file, 'wt', encoding='utf-8') as f:
+                    json.dump(session_data['processed_data'], f, default=str, separators=(',', ':'))
+                self.logger.info(f"Saved {len(session_data['processed_data'])} records to {data_file}")
+            
+            # Save metadata to regular sessions file
+            regular_sessions = {}
+            if os.path.exists(self.sessions_file):
+                with open(self.sessions_file, 'r') as f:
+                    regular_sessions = json.load(f)
+            
+            # Create metadata without processed_data
+            metadata = {k: v for k, v in session_data.items() if k != 'processed_data'}
+            regular_sessions[session_id] = metadata
+            
+            with open(self.sessions_file, 'w') as f:
+                json.dump(regular_sessions, f, indent=2, default=str)
+                
+            self.logger.info(f"Session {session_id} metadata saved to regular sessions file")
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error saving large session {session_id}: {e}")
+            return False
 
     def get_processed_data(self, session_id: str) -> List[Dict]:
         """Get processed data for a session"""

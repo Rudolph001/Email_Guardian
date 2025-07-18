@@ -1,0 +1,11 @@
+_time,sender,subject,attachments,recipients,recipients_email_domain,leaver,Termination,time_month,account_type,wordlist_attachment,wordlist_subject,bunit,department,status,user_response,final_outcome,policy_name
+2025-07-14T08:24:12.280583,carol@company.com,Quarterly Report,report.pdf,dave@external.com,external.com,YES,2025-07,2025-07,contractor,-,-,HR,Recruitment,Critical,a,f,policy_A
+2025-07-06T08:24:12.280656,alice@company.com,Resignation Letter,report.pdf,erin@partner.org,partner.org,NO,2025-08,2025-07,contractor,-,-,Finance,Accounting,Low,b,g,Ploicy_B
+2025-07-15T08:24:12.280685,carol@company.com,Confidential Proposal,report.pdf,erin@partner.org,partner.org,NO,2025-09,2025-07,employee,-,-,Finance,Development,Low,c,h,policy_A
+2025-07-07T08:24:12.280711,alice@company.com,Confidential Proposal,report.pdf,erin@partner.org,external.com,YES,2025-10,2025-07,contractor,-,-,Finance,Accounting,High,a,f,Ploicy_B
+2025-07-10T08:24:12.280737,bob@company.com,Quarterly Report,report.pdf,erin@partner.org,external.com,YES,2025-11,2025-07,intern,-,-,HR,Recruitment,High,b,g,policy_A
+2025-07-02T08:24:12.280762,bob@company.com,Resignation Letter,report.pdf,frank@vendor.com,vendor.com,NO,2025-12,2025-07,employee,-,-,HR,Accounting,Medium,c,h,policy_A
+2025-06-27T08:24:12.280787,carol@company.com,Quarterly Report,-,dave@gmail.com,gmail.com,YES,2025-13,2025-06,employee,-,-,Engineering,Recruitment,Medium,a,f,policy_A
+2025-06-23T08:24:12.280813,carol@company.com,Confidential Proposal,-,erin@rdcomputers.co.za,rdcomputers.co.za,YES,2025-14,2025-06,employee,-,-,Engineering,Recruitment,Critical,b,g,policy_A
+2025-06-17T08:24:12.280844,carol@company.com,Resignation Letter,report.pdf,erin@partner.org,partner.org,NO,2025-15,2025-06,contractor,confidential,confidential,Finance,Accounting,Low,c,h,policy_A
+2025-06-16T08:24:12.280868,bob@company.com,Confidential Proposal,report.pdf,frank@vendor.com,partner.org,YES,2025-16,2025-06,contractor,salary,salary,Engineering,Accounting,Critical,a,f,policy_A
