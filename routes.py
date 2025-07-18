@@ -1216,6 +1216,37 @@ def bau_analysis(session_id):
         app.logger.error(f"Error getting BAU analysis: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/processing_status/<session_id>')
+def get_processing_status(session_id):
+    """API endpoint to check processing status for large files"""
+    try:
+        session_manager = SessionManager()
+        session_data = session_manager.get_session(session_id)
+        
+        if not session_data:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        processed_data = session_manager.get_processed_data(session_id)
+        
+        status = {
+            'session_id': session_id,
+            'total_records': session_data.get('total_records', 0),
+            'processed_records': len(processed_data) if processed_data else 0,
+            'processing_complete': len(processed_data) > 0 if processed_data else False,
+            'whitelist_filtered': session_data.get('whitelist_filtered', 0),
+            'escalated_records': session_data.get('escalated_records', 0),
+            'case_management_records': session_data.get('case_management_records', 0),
+            'processing_steps': session_data.get('processing_stats', {}).get('processing_steps', []),
+            'created_at': session_data.get('created_at'),
+            'updated_at': session_data.get('updated_at')
+        }
+        
+        return jsonify(status)
+        
+    except Exception as e:
+        app.logger.error(f"Error getting processing status: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/whitelist_bau/<session_id>', methods=['POST'])
 def whitelist_bau_domains(session_id):
     """API endpoint to whitelist BAU domain pairs"""

@@ -56,7 +56,7 @@ class SessionManager:
             # Check if we need compression (>10MB when serialized)
             json_str = json.dumps(sessions, default=str)
             
-            if len(json_str) > 10 * 1024 * 1024:  # 10MB threshold
+            if len(json_str) > 5 * 1024 * 1024:  # 5MB threshold for better memory management
                 # Use gzip compression for large sessions
                 compressed_file = self.sessions_file + '.gz'
                 with gzip.open(compressed_file, 'wt', encoding='utf-8') as f:

@@ -121,9 +121,9 @@ class DataProcessor:
             file_size = os.path.getsize(file_path)
             self.logger.info(f"File size: {file_size / (1024*1024):.2f} MB")
             
-            # For large files, use chunked reading
-            if file_size > 50 * 1024 * 1024:  # 50MB threshold
-                self.logger.info("Large file detected, using chunked processing")
+            # For large files, use chunked reading - reduced threshold to handle 10K+ records better
+            if file_size > 10 * 1024 * 1024:  # 10MB threshold (approximately 5000+ records)
+                self.logger.info(f"Large file detected ({file_size / (1024*1024):.2f} MB), using chunked processing")
                 return self._process_large_csv(file_path, session_id, filename)
 
             # Read CSV file normally for smaller files
@@ -182,6 +182,7 @@ class DataProcessor:
             save_result = self.session_manager.update_session_data(session_id, all_processed_data, processing_stats)
             if not save_result.get('success'):
                 self.logger.error(f"Failed to save processed data: {save_result.get('error')}")
+                return {'success': False, 'error': f'Failed to save processed data: {save_result.get("error", "Unknown error")}'}
 
             return {
                 'success': True,
@@ -547,7 +548,7 @@ class DataProcessor:
     def _process_large_csv(self, file_path: str, session_id: str, filename: str) -> Dict:
         """Process large CSV files in chunks"""
         try:
-            chunk_size = 1000
+            chunk_size = 2500  # Increased chunk size for better performance with large files
             all_processed_data = []
             total_records = 0
             whitelist_count = 0
@@ -601,9 +602,12 @@ class DataProcessor:
                 ]
             }
             
-            # Save processed data to session
+            # Save processed data to session with error handling
             self.logger.info(f"Saving {len(all_processed_data)} processed records to session {session_id}")
             save_result = self.session_manager.update_session_data(session_id, all_processed_data, processing_stats)
+            if not save_result.get('success'):
+                self.logger.error(f"Failed to save large CSV processed data: {save_result.get('error')}")
+                return {'success': False, 'error': f'Failed to save processed data: {save_result.get("error", "Unknown error")}'}
             
             return {
                 'success': True,
