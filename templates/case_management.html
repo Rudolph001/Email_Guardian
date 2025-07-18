@@ -31,6 +31,22 @@
                 <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
                     <i class="fas fa-home me-2"></i>All Sessions
                 </a>
+                <button type="button" class="btn btn-outline-warning" onclick="checkProcessingErrors()">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Check Errors
+                </button>
+            </div>
+        </div>
+
+        <!-- Error Display Section -->
+        <div id="errorSection" class="alert alert-danger" style="display: none;">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h5 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Processing Errors Detected
+                    </h5>
+                    <div id="errorContent"></div>
+                </div>
+                <button type="button" class="btn-close" onclick="hideErrors()"></button>
             </div>
         </div>
     </div>
@@ -232,7 +248,7 @@
     </div>
     <div class="card-body p-0">
         <div class="table-responsive" style="overflow-y: visible !important;">
-            <table class="table table-hover mb-0">
+            <table id="casesTable" class="table table-hover mb-0">
                 <thead class="table-dark">
                     <tr>
                         <th>Date/Time</th>
@@ -995,6 +1011,119 @@ function loadSavedFilters() {
     }
 }
 
+function checkProcessingErrors() {
+    const sessionId = '{{ session.session_id }}';
+    
+    fetch(`/api/processing_errors/${sessionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.processing_failed && data.errors && data.errors.length > 0) {
+                displayErrors(data.errors);
+            } else {
+                // Show success message if no errors
+                const errorSection = document.getElementById('errorSection');
+                errorSection.className = 'alert alert-success';
+                errorSection.style.display = 'block';
+                document.getElementById('errorContent').innerHTML = `
+                    <p class="mb-0">
+                        <i class="fas fa-check-circle me-2"></i>
+                        No processing errors found. All data loaded successfully.
+                    </p>
+                `;
+                
+                // Auto-hide success message after 3 seconds
+                setTimeout(() => {
+                    errorSection.style.display = 'none';
+                    errorSection.className = 'alert alert-danger';
+                }, 3000);
+            }
+        })
+        .catch(error => {
+            console.error('Error checking processing errors:', error);
+            displayErrors([{
+                error_type: 'api_error',
+                error: `Failed to check errors: ${error.message}`,
+                field: 'system',
+                value: 'N/A'
+            }]);
+        });
+}
+
+function displayErrors(errors) {
+    const errorSection = document.getElementById('errorSection');
+    const errorContent = document.getElementById('errorContent');
+    
+    let errorHtml = `
+        <p class="mb-3">
+            <strong>Found ${errors.length} processing error(s):</strong>
+        </p>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Record</th>
+                        <th>Error Type</th>
+                        <th>Field</th>
+                        <th>Value</th>
+                        <th>Error Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    errors.forEach((error, index) => {
+        errorHtml += `
+            <tr>
+                <td>${error.record_index || 'Unknown'}</td>
+                <td>
+                    <span class="badge bg-warning text-dark">
+                        ${error.error_type || 'Unknown'}
+                    </span>
+                </td>
+                <td><code>${error.field || 'N/A'}</code></td>
+                <td>
+                    <small class="text-muted" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">
+                        ${error.value || 'N/A'}
+                    </small>
+                </td>
+                <td>${error.error || 'No description'}</td>
+            </tr>
+        `;
+    });
+    
+    errorHtml += `
+                </tbody>
+            </table>
+        </div>
+        <div class="mt-3">
+            <small class="text-muted">
+                <i class="fas fa-info-circle me-1"></i>
+                These errors occurred during data processing. Records with errors may have incomplete or missing information.
+            </small>
+        </div>
+    `;
+    
+    errorContent.innerHTML = errorHtml;
+    errorSection.style.display = 'block';
+}
+
+function hideErrors() {
+    document.getElementById('errorSection').style.display = 'none';
+}
+
+// Auto-check for errors if no data is loaded
+function autoCheckErrors() {
+    const casesTable = document.querySelector('#casesTable tbody');
+    const totalCases = {{ cases|length }};
+    
+    if (totalCases === 0) {
+        // Automatically check for processing errors if no cases are displayed
+        setTimeout(() => {
+            checkProcessingErrors();
+        }, 1000);
+    }
+}
+
 // Auto-apply filters on change
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize Bootstrap tooltips
@@ -1015,6 +1144,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+
+    // Auto-check for errors if needed
+    autoCheckErrors();
 });
 </script>
 {% endblock %}

@@ -336,7 +336,8 @@ class DataProcessor:
                     'error': 'Data validation failed:\n' + '\n'.join(error_summary),
                     'error_type': 'data_validation',
                     'validation_errors': limited_errors,
-                    'total_errors': len(validation_errors)
+                    'total_errors': len(validation_errors),
+                    'detailed_errors': validation_errors  # Include all errors for detailed view
                 }
 
             return {'valid': True}
@@ -346,6 +347,70 @@ class DataProcessor:
                 'valid': False, 
                 'error': f'Validation error: {str(e)}',
                 'error_type': 'validation_exception'
+            }
+
+    def get_processing_errors(self, session_id: str) -> Dict:
+        """Get detailed processing errors for a session"""
+        try:
+            session_data = self.session_manager.get_session(session_id)
+            if not session_data:
+                return {'errors': [], 'processing_failed': True, 'error': 'Session not found'}
+
+            processing_errors = []
+            processed_data = session_data.get('processed_data', [])
+            
+            # Check for records with processing errors
+            for idx, record in enumerate(processed_data):
+                if record and isinstance(record, dict):
+                    # Check for various error fields
+                    if 'processing_error' in record:
+                        processing_errors.append({
+                            'record_index': idx,
+                            'error_type': 'processing_error',
+                            'error': record['processing_error'],
+                            'field': 'general',
+                            'value': 'N/A'
+                        })
+                    
+                    if 'domain_error' in record:
+                        processing_errors.append({
+                            'record_index': idx,
+                            'error_type': 'domain_classification_error',
+                            'error': record['domain_error'],
+                            'field': 'recipients_email_domain',
+                            'value': record.get('recipients_email_domain', 'N/A')
+                        })
+                    
+                    if 'rule_error' in record:
+                        processing_errors.append({
+                            'record_index': idx,
+                            'error_type': 'rule_processing_error',
+                            'error': record['rule_error'],
+                            'field': 'rule_processing',
+                            'value': 'N/A'
+                        })
+                    
+                    if 'attachment_error' in record:
+                        processing_errors.append({
+                            'record_index': idx,
+                            'error_type': 'attachment_processing_error',
+                            'error': record['attachment_error'],
+                            'field': 'attachments',
+                            'value': record.get('attachments', 'N/A')
+                        })
+
+            return {
+                'errors': processing_errors,
+                'processing_failed': len(processing_errors) > 0,
+                'total_errors': len(processing_errors)
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error getting processing errors: {str(e)}")
+            return {
+                'errors': [{'error_type': 'system_error', 'error': str(e), 'field': 'system', 'value': 'N/A'}],
+                'processing_failed': True,
+                'total_errors': 1
             }
 
     def _apply_whitelist_filtering_with_stats(self, df: pd.DataFrame) -> tuple:

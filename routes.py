@@ -1216,6 +1216,23 @@ def debug_data(session_id):
         app.logger.error(f"Error getting debug data: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/processing_errors/<session_id>')
+def get_processing_errors(session_id):
+    """API endpoint to get detailed processing errors for case management"""
+    try:
+        data_processor = DataProcessor()
+        error_details = data_processor.get_processing_errors(session_id)
+        
+        return jsonify(error_details)
+
+    except Exception as e:
+        app.logger.error(f"Error getting processing errors for session {session_id}: {str(e)}")
+        return jsonify({
+            'errors': [{'error_type': 'api_error', 'error': str(e), 'field': 'system', 'value': 'N/A'}],
+            'processing_failed': True,
+            'total_errors': 1
+        }), 500
+
 @app.route('/api/bau_analysis/<session_id>')
 def bau_analysis(session_id):
     """API endpoint for BAU (Business As Usual) analysis"""
