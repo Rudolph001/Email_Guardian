@@ -171,7 +171,7 @@
                         <th>Risk Level</th>
                         <th>Rule Matches</th>
                         <th>Status</th>
-                        <th>Actions</th>
+                        <th style="width: 180px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -276,8 +276,8 @@
                             <span class="badge bg-secondary">{{ status }}</span>
                             {% endif %}
                         </td>
-                        <td style="min-width: 140px;">
-                            <div class="btn-group btn-group-sm">
+                        <td style="min-width: 180px; width: 180px;">
+                            <div class="btn-group btn-group-sm" style="white-space: nowrap;">
                                 <button class="btn btn-outline-primary btn-sm" 
                                         onclick="viewEscalationDetails('{{ session.session_id }}', '{{ escalation.get('record_id', loop.index0) }}')"
                                         title="View Details">
@@ -286,10 +286,11 @@
                                 <div class="dropdown">
                                     <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
                                             type="button" data-bs-toggle="dropdown"
-                                            data-bs-auto-close="true">
+                                            data-bs-auto-close="true"
+                                            style="border-left: 1px solid #dee2e6;">
                                         <i class="fas fa-cog"></i>
                                     </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
+                                    <ul class="dropdown-menu dropdown-menu-end" style="min-width: 200px;">
                                         <li><a class="dropdown-item" href="#" onclick="generateEscalationEmail('{{ session.session_id }}', '{{ escalation.get('record_id', loop.index0) }}')">
                                             <i class="fas fa-envelope text-primary me-2"></i>Generate Email
                                         </a></li>
