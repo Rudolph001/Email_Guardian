@@ -149,22 +149,28 @@ def case_management(session_id):
         return redirect(url_for('index'))
     
     # Get processed data
-    processed_data = session_manager.get_processed_data(session_id)
+    all_processed_data = session_manager.get_processed_data(session_id)
     
-    # Filter out escalated cases - they should only appear in escalation dashboard
-    if processed_data:
-        non_escalated_data = []
-        for i, d in enumerate(processed_data):
+    # Count escalated cases for the badge
+    escalated_count = 0
+    non_escalated_data = []
+    
+    if all_processed_data:
+        for i, d in enumerate(all_processed_data):
             dashboard_type = d.get('dashboard_type', 'case_management')
             status = d.get('status', 'Active').lower()
             
-            # Only include records that are NOT assigned to escalation dashboard
-            if dashboard_type != 'escalation' and status != 'escalated':
+            # Count escalated cases
+            if dashboard_type == 'escalation' or status == 'escalated':
+                escalated_count += 1
+            else:
+                # Only include records that are NOT assigned to escalation dashboard
                 # Ensure record has an ID for actions
                 if 'record_id' not in d:
                     d['record_id'] = str(i)
                 non_escalated_data.append(d)
-        processed_data = non_escalated_data
+    
+    processed_data = non_escalated_data
     
     # Get filter parameters
     risk_filter = request.args.get('risk_filter', 'all')
@@ -201,6 +207,7 @@ def case_management(session_id):
     return render_template('case_management.html', 
                          session=session_data,
                          cases=filtered_data,
+                         escalated_count=escalated_count,
                          risk_levels=risk_levels,
                          statuses=statuses,
                          current_filters={

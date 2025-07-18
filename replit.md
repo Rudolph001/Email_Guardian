@@ -11,6 +11,11 @@ Upload limit preference: High capacity (500MB) for large email data files.
 
 ## Recent Changes
 
+- **Fixed Step 2 Rule Escalation Logic** (July 18, 2025):
+  - Resolved bug where rule matches weren't properly escalating to escalation dashboard
+  - Fixed dashboard separation logic to use dashboard_type instead of status field
+  - Updated escalation count display to show correct numbers across all dashboards
+  - Any event matching a rule now automatically moves to escalation dashboard
 - **4-Step Processing Workflow** (July 18, 2025): 
   - Implemented user-requested 4-step data processing workflow
   - Step 1: Whitelist domain filtering - ignore trusted events
