@@ -1,6 +1,6 @@
 {
-  "113e1fbf": {
-    "session_id": "113e1fbf",
+  "775e9fcd": {
+    "session_id": "775e9fcd",
     "filename": "dummy_email_data.csv",
     "csv_headers": [
       "_time",
@@ -22,8 +22,8 @@
       "final_outcome",
       "policy_name"
     ],
-    "created_at": "2025-07-18T13:54:27.564970",
-    "updated_at": "2025-07-18T13:54:27.804092",
+    "created_at": "2025-07-18T13:57:03.372840",
+    "updated_at": "2025-07-18T13:57:03.617946",
     "status": "active",
     "total_records": 10,
     "processed_records": 9,
@@ -70,7 +70,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:54:27.570910",
+        "processing_timestamp": "2025-07-18T13:57:03.376573",
         "dashboard_type": "escalation"
       },
       {
@@ -102,7 +102,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:54:27.569961",
+        "processing_timestamp": "2025-07-18T13:57:03.375856",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 1.0,
         "ml_risk_level": "Medium",
@@ -146,7 +146,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:54:27.570184",
+        "processing_timestamp": "2025-07-18T13:57:03.376045",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.9779914798037993,
         "ml_risk_level": "Medium",
@@ -190,7 +190,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:54:27.570623",
+        "processing_timestamp": "2025-07-18T13:57:03.376399",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.8818380179603895,
         "ml_risk_level": "Medium",
@@ -209,7 +209,7 @@
         "_time": "2025-06-27T08:24:12.280787",
         "sender": "carol@company.com",
         "subject": "Quarterly Report",
-        "attachments": null,
+        "attachments": "-",
         "recipients": "dave@gmail.com",
         "recipients_email_domain": "gmail.com",
         "leaver": "YES",
@@ -234,7 +234,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:54:27.570368",
+        "processing_timestamp": "2025-07-18T13:57:03.376229",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.6764489994208976,
         "ml_risk_level": "Low",
@@ -271,7 +271,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:54:27.568862",
+        "processing_timestamp": "2025-07-18T13:57:03.374972",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.3187588819038035,
         "ml_risk_level": "Low",
@@ -308,7 +308,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:54:27.569409",
+        "processing_timestamp": "2025-07-18T13:57:03.375428",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.25130150578862215,
         "ml_risk_level": "Low",
@@ -345,7 +345,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:54:27.569739",
+        "processing_timestamp": "2025-07-18T13:57:03.375649",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.17110616527988165,
         "ml_risk_level": "Low",
@@ -382,7 +382,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:54:27.569156",
+        "processing_timestamp": "2025-07-18T13:57:03.375219",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.0,
         "ml_risk_level": "Low",
