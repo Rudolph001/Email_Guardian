@@ -435,6 +435,7 @@ function addCondition() {
                     <option value="user_response">User Response</option>
                     <option value="final_outcome">Final Outcome</option>
                     <option value="policy_name">Policy Name</option>
+                    <option value="ml_risk_level">Risk Level</option>
 					<option value="justification">Justification</option>
                 </select>
             </div>
@@ -497,6 +498,8 @@ function updateConditionValue(selectElement, conditionId) {
         valueInput.placeholder = 'Final outcome value';
     } else if (fieldType === 'policy_name') {
         valueInput.placeholder = 'Policy name (e.g., policy_A, policy_B)';
+    } else if (fieldType === 'ml_risk_level') {
+        valueInput.placeholder = 'Risk level (Low, Medium, High, Critical)';
     } else {
         valueInput.placeholder = 'Value';
     }
@@ -822,6 +825,7 @@ function addEditCondition() {
                     <option value="user_response">User Response</option>
                     <option value="final_outcome">Final Outcome</option>
                     <option value="policy_name">Policy Name</option>
+                    <option value="ml_risk_level">Risk Level</option>
 					<option value="justification">Justification</option>
                 </select>
             </div>
@@ -934,6 +938,8 @@ function updateEditConditionValue(selectElement, conditionId) {
         valueInput.placeholder = 'Final outcome value';
     } else if (fieldType === 'policy_name') {
         valueInput.placeholder = 'Policy name (e.g., policy_A, policy_B)';
+    } else if (fieldType === 'ml_risk_level') {
+        valueInput.placeholder = 'Risk level (Low, Medium, High, Critical)';
     } else {
         valueInput.placeholder = 'Value';
     }
