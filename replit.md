@@ -87,6 +87,12 @@ Upload limit preference: High capacity (500MB) for large email data files.
   - Fixed session data storage issues that were causing "no processed data found" errors
   - Verified end-to-end functionality with successful file upload and 4-step processing workflow
   - All features working: whitelist filtering, rule processing, ML analysis, case management
+  - **Null Value Handling Fix** (July 18, 2025): Fixed TypeError with None values in templates
+    - Added comprehensive null value cleaning in data processor with `_clean_record_data()` function
+    - Enhanced template safety checks using `{% if case is not none and case is mapping %}` guards
+    - Implemented proper default value handling for critical fields (subject, sender, recipients)
+    - Fixed issue where `case.get('subject', 'N/A')[:50]` failed when subject was explicitly None
+    - All template operations now handle null/None values safely with fallback defaults
   - Fixed NoneType object error in case management template by adding comprehensive null checks
   - Enhanced data filtering in routes.py to prevent null values from reaching the frontend
   - Added safety checks in case_management.html template to handle edge cases gracefully

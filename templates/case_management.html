@@ -276,18 +276,19 @@
                             <div class="d-flex align-items-center">
                                 <div class="avatar-sm me-2">
                                     <span class="avatar-title bg-primary rounded-circle">
-                                        {{ case.get('sender', 'N/A')[:1].upper() }}
+                                        {{ (case.get('sender') or 'N/A')[:1].upper() }}
                                     </span>
                                 </div>
                                 <div>
-                                    <div class="fw-bold">{{ case.get('sender', 'N/A') }}</div>
-                                    <small class="text-muted">{{ case.get('recipients_email_domain', 'N/A') }}</small>
+                                    <div class="fw-bold">{{ case.get('sender') or 'N/A' }}</div>
+                                    <small class="text-muted">{{ case.get('recipients_email_domain') or 'N/A' }}</small>
                                 </div>
                             </div>
                         </td>
                         <td>
                             <div>
-                                <div class="fw-bold">{{ case.get('subject', 'N/A')[:50] }}{% if case.get('subject', '')|length > 50 %}...{% endif %}</div>
+                                {% set subject = case.get('subject') or 'N/A' %}
+                                <div class="fw-bold">{{ subject[:50] }}{% if subject|length > 50 %}...{% endif %}</div>
                                 {% if case.get('has_attachments') %}
                                 <small class="text-warning">
                                     <i class="fas fa-paperclip me-1"></i>Has Attachments
@@ -297,8 +298,9 @@
                         </td>
                         <td>
                             <div>
-                                <div>{{ case.get('recipients', 'N/A')[:30] }}{% if case.get('recipients', '')|length > 30 %}...{% endif %}</div>
-                                <small class="text-muted">{{ case.get('department', 'N/A') }}</small>
+                                {% set recipients = case.get('recipients') or 'N/A' %}
+                                <div>{{ recipients[:30] }}{% if recipients|length > 30 %}...{% endif %}</div>
+                                <small class="text-muted">{{ case.get('department') or 'N/A' }}</small>
                             </div>
                         </td>
                         <td>

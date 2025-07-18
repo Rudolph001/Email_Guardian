@@ -33,6 +33,24 @@ class DataProcessor:
         str_value = str(value).strip()
         return str_value != '' and str_value != '-' and str_value.lower() != 'nan'
 
+    def _clean_record_data(self, record):
+        """Clean record data by converting None values and '-' to proper defaults"""
+        cleaned_record = {}
+        for key, value in record.items():
+            if value is None or (isinstance(value, str) and value.strip() in ['', '-', 'nan', 'NaN']):
+                # Provide appropriate defaults for common fields
+                if key in ['subject', 'sender', 'recipients', 'department']:
+                    cleaned_record[key] = 'N/A'
+                elif key in ['has_attachments']:
+                    cleaned_record[key] = False
+                elif key in ['ml_anomaly_score', 'ml_risk_score']:
+                    cleaned_record[key] = 0.0
+                else:
+                    cleaned_record[key] = 'N/A'
+            else:
+                cleaned_record[key] = value
+        return cleaned_record
+
     def reprocess_existing_session(self, session_id: str) -> Dict:
         """Reprocess an existing session with current rules and escalation logic"""
         try:
@@ -545,8 +563,9 @@ class DataProcessor:
     def _process_email_record(self, record: Dict, record_index: int) -> Dict:
         """Process a single email record with detailed error handling"""
         try:
-            # Start with original record and clean NaN values
+            # Start with original record and clean NaN values and None values
             processed_record = self._clean_nan_values(record.copy())
+            processed_record = self._clean_record_data(processed_record)
             processed_record['record_id'] = record_index
 
             # Apply domain classification with error handling
@@ -591,6 +610,7 @@ class DataProcessor:
             
             # Return a minimal safe record
             safe_record = self._clean_nan_values(record.copy()) if isinstance(record, dict) else {}
+            safe_record = self._clean_record_data(safe_record)
             safe_record.update({
                 'record_id': record_index,
                 'processing_error': str(e),
