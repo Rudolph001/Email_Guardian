@@ -265,6 +265,7 @@
                 </thead>
                 <tbody>
                     {% for case in cases %}
+                    {% if case is not none and case is mapping %}
                     <tr>
                         <td>
                             <small class="text-muted">
@@ -397,6 +398,7 @@
                             </div>
                         </td>
                     </tr>
+                    {% endif %}
                     {% endfor %}
                 </tbody>
                 </table>

@@ -310,8 +310,12 @@ def case_management(session_id):
     size_filter = request.args.get('size_filter', 'all')
     has_links = request.args.get('has_links', 'all')
 
-    # Apply filters with null checks
-    filtered_data = [d for d in processed_data if d is not None and isinstance(d, dict)] if processed_data else []
+    # Apply filters with comprehensive null checks
+    filtered_data = []
+    if processed_data:
+        for item in processed_data:
+            if item is not None and isinstance(item, dict) and len(item) > 0:
+                filtered_data.append(item)
 
     if risk_filter != 'all':
         filtered_data = [d for d in filtered_data if d is not None and isinstance(d, dict) and d.get('ml_risk_level', '').lower() == risk_filter.lower()]
@@ -452,11 +456,11 @@ def case_management(session_id):
                         search_lower in d.get('recipients', '').lower() or
                         search_lower in d.get('attachment_classification', '').lower()]
 
-    # Calculate pagination
+    # Calculate pagination with additional safety check
     total_filtered = len(filtered_data)
     start_idx = (page - 1) * per_page
     end_idx = start_idx + per_page
-    paginated_data = filtered_data[start_idx:end_idx]
+    paginated_data = [item for item in filtered_data[start_idx:end_idx] if item is not None and isinstance(item, dict)]
 
     # Calculate pagination info
     total_pages = (total_filtered + per_page - 1) // per_page
