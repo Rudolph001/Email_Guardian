@@ -1,0 +1,43 @@
+TypeError: 'NoneType' object is not subscriptable 
+Traceback (most recent call last)
+This is the Copy/Paste friendly version of the traceback.
+Traceback (most recent call last):
+  File "C:\Users\rudolph.vanstaden\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1536, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rudolph.vanstaden\AppData\Local\Programs\Python\Python313\Lib\site-packages\werkzeug\middleware\proxy_fix.py", line 183, in __call__
+    return self.app(environ, start_response)
+           ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rudolph.vanstaden\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1514, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\rudolph.vanstaden\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\rudolph.vanstaden\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\rudolph.vanstaden\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\rudolph.vanstaden\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\rudolph.vanstaden\Downloads\Email_Guardian\routes.py", line 470, in case_management
+    return render_template('case_management.html',
+           ^^^^^^^^^^^^^^^^
+  File "C:\Users\rudolph.vanstaden\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "C:\Users\rudolph.vanstaden\AppData\Local\Programs\Python\Python313\Lib\site-packages\flask\templating.py", line 131, in _render
+    rv = template.render(context)
+  File "C:\Users\rudolph.vanstaden\AppData\Local\Programs\Python\Python313\Lib\site-packages\jinja2\environment.py", line 1295, in render
+    self.environment.handle_exception()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\rudolph.vanstaden\AppData\Local\Programs\Python\Python313\Lib\site-packages\jinja2\environment.py", line 942, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "C:\Users\rudolph.vanstaden\Downloads\Email_Guardian\templates\case_management.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "C:\Users\rudolph.vanstaden\Downloads\Email_Guardian\templates\base.html", line 77, in top-level template code
+    {% block content %}{% endblock %}
+    ^^^^^^^^^^^^^
+  File "C:\Users\rudolph.vanstaden\Downloads\Email_Guardian\templates\case_management.html", line 289, in block 'content'
+    <div class="fw-bold">{{ case.get('subject', 'N/A')[:50] }}{% if case.get('subject', '')|length > 50 %}...{% endif %}</div>
+    
+TypeError: 'NoneType' object is not subscriptable
+ 
