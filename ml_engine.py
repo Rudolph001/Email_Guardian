@@ -718,7 +718,7 @@ class MLEngine:
                 attachments = row.get('attachments', '')
                 self.logger.info(f"Row {idx}: attachments = '{attachments}' (type: {type(attachments)})")
 
-                if pd.isna(attachments) or str(attachments).strip() == '' or str(attachments).lower() == 'nan':
+                if pd.isna(attachments) or str(attachments).strip() == '' or str(attachments).lower() == 'nan' or str(attachments).strip() == '-':
                     classifications.append('No Attachments')
                     continue
 

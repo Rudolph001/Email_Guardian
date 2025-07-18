@@ -11,6 +11,11 @@ Upload limit preference: High capacity (500MB) for large email data files.
 
 ## Recent Changes
 
+- **Fixed Attachment Classification Bug** (July 18, 2025):
+  - Resolved issue where ML attachment classification was returning `<class 'str'>` instead of actual classification
+  - Fixed duplicate `analyze_emails` functions that were causing attachment_classifications to be missing
+  - Added proper handling of "-" values as null/empty data throughout the system
+  - Updated `has_attachments` logic to correctly identify when attachments field contains "-" vs actual file names
 - **Fixed Step 2 Rule Escalation Logic** (July 18, 2025):
   - Resolved bug where rule matches weren't properly escalating to escalation dashboard
   - Fixed dashboard separation logic to use dashboard_type instead of status field

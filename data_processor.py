@@ -26,6 +26,13 @@ class DataProcessor:
             'user_response', 'final_outcome', 'policy_name', 'justification'
         ]
 
+    def _has_valid_value(self, value):
+        """Check if a value represents actual data or is a null indicator like '-'"""
+        if pd.isna(value):
+            return False
+        str_value = str(value).strip()
+        return str_value != '' and str_value != '-' and str_value.lower() != 'nan'
+
     def reprocess_existing_session(self, session_id: str) -> Dict:
         """Reprocess an existing session with current rules and escalation logic"""
         try:
@@ -361,7 +368,7 @@ class DataProcessor:
             processed_record['rule_results'] = rule_results
 
             # Extract additional features
-            processed_record['has_attachments'] = bool(record.get('attachments', ''))
+            processed_record['has_attachments'] = self._has_valid_value(record.get('attachments', ''))
             processed_record['processing_timestamp'] = datetime.now().isoformat()
 
             return processed_record
