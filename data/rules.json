@@ -56,31 +56,5 @@
     "active": true,
     "created_at": "2025-01-18T00:00:00",
     "updated_at": "2025-01-18T00:00:00"
-  },
-  {
-    "id": 3,
-    "name": "Blocked Emails",
-    "description": "Handle blocked emails",
-    "conditions": [
-      {
-        "field": "status",
-        "operator": "equals",
-        "value": "Blocked"
-      }
-    ],
-    "actions": [
-      {
-        "type": "mark_priority",
-        "value": "High"
-      },
-      {
-        "type": "escalate",
-        "value": true
-      }
-    ],
-    "priority": 1,
-    "active": true,
-    "created_at": "2025-01-18T00:00:00",
-    "updated_at": "2025-01-18T00:00:00"
   }
 ]
