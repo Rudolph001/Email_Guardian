@@ -13,6 +13,73 @@ import json
 import uuid
 from datetime import datetime
 
+def reprocess_all_sessions():
+    """Reprocess all existing sessions with current whitelist and rules"""
+    try:
+        session_manager = SessionManager()
+        all_sessions = session_manager.get_all_sessions()
+        
+        if not all_sessions:
+            return {'success': True, 'sessions_count': 0}
+        
+        reprocessed_count = 0
+        failed_sessions = []
+        
+        for session in all_sessions:
+            session_id = session.get('session_id')
+            if not session_id:
+                continue
+                
+            try:
+                # Get original file path
+                original_filename = session.get('filename', '')
+                if not original_filename:
+                    continue
+                
+                # Find the original uploaded file
+                upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
+                if not os.path.exists(upload_folder):
+                    os.makedirs(upload_folder)
+                original_file_path = None
+                
+                # Try to find the original file
+                for filename in os.listdir(upload_folder):
+                    if filename.startswith(session_id) and filename.endswith('.csv'):
+                        original_file_path = os.path.join(upload_folder, filename)
+                        break
+                
+                if not original_file_path or not os.path.exists(original_file_path):
+                    app.logger.warning(f"Original file not found for session {session_id}")
+                    continue
+                
+                # Reprocess the session
+                processor = DataProcessor()
+                result = processor.process_csv(original_file_path, session_id, original_filename)
+                
+                if result['success']:
+                    reprocessed_count += 1
+                    app.logger.info(f"Successfully reprocessed session {session_id}")
+                else:
+                    failed_sessions.append(session_id)
+                    app.logger.error(f"Failed to reprocess session {session_id}: {result.get('error', 'Unknown error')}")
+                    
+            except Exception as e:
+                failed_sessions.append(session_id)
+                app.logger.error(f"Error reprocessing session {session_id}: {str(e)}")
+        
+        if failed_sessions:
+            return {
+                'success': False,
+                'sessions_count': reprocessed_count,
+                'error': f'Failed to reprocess sessions: {", ".join(failed_sessions)}'
+            }
+        else:
+            return {'success': True, 'sessions_count': reprocessed_count}
+            
+    except Exception as e:
+        app.logger.error(f"Error in reprocess_all_sessions: {str(e)}")
+        return {'success': False, 'sessions_count': 0, 'error': str(e)}
+
 @app.route('/')
 def index():
     """Main dashboard with session overview"""
@@ -635,7 +702,7 @@ def rules():
 
 @app.route('/rules/create', methods=['POST'])
 def create_rule():
-    """Create a new rule"""
+    """Create a new rule and reprocess existing sessions"""
     try:
         rule_data = {
             'name': request.form.get('name'),
@@ -650,7 +717,13 @@ def create_rule():
         result = rule_engine.create_rule(rule_data)
 
         if result['success']:
-            flash('Rule created successfully', 'success')
+            # Automatically reprocess all existing sessions with the new rule
+            reprocess_result = reprocess_all_sessions()
+            
+            if reprocess_result['success']:
+                flash(f'Rule created successfully! Reprocessed {reprocess_result["sessions_count"]} sessions with new rule.', 'success')
+            else:
+                flash(f'Rule created, but some sessions failed to reprocess: {reprocess_result["error"]}', 'warning')
         else:
             flash(f'Error creating rule: {result["error"]}', 'error')
 
@@ -661,7 +734,7 @@ def create_rule():
 
 @app.route('/rules/<int:rule_id>/update', methods=['POST'])
 def update_rule(rule_id):
-    """Update an existing rule"""
+    """Update an existing rule and reprocess existing sessions"""
     try:
         rule_data = {
             'name': request.form.get('name'),
@@ -676,7 +749,13 @@ def update_rule(rule_id):
         result = rule_engine.update_rule(rule_id, rule_data)
 
         if result['success']:
-            flash('Rule updated successfully', 'success')
+            # Automatically reprocess all existing sessions with the updated rule
+            reprocess_result = reprocess_all_sessions()
+            
+            if reprocess_result['success']:
+                flash(f'Rule updated successfully! Reprocessed {reprocess_result["sessions_count"]} sessions with updated rule.', 'success')
+            else:
+                flash(f'Rule updated, but some sessions failed to reprocess: {reprocess_result["error"]}', 'warning')
         else:
             flash(f'Error updating rule: {result["error"]}', 'error')
 
@@ -725,7 +804,7 @@ def case_action(session_id, record_id):
 
 @app.route('/admin/whitelist', methods=['POST'])
 def update_whitelist():
-    """Update whitelist domains"""
+    """Update whitelist domains and reprocess existing sessions"""
     domains = request.form.get('domains', '').split('\n')
     domains = [domain.strip() for domain in domains if domain.strip()]
 
@@ -733,10 +812,32 @@ def update_whitelist():
     result = session_manager.update_whitelist(domains)
 
     if result['success']:
-        flash('Whitelist updated successfully', 'success')
+        # Automatically reprocess all existing sessions with the new whitelist
+        reprocess_result = reprocess_all_sessions()
+        
+        if reprocess_result['success']:
+            flash(f'Whitelist updated successfully! Reprocessed {reprocess_result["sessions_count"]} sessions with new whitelist.', 'success')
+        else:
+            flash(f'Whitelist updated, but some sessions failed to reprocess: {reprocess_result["error"]}', 'warning')
     else:
         flash(f'Error updating whitelist: {result["error"]}', 'error')
 
+    return redirect(url_for('admin'))
+
+@app.route('/admin/reprocess-sessions', methods=['POST'])
+def manual_reprocess_sessions():
+    """Manual endpoint to reprocess all sessions"""
+    try:
+        reprocess_result = reprocess_all_sessions()
+        
+        if reprocess_result['success']:
+            flash(f'Successfully reprocessed {reprocess_result["sessions_count"]} sessions with current whitelist and rules.', 'success')
+        else:
+            flash(f'Some sessions failed to reprocess: {reprocess_result["error"]}', 'error')
+            
+    except Exception as e:
+        flash(f'Error reprocessing sessions: {str(e)}', 'error')
+    
     return redirect(url_for('admin'))
 
 @app.route('/admin/attachment-keywords', methods=['POST'])

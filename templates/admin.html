@@ -69,6 +69,10 @@
                             </h5>
                         </div>
                         <div class="card-body">
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Automatic Reprocessing:</strong> When you update the whitelist, all existing sessions will be automatically reprocessed with the new settings. This ensures all your uploaded data reflects the current configuration.
+                            </div>
                             <form method="post" action="{{ url_for('update_whitelist') }}">
                                 <div class="mb-3">
                                     <label for="domains" class="form-label fw-bold">Whitelisted Domains</label>
@@ -81,9 +85,14 @@
                                     </div>
                                 </div>
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save me-2"></i>Update Whitelist
-                                    </button>
+                                    <div>
+                                        <button type="submit" class="btn btn-primary me-2">
+                                            <i class="fas fa-save me-2"></i>Update Whitelist
+                                        </button>
+                                        <button type="button" class="btn btn-info" onclick="reprocessAllSessions()">
+                                            <i class="fas fa-sync-alt me-2"></i>Reprocess All Sessions
+                                        </button>
+                                    </div>
                                     <small class="text-muted">
                                         Last updated: {{ whitelists.updated_at[:19] if whitelists.updated_at else 'Never' }}
                                     </small>
@@ -494,6 +503,24 @@ function confirmSessionDeletion(sessionId) {
         '• Escalation history\n' +
         '• ML analysis results'
     );
+}
+
+// Reprocess all sessions function
+function reprocessAllSessions() {
+    if (confirm('⚠️ Are you sure you want to reprocess all sessions?\n\nThis will:\n• Re-apply current whitelist and rules to all sessions\n• Update all data analysis results\n• May take some time to complete')) {
+        // Show loading state
+        const reprocessBtn = document.querySelector('button[onclick="reprocessAllSessions()"]');
+        const originalText = reprocessBtn.innerHTML;
+        reprocessBtn.disabled = true;
+        reprocessBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Reprocessing...';
+        
+        // Create and submit form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '{{ url_for("manual_reprocess_sessions") }}';
+        document.body.appendChild(form);
+        form.submit();
+    }
 }
 </script>
 {% endblock %}
