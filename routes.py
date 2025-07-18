@@ -91,13 +91,11 @@ def index():
 def upload_file():
     """Handle CSV file upload and initial processing"""
     if 'file' not in request.files:
-        flash('No file selected', 'error')
-        return redirect(url_for('index'))
+        return jsonify({'success': False, 'error': 'No file selected'})
 
     file = request.files['file']
     if file.filename == '':
-        flash('No file selected', 'error')
-        return redirect(url_for('index'))
+        return jsonify({'success': False, 'error': 'No file selected'})
 
     if file and file.filename.lower().endswith('.csv'):
         try:
@@ -114,14 +112,16 @@ def upload_file():
             result = processor.process_csv(file_path, session_id, filename)
 
             if result['success']:
-                stats = result.get('processing_stats', {})
-                steps = stats.get('processing_steps', [])
-                steps_text = '; '.join(steps) if steps else 'Processing completed'
-                flash(f'Successfully processed {result["total_records"]} records. {steps_text}', 'success')
-                return redirect(url_for('dashboard', session_id=session_id))
+                return jsonify({
+                    'success': True, 
+                    'session_id': session_id, 
+                    'total_records': result.get('total_records', 0),
+                    'message': f'File uploaded and processing started! Session ID: {session_id}'
+                })
             else:
-                flash(f'Error processing file: {result["error"]}', 'error')
-                return redirect(url_for('index'))
+                return jsonify({'success': False, 'error': f'Error processing file: {result["error"]}'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': f'Error uploading file: {str(e)}'})
 
         except Exception as e:
             flash(f'Error uploading file: {str(e)}', 'error')
