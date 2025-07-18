@@ -71,6 +71,158 @@
     </div>
 </div>
 
+<!-- Attachment Keywords Management -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-paperclip me-2"></i>Attachment Analysis Keywords
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('update_attachment_keywords') }}">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="business_keywords" class="form-label">
+                                    <i class="fas fa-briefcase me-1"></i>Business Keywords
+                                </label>
+                                <textarea class="form-control" id="business_keywords" name="business_keywords" rows="8" 
+                                          placeholder="Enter one keyword per line">{% for keyword in attachment_keywords.business_keywords %}{{ keyword }}
+{% endfor %}</textarea>
+                                <div class="form-text">
+                                    Keywords that indicate business-related attachments
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="personal_keywords" class="form-label">
+                                    <i class="fas fa-user me-1"></i>Personal Keywords
+                                </label>
+                                <textarea class="form-control" id="personal_keywords" name="personal_keywords" rows="8" 
+                                          placeholder="Enter one keyword per line">{% for keyword in attachment_keywords.personal_keywords %}{{ keyword }}
+{% endfor %}</textarea>
+                                <div class="form-text">
+                                    Keywords that indicate personal attachments
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="suspicious_keywords" class="form-label">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>Suspicious Keywords
+                                </label>
+                                <textarea class="form-control" id="suspicious_keywords" name="suspicious_keywords" rows="8" 
+                                          placeholder="Enter one keyword per line">{% for keyword in attachment_keywords.suspicious_keywords %}{{ keyword }}
+{% endfor %}</textarea>
+                                <div class="form-text">
+                                    Keywords that indicate potentially suspicious attachments
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Update Attachment Keywords
+                            </button>
+                            <small class="text-muted ms-3">
+                                Last updated: {{ attachment_keywords.updated_at[:19] if attachment_keywords.updated_at else 'Never' }}
+                            </small>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Attachment Analysis Statistics -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-briefcase me-2"></i>Business Keywords
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Total Keywords:</strong>
+                    <span class="badge bg-primary">{{ attachment_keywords.business_keywords|length }}</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Examples:</strong>
+                    <ul class="list-unstyled">
+                        {% for keyword in attachment_keywords.business_keywords[:3] %}
+                        <li><code>{{ keyword }}</code></li>
+                        {% endfor %}
+                        {% if attachment_keywords.business_keywords|length > 3 %}
+                        <li><small class="text-muted">... and {{ attachment_keywords.business_keywords|length - 3 }} more</small></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-user me-2"></i>Personal Keywords
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Total Keywords:</strong>
+                    <span class="badge bg-warning">{{ attachment_keywords.personal_keywords|length }}</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Examples:</strong>
+                    <ul class="list-unstyled">
+                        {% for keyword in attachment_keywords.personal_keywords[:3] %}
+                        <li><code>{{ keyword }}</code></li>
+                        {% endfor %}
+                        {% if attachment_keywords.personal_keywords|length > 3 %}
+                        <li><small class="text-muted">... and {{ attachment_keywords.personal_keywords|length - 3 }} more</small></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Suspicious Keywords
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Total Keywords:</strong>
+                    <span class="badge bg-danger">{{ attachment_keywords.suspicious_keywords|length }}</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Examples:</strong>
+                    <ul class="list-unstyled">
+                        {% for keyword in attachment_keywords.suspicious_keywords[:3] %}
+                        <li><code>{{ keyword }}</code></li>
+                        {% endfor %}
+                        {% if attachment_keywords.suspicious_keywords|length > 3 %}
+                        <li><small class="text-muted">... and {{ attachment_keywords.suspicious_keywords|length - 3 }} more</small></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Session Management -->
 <div class="row mb-4">
     <div class="col-12">

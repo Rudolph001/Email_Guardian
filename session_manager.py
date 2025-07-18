@@ -106,7 +106,7 @@ class SessionManager:
                 sessions[session_id]['processed_data'] = processed_data
                 sessions[session_id]['processed_records'] = len(processed_data)
                 sessions[session_id]['updated_at'] = datetime.now().isoformat()
-                
+
                 # Add processing statistics if provided
                 if processing_stats:
                     sessions[session_id]['processing_stats'] = processing_stats
@@ -253,9 +253,60 @@ Session ID: {session_id}
             self.logger.error(f"Error saving whitelists: {str(e)}")
             return False
 
-    def get_whitelists(self) -> Dict:
-        """Get whitelist data"""
-        return self.load_whitelists()
+    def get_whitelists(self):
+        """Get current whitelist domains"""
+        try:
+            with open(self.whitelists_file, 'r') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            return {
+                'domains': [],
+                'updated_at': datetime.now().isoformat()
+            }
+
+    def get_attachment_keywords(self):
+        """Get current attachment analysis keywords"""
+        try:
+            with open('data/attachment_keywords.json', 'r') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            # Default keywords for attachment classification
+            default_keywords = {
+                'business_keywords': [
+                    'contract', 'invoice', 'proposal', 'presentation', 'report', 'memo',
+                    'budget', 'forecast', 'analysis', 'summary', 'minutes', 'agenda',
+                    'specification', 'requirements', 'policy', 'procedure', 'guidelines',
+                    'training', 'manual', 'documentation', 'quarterly', 'annual',
+                    'financial', 'legal', 'compliance', 'audit', 'review'
+                ],
+                'personal_keywords': [
+                    'family', 'personal', 'private', 'photo', 'picture', 'vacation',
+                    'holiday', 'birthday', 'wedding', 'baby', 'child', 'kids',
+                    'home', 'house', 'car', 'pet', 'hobby', 'friend', 'resume',
+                    'cv', 'portfolio', 'diary', 'journal', 'medical', 'health',
+                    'insurance', 'tax', 'bank', 'credit', 'loan', 'mortgage'
+                ],
+                'suspicious_keywords': [
+                    'confidential', 'secret', 'classified', 'proprietary', 'internal',
+                    'restricted', 'sensitive', 'backup', 'copy', 'duplicate',
+                    'final', 'urgent', 'immediate', 'asap', 'password', 'login',
+                    'access', 'key', 'token', 'credential', 'database', 'db'
+                ],
+                'updated_at': datetime.now().isoformat()
+            }
+            self.update_attachment_keywords(default_keywords)
+            return default_keywords
+
+    def update_attachment_keywords(self, keywords_data):
+        """Update attachment analysis keywords"""
+        try:
+            keywords_data['updated_at'] = datetime.now().isoformat()
+            os.makedirs('data', exist_ok=True)
+            with open('data/attachment_keywords.json', 'w') as f:
+                json.dump(keywords_data, f, indent=2)
+            return {'success': True, 'message': 'Attachment keywords updated successfully'}
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
 
     def update_whitelist(self, domains: List[str]) -> Dict:
         """Update whitelist domains"""
@@ -299,19 +350,19 @@ Session ID: {session_id}
         """Delete a processing session"""
         try:
             sessions = self.load_sessions()
-            
+
             if session_id not in sessions:
                 return {'success': False, 'error': 'Session not found'}
-            
+
             # Remove the session
             del sessions[session_id]
-            
+
             if self.save_sessions(sessions):
                 self.logger.info(f"Successfully deleted session {session_id}")
                 return {'success': True}
             else:
                 return {'success': False, 'error': 'Failed to save sessions after deletion'}
-                
+
         except Exception as e:
             self.logger.error(f"Error deleting session {session_id}: {str(e)}")
             return {'success': False, 'error': str(e)}
@@ -335,24 +386,24 @@ Session ID: {session_id}
             'csv_headers': session.get('csv_headers', []),
             'exported_at': datetime.now().isoformat()
         }
-    
+
     def update_processed_data(self, session_id: str, processed_data: List[Dict]) -> Dict:
         """Update processed data for a session"""
         try:
             sessions = self.load_sessions()
-            
+
             if session_id not in sessions:
                 return {'success': False, 'error': 'Session not found'}
-            
+
             sessions[session_id]['processed_data'] = processed_data
             sessions[session_id]['updated_at'] = datetime.now().isoformat()
-            
+
             if self.save_sessions(sessions):
                 self.logger.info(f"Updated processed data for session {session_id}")
                 return {'success': True}
             else:
                 return {'success': False, 'error': 'Failed to save session data'}
-                
+
         except Exception as e:
             self.logger.error(f"Error updating processed data for session {session_id}: {str(e)}")
             return {'success': False, 'error': str(e)}

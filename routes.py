@@ -550,8 +550,9 @@ def admin():
     """Admin panel for managing whitelists and settings"""
     session_manager = SessionManager()
     whitelists = session_manager.get_whitelists()
+    attachment_keywords = session_manager.get_attachment_keywords()
     sessions = session_manager.get_all_sessions()
-    return render_template('admin.html', whitelists=whitelists, sessions=sessions)
+    return render_template('admin.html', whitelists=whitelists, attachment_keywords=attachment_keywords, sessions=sessions)
 
 @app.route('/rules')
 def rules():
@@ -659,6 +660,34 @@ def update_whitelist():
         flash('Whitelist updated successfully', 'success')
     else:
         flash(f'Error updating whitelist: {result["error"]}', 'error')
+    
+    return redirect(url_for('admin'))
+
+@app.route('/admin/attachment-keywords', methods=['POST'])
+def update_attachment_keywords():
+    """Update attachment analysis keywords"""
+    business_keywords = request.form.get('business_keywords', '').split('\n')
+    personal_keywords = request.form.get('personal_keywords', '').split('\n')
+    suspicious_keywords = request.form.get('suspicious_keywords', '').split('\n')
+    
+    # Clean and filter keywords
+    business_keywords = [kw.strip().lower() for kw in business_keywords if kw.strip()]
+    personal_keywords = [kw.strip().lower() for kw in personal_keywords if kw.strip()]
+    suspicious_keywords = [kw.strip().lower() for kw in suspicious_keywords if kw.strip()]
+    
+    keywords_data = {
+        'business_keywords': business_keywords,
+        'personal_keywords': personal_keywords,
+        'suspicious_keywords': suspicious_keywords
+    }
+    
+    session_manager = SessionManager()
+    result = session_manager.update_attachment_keywords(keywords_data)
+    
+    if result['success']:
+        flash('Attachment keywords updated successfully', 'success')
+    else:
+        flash(f'Error updating attachment keywords: {result["error"]}', 'error')
     
     return redirect(url_for('admin'))
 
