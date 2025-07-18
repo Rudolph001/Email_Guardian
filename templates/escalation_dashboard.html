@@ -279,7 +279,7 @@
                         <td>
                             <div class="btn-group btn-group-sm">
                                 <button class="btn btn-outline-primary btn-sm" 
-                                        onclick="viewEscalationDetails('{{ session.session_id }}', '{{ escalation.get('record_id', '') }}')"
+                                        onclick="viewEscalationDetails('{{ session.session_id }}', '{{ escalation.get('record_id', loop.index0) }}')"
                                         title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </button>
@@ -289,13 +289,13 @@
                                         <i class="fas fa-cog"></i>
                                     </button>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="#" onclick="resolveEscalation('{{ session.session_id }}', '{{ escalation.get('record_id', '') }}', 'Resolved', 'Threat mitigated')">
+                                        <li><a class="dropdown-item" href="#" onclick="resolveEscalation('{{ session.session_id }}', '{{ escalation.get('record_id', loop.index0) }}', 'Resolved', 'Threat mitigated')">
                                             <i class="fas fa-check-circle text-success me-2"></i>Mark as Resolved
                                         </a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="updateEscalationStatus('{{ session.session_id }}', '{{ escalation.get('record_id', '') }}', 'Under Investigation')">
+                                        <li><a class="dropdown-item" href="#" onclick="updateEscalationStatus('{{ session.session_id }}', '{{ escalation.get('record_id', loop.index0) }}', 'Under Investigation')">
                                             <i class="fas fa-search text-warning me-2"></i>Under Investigation
                                         </a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="resolveEscalation('{{ session.session_id }}', '{{ escalation.get('record_id', '') }}', 'False Positive', 'Determined to be safe')">
+                                        <li><a class="dropdown-item" href="#" onclick="resolveEscalation('{{ session.session_id }}', '{{ escalation.get('record_id', loop.index0) }}', 'False Positive', 'Determined to be safe')">
                                             <i class="fas fa-times-circle text-info me-2"></i>False Positive
                                         </a></li>
                                     </ul>

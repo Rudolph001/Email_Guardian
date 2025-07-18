@@ -261,14 +261,23 @@ def get_case_details(session_id, record_id):
     if not processed_data:
         return jsonify({'error': 'Session not found'}), 404
     
-    # Find the specific record
+    # Find the specific record - try multiple ID formats
     case_data = None
-    for record in processed_data:
-        if record.get('record_id') == record_id:
+    for i, record in enumerate(processed_data):
+        # Check various possible record ID formats
+        if (record.get('record_id') == record_id or 
+            str(record.get('record_id')) == record_id or
+            str(i) == record_id):
             case_data = record
+            # Ensure record has a record_id for future references
+            if 'record_id' not in record:
+                record['record_id'] = str(i)
             break
     
     if not case_data:
+        app.logger.error(f"Record ID {record_id} not found in session {session_id}")
+        app.logger.error(f"Available records: {len(processed_data)}")
+        app.logger.error(f"Available record IDs: {[r.get('record_id', 'None') for r in processed_data[:5]]}")
         return jsonify({'error': 'Case not found'}), 404
     
     return jsonify(case_data)
