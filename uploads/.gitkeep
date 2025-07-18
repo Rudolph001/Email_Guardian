@@ -1,0 +1,2 @@
+# This file ensures the uploads directory is tracked in version control
+# The directory is needed for CSV file uploads in the Email Guardian system

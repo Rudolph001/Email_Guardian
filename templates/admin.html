@@ -1,0 +1,238 @@
+{% extends "base.html" %}
+
+{% block title %}Email Guardian - Admin{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="h3 mb-4">Administration Panel</h1>
+    </div>
+</div>
+
+<!-- Whitelist Management -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list me-2"></i>Whitelist Domains
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('update_whitelist') }}">
+                    <div class="mb-3">
+                        <label for="domains" class="form-label">Trusted Domains</label>
+                        <textarea class="form-control" id="domains" name="domains" rows="8" 
+                                  placeholder="Enter one domain per line">{% for domain in whitelists.domains %}{{ domain }}
+{% endfor %}</textarea>
+                        <div class="form-text">
+                            Emails from these domains will be filtered out from analysis. Enter one domain per line.
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Update Whitelist
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Whitelist Statistics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>Current Domains</h6>
+                    <span class="badge bg-primary">{{ whitelists.domains|length }}</span>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Last Updated</h6>
+                    <small class="text-muted">{{ whitelists.updated_at[:19] }}</small>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Domain Examples</h6>
+                    <ul class="list-unstyled">
+                        {% for domain in whitelists.domains[:5] %}
+                        <li><code>{{ domain }}</code></li>
+                        {% endfor %}
+                        {% if whitelists.domains|length > 5 %}
+                        <li><small class="text-muted">... and {{ whitelists.domains|length - 5 }} more</small></li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Session Management -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-database me-2"></i>Session Management
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if sessions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Session ID</th>
+                                    <th>Filename</th>
+                                    <th>Status</th>
+                                    <th>Records</th>
+                                    <th>Created</th>
+                                    <th>Size</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for session in sessions %}
+                                <tr>
+                                    <td>
+                                        <code>{{ session.session_id }}</code>
+                                    </td>
+                                    <td>{{ session.filename }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if session.status == 'active' else 'secondary' }}">
+                                            {{ session.status.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px; width: 100px;">
+                                            <div class="progress-bar" role="progressbar" 
+                                                 style="width: {{ (session.processed_records / session.total_records * 100) if session.total_records > 0 else 0 }}%">
+                                                {{ session.processed_records or 0 }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <small>{{ session.created_at[:19] }}</small>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ "%.1f"|format((session.processed_data|length * 1024) / 1024) }} KB
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('dashboard', session_id=session.session_id) }}" 
+                                               class="btn btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{{ url_for('export_session', session_id=session.session_id) }}" 
+                                               class="btn btn-outline-success">
+                                                <i class="fas fa-download"></i>
+                                            </a>
+                                            <button class="btn btn-outline-danger" 
+                                                    onclick="confirmDelete('{{ session.session_id }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-database fa-3x text-muted mb-3"></i>
+                        <h5>No Sessions Found</h5>
+                        <p class="text-muted">No processing sessions have been created yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Information -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">System Status</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>ML Engine:</strong>
+                    <span class="badge bg-success">Active</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Rule Engine:</strong>
+                    <span class="badge bg-success">Active</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Storage:</strong>
+                    <span class="badge bg-success">Available</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Processing Statistics</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Total Sessions:</strong>
+                    <span class="badge bg-info">{{ sessions|length }}</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Active Sessions:</strong>
+                    <span class="badge bg-success">{{ sessions|selectattr('status', 'equalto', 'active')|list|length }}</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Total Records:</strong>
+                    <span class="badge bg-primary">{{ sessions|sum(attribute='processed_records') or 0 }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">Configuration</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Whitelisted Domains:</strong>
+                    <span class="badge bg-info">{{ whitelists.domains|length }}</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Upload Limit:</strong>
+                    <span class="badge bg-secondary">16 MB</span>
+                </div>
+                <div class="mb-2">
+                    <strong>Data Retention:</strong>
+                    <span class="badge bg-secondary">Persistent</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDelete(sessionId) {
+    if (confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
+        // In a real implementation, this would make a DELETE request
+        alert('Session deletion would be implemented here');
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,323 @@
+{% extends "base.html" %}
+
+{% block title %}Email Guardian - Session {{ session.session_id }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-0">Session Dashboard</h1>
+                <p class="text-muted">{{ session.filename }} - {{ session.created_at[:19] }}</p>
+            </div>
+            <div class="btn-group">
+                <a href="{{ url_for('export_session', session_id=session.session_id) }}" 
+                   class="btn btn-outline-success">
+                    <i class="fas fa-download me-2"></i>Export Data
+                </a>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Session Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-primary">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="card-title mb-0">{{ processed_data|length }}</h5>
+                        <p class="card-text text-muted">Total Emails</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="card-title mb-0">
+                            {{ processed_data|selectattr('ml_risk_level', 'equalto', 'Critical')|list|length }}
+                        </h5>
+                        <p class="card-text text-muted">Critical Risk</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-warning">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="card-title mb-0">
+                            {{ processed_data|selectattr('rule_results.matched_rules')|list|length }}
+                        </h5>
+                        <p class="card-text text-muted">Rule Matches</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-success">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="card-title mb-0">
+                            {{ processed_data|selectattr('rule_results.escalate', 'equalto', true)|list|length }}
+                        </h5>
+                        <p class="card-text text-muted">Escalations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ML Insights -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Risk Level Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="riskChart"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Domain Classification</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="domainChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ML Insights Panel -->
+{% if ml_insights %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-brain me-2"></i>ML Analysis Insights
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>Anomaly Detection</h6>
+                        <p class="text-muted">
+                            {{ ml_insights.anomaly_summary.high_anomaly_count }} high-anomaly emails detected
+                            ({{ "%.1f"|format(ml_insights.anomaly_summary.anomaly_percentage) }}%)
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Pattern Analysis</h6>
+                        <p class="text-muted">
+                            {{ ml_insights.pattern_summary.total_patterns }} patterns found,
+                            {{ ml_insights.pattern_summary.critical_patterns }} critical
+                        </p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Recommendations</h6>
+                        {% if ml_insights.recommendations %}
+                            <ul class="list-unstyled">
+                                {% for rec in ml_insights.recommendations[:2] %}
+                                <li><small>• {{ rec }}</small></li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-muted">No specific recommendations</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Email Records Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Email Records</h5>
+            </div>
+            <div class="card-body">
+                {% if processed_data %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Sender</th>
+                                    <th>Subject</th>
+                                    <th>Recipients</th>
+                                    <th>Risk Level</th>
+                                    <th>ML Score</th>
+                                    <th>Rules</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in processed_data[:50] %}
+                                <tr class="{% if record.ml_risk_level == 'Critical' %}table-danger{% elif record.ml_risk_level == 'High' %}table-warning{% endif %}">
+                                    <td>
+                                        <small>{{ record._time[:19] if record._time else 'N/A' }}</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ record.sender[:30] + '...' if record.sender and record.sender|length > 30 else record.sender or 'N/A' }}</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ record.subject[:40] + '...' if record.subject and record.subject|length > 40 else record.subject or 'N/A' }}</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ record.recipients_email_domain or 'N/A' }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if record.ml_risk_level == 'Critical' else 'warning' if record.ml_risk_level == 'High' else 'info' if record.ml_risk_level == 'Medium' else 'success' }}">
+                                            {{ record.ml_risk_level or 'Low' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">
+                                            {{ "%.2f"|format(record.ml_anomaly_score or 0) }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if record.rule_results.matched_rules %}
+                                            <span class="badge bg-primary">
+                                                {{ record.rule_results.matched_rules|length }}
+                                            </span>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <form method="post" action="{{ url_for('case_action', session_id=session.session_id, record_id=record.record_id) }}" class="d-inline">
+                                                <input type="hidden" name="action" value="clear">
+                                                <button type="submit" class="btn btn-outline-success btn-sm">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </form>
+                                            <form method="post" action="{{ url_for('case_action', session_id=session.session_id, record_id=record.record_id) }}" class="d-inline">
+                                                <input type="hidden" name="action" value="escalate">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% if processed_data|length > 50 %}
+                        <div class="text-center mt-3">
+                            <small class="text-muted">Showing first 50 records of {{ processed_data|length }} total</small>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5>No Data Available</h5>
+                        <p class="text-muted">No processed email records found for this session.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Risk Level Chart
+const riskCtx = document.getElementById('riskChart').getContext('2d');
+const riskData = {
+    {% set risk_counts = {} %}
+    {% for record in processed_data %}
+        {% set risk_level = record.ml_risk_level or 'Low' %}
+        {% if risk_counts.update({risk_level: risk_counts.get(risk_level, 0) + 1}) %}{% endif %}
+    {% endfor %}
+    labels: [{% for level in ['Low', 'Medium', 'High', 'Critical'] %}'{{ level }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        data: [{% for level in ['Low', 'Medium', 'High', 'Critical'] %}{{ risk_counts.get(level, 0) }}{% if not loop.last %},{% endif %}{% endfor %}],
+        backgroundColor: ['#28a745', '#17a2b8', '#ffc107', '#dc3545']
+    }]
+};
+
+new Chart(riskCtx, {
+    type: 'doughnut',
+    data: riskData,
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Domain Classification Chart
+const domainCtx = document.getElementById('domainChart').getContext('2d');
+const domainData = {
+    {% set domain_counts = {} %}
+    {% for record in processed_data %}
+        {% set domain_class = record.domain_classification or 'Unknown' %}
+        {% if domain_counts.update({domain_class: domain_counts.get(domain_class, 0) + 1}) %}{% endif %}
+    {% endfor %}
+    labels: [{% for class in domain_counts.keys() %}'{{ class }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        data: [{% for count in domain_counts.values() %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}],
+        backgroundColor: ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd']
+    }]
+};
+
+new Chart(domainCtx, {
+    type: 'pie',
+    data: domainData,
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,425 @@
+{% extends "base.html" %}
+
+{% block title %}Email Guardian - Rules{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">Rule Management</h1>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createRuleModal">
+                <i class="fas fa-plus me-2"></i>Create Rule
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Rules Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-primary">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="card-title mb-0">{{ rules|length }}</h5>
+                        <p class="card-text text-muted">Total Rules</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="card-title mb-0">{{ rules|selectattr('active', 'equalto', true)|list|length }}</h5>
+                        <p class="card-text text-muted">Active Rules</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="card-title mb-0">{{ rules|selectattr('priority', 'equalto', 1)|list|length }}</h5>
+                        <p class="card-text text-muted">High Priority</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-danger">
+                        <i class="fas fa-ban"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="card-title mb-0">{{ rules|selectattr('active', 'equalto', false)|list|length }}</h5>
+                        <p class="card-text text-muted">Inactive Rules</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rules List -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Processing Rules</h5>
+            </div>
+            <div class="card-body">
+                {% if rules %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Rule Name</th>
+                                    <th>Description</th>
+                                    <th>Priority</th>
+                                    <th>Conditions</th>
+                                    <th>Actions</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for rule in rules %}
+                                <tr class="{% if not rule.active %}table-secondary{% endif %}">
+                                    <td>
+                                        <strong>{{ rule.name }}</strong>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">{{ rule.description[:50] + '...' if rule.description and rule.description|length > 50 else rule.description or 'No description' }}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'danger' if rule.priority == 1 else 'warning' if rule.priority == 2 else 'info' }}">
+                                            {{ rule.priority }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ rule.conditions|length }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ rule.actions|length }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if rule.active else 'secondary' }}">
+                                            {{ 'Active' if rule.active else 'Inactive' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small>{{ rule.created_at[:19] if rule.created_at else 'N/A' }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-primary" 
+                                                    onclick="viewRule({{ rule.id }})">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                            <button class="btn btn-outline-warning" 
+                                                    onclick="editRule({{ rule.id }})">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <form method="post" action="{{ url_for('delete_rule', rule_id=rule.id) }}" 
+                                                  class="d-inline" onsubmit="return confirm('Are you sure you want to delete this rule?')">
+                                                <button type="submit" class="btn btn-outline-danger">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-cogs fa-3x text-muted mb-3"></i>
+                        <h5>No Rules Configured</h5>
+                        <p class="text-muted">Create your first rule to start automated email processing.</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createRuleModal">
+                            <i class="fas fa-plus me-2"></i>Create First Rule
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Rule Modal -->
+<div class="modal fade" id="createRuleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Rule</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="{{ url_for('create_rule') }}">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Rule Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="priority" class="form-label">Priority</label>
+                                <select class="form-select" id="priority" name="priority">
+                                    <option value="1">1 - High</option>
+                                    <option value="2" selected>2 - Medium</option>
+                                    <option value="3">3 - Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Status</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="active" name="active" checked>
+                                    <label class="form-check-label" for="active">
+                                        Active
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Conditions</label>
+                        <div id="conditions-container">
+                            <div class="condition-row mb-2">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <select class="form-select" name="condition_field_0">
+                                            <option value="leaver">Leaver</option>
+                                            <option value="wordlist_subject">Wordlist Subject</option>
+                                            <option value="wordlist_attachment">Wordlist Attachment</option>
+                                            <option value="status">Status</option>
+                                            <option value="sender">Sender</option>
+                                            <option value="subject">Subject</option>
+                                            <option value="recipients_email_domain">Recipients Domain</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select class="form-select" name="condition_operator_0">
+                                            <option value="equals">Equals</option>
+                                            <option value="contains">Contains</option>
+                                            <option value="not_equals">Not Equals</option>
+                                            <option value="in_list">In List</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <input type="text" class="form-control" name="condition_value_0" placeholder="Value">
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeCondition(this)">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addCondition()">
+                            <i class="fas fa-plus me-1"></i>Add Condition
+                        </button>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Actions</label>
+                        <div id="actions-container">
+                            <div class="action-row mb-2">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <select class="form-select" name="action_type_0">
+                                            <option value="mark_priority">Mark Priority</option>
+                                            <option value="escalate">Escalate</option>
+                                            <option value="notify">Notify</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <input type="text" class="form-control" name="action_value_0" placeholder="Value">
+                                    </div>
+                                    <div class="col-md-1">
+                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeAction(this)">
+                                            <i class="fas fa-minus"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addAction()">
+                            <i class="fas fa-plus me-1"></i>Add Action
+                        </button>
+                    </div>
+                    
+                    <input type="hidden" id="conditions" name="conditions">
+                    <input type="hidden" id="actions" name="actions">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary" onclick="prepareFormData()">
+                        <i class="fas fa-save me-2"></i>Create Rule
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let conditionCounter = 0;
+let actionCounter = 0;
+
+function addCondition() {
+    conditionCounter++;
+    const container = document.getElementById('conditions-container');
+    const newRow = document.createElement('div');
+    newRow.className = 'condition-row mb-2';
+    newRow.innerHTML = `
+        <div class="row">
+            <div class="col-md-4">
+                <select class="form-select" name="condition_field_${conditionCounter}">
+                    <option value="leaver">Leaver</option>
+                    <option value="wordlist_subject">Wordlist Subject</option>
+                    <option value="wordlist_attachment">Wordlist Attachment</option>
+                    <option value="status">Status</option>
+                    <option value="sender">Sender</option>
+                    <option value="subject">Subject</option>
+                    <option value="recipients_email_domain">Recipients Domain</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="condition_operator_${conditionCounter}">
+                    <option value="equals">Equals</option>
+                    <option value="contains">Contains</option>
+                    <option value="not_equals">Not Equals</option>
+                    <option value="in_list">In List</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <input type="text" class="form-control" name="condition_value_${conditionCounter}" placeholder="Value">
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeCondition(this)">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    container.appendChild(newRow);
+}
+
+function removeCondition(button) {
+    button.closest('.condition-row').remove();
+}
+
+function addAction() {
+    actionCounter++;
+    const container = document.getElementById('actions-container');
+    const newRow = document.createElement('div');
+    newRow.className = 'action-row mb-2';
+    newRow.innerHTML = `
+        <div class="row">
+            <div class="col-md-4">
+                <select class="form-select" name="action_type_${actionCounter}">
+                    <option value="mark_priority">Mark Priority</option>
+                    <option value="escalate">Escalate</option>
+                    <option value="notify">Notify</option>
+                </select>
+            </div>
+            <div class="col-md-7">
+                <input type="text" class="form-control" name="action_value_${actionCounter}" placeholder="Value">
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeAction(this)">
+                    <i class="fas fa-minus"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    container.appendChild(newRow);
+}
+
+function removeAction(button) {
+    button.closest('.action-row').remove();
+}
+
+function prepareFormData() {
+    // Collect conditions
+    const conditions = [];
+    const conditionRows = document.querySelectorAll('.condition-row');
+    conditionRows.forEach((row, index) => {
+        const field = row.querySelector('select[name^="condition_field_"]').value;
+        const operator = row.querySelector('select[name^="condition_operator_"]').value;
+        const value = row.querySelector('input[name^="condition_value_"]').value;
+        
+        if (field && operator && value) {
+            conditions.push({
+                field: field,
+                operator: operator,
+                value: value
+            });
+        }
+    });
+    
+    // Collect actions
+    const actions = [];
+    const actionRows = document.querySelectorAll('.action-row');
+    actionRows.forEach((row, index) => {
+        const type = row.querySelector('select[name^="action_type_"]').value;
+        const value = row.querySelector('input[name^="action_value_"]').value;
+        
+        if (type && value) {
+            actions.push({
+                type: type,
+                value: value
+            });
+        }
+    });
+    
+    // Set hidden fields
+    document.getElementById('conditions').value = JSON.stringify(conditions);
+    document.getElementById('actions').value = JSON.stringify(actions);
+}
+
+function viewRule(ruleId) {
+    alert('Rule details view would be implemented here for rule ID: ' + ruleId);
+}
+
+function editRule(ruleId) {
+    alert('Rule editing would be implemented here for rule ID: ' + ruleId);
+}
+</script>
+{% endblock %}

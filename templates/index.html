@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}Email Guardian - Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">Email Security Dashboard</h1>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                <i class="fas fa-upload me-2"></i>Upload CSV
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-primary">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="card-title mb-0">{{ sessions|length }}</h5>
+                        <p class="card-text text-muted">Active Sessions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-success">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="card-title mb-0">
+                            {{ sessions|sum(attribute='processed_records') or 0 }}
+                        </h5>
+                        <p class="card-text text-muted">Emails Processed</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="card-title mb-0">0</h5>
+                        <p class="card-text text-muted">Pending Reviews</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-danger">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="card-title mb-0">0</h5>
+                        <p class="card-text text-muted">Escalated Cases</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Sessions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Processing Sessions</h5>
+            </div>
+            <div class="card-body">
+                {% if sessions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Session ID</th>
+                                    <th>Filename</th>
+                                    <th>Created</th>
+                                    <th>Status</th>
+                                    <th>Records</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for session in sessions %}
+                                <tr>
+                                    <td>
+                                        <code>{{ session.session_id }}</code>
+                                    </td>
+                                    <td>{{ session.filename }}</td>
+                                    <td>{{ session.created_at[:19] }}</td>
+                                    <td>
+                                        <span class="badge bg-{{ 'success' if session.status == 'active' else 'secondary' }}">
+                                            {{ session.status.title() }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ session.processed_records or 0 }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{{ url_for('dashboard', session_id=session.session_id) }}" 
+                                               class="btn btn-outline-primary">
+                                                <i class="fas fa-eye"></i> View
+                                            </a>
+                                            <a href="{{ url_for('export_session', session_id=session.session_id) }}" 
+                                               class="btn btn-outline-success">
+                                                <i class="fas fa-download"></i> Export
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                        <h5>No Sessions Yet</h5>
+                        <p class="text-muted">Upload your first CSV file to get started with email security analysis.</p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                            <i class="fas fa-upload me-2"></i>Upload CSV File
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Upload CSV File</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="file" class="form-label">Select CSV File</label>
+                        <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
+                        <div class="form-text">
+                            Upload a CSV file containing Tessian email data. The first row should contain column headers.
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle me-2"></i>Expected Columns:</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled small">
+                                    <li>• _time</li>
+                                    <li>• sender</li>
+                                    <li>• subject</li>
+                                    <li>• attachments</li>
+                                    <li>• recipients</li>
+                                    <li>• recipients_email_domain</li>
+                                    <li>• leaver</li>
+                                    <li>• termination_date</li>
+                                    <li>• time_month</li>
+                                    <li>• account_type</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled small">
+                                    <li>• wordlist_attachment</li>
+                                    <li>• wordlist_subject</li>
+                                    <li>• bunit</li>
+                                    <li>• department</li>
+                                    <li>• status</li>
+                                    <li>• user_response</li>
+                                    <li>• final_outcome</li>
+                                    <li>• policy_name</li>
+                                    <li>• justification</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>Upload & Process
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
