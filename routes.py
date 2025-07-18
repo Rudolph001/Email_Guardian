@@ -362,6 +362,15 @@ def generate_ml_explanations(case_data):
     # Risk Level Analysis
     risk_level = case_data.get('ml_risk_level', 'Unknown')
     anomaly_score = case_data.get('ml_anomaly_score', 0)
+    
+    # Handle null anomaly scores
+    if anomaly_score is None:
+        anomaly_score = 0
+    
+    try:
+        anomaly_score = float(anomaly_score)
+    except (ValueError, TypeError):
+        anomaly_score = 0
 
     if risk_level == 'Critical':
         explanations['risk_analysis'].append("This email shows multiple high-risk indicators that require immediate attention.")

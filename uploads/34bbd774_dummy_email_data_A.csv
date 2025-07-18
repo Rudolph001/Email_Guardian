@@ -1,0 +1,9 @@
+_time,sender,subject,attachments,recipients,recipients_email_domain,leaver,termination_date,time_month,account_type,wordlist_attachment,wordlist_subject,bunit,department,status,user_response,final_outcome,policy_name,justification
+2025-07-14T08:24:12.280583,carol@company.com,Quarterly Report,letter.docx,dave@external.com,external.com,YES,2025-07,2025-07,contractor,resignation,salary,HR,Recruitment,Critical,a,f,policy_A,
+2025-07-06T08:24:12.280656,alice@company.com,Resignation Letter,report.pdf,erin@partner.org,partner.org,NO,2025-08,2025-07,contractor,salary,resignation,Finance,Accounting,Low,b,g,Ploicy_B,
+,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,
+,,,,,,,,,,,,,,,,,,
