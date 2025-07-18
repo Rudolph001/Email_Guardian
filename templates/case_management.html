@@ -407,6 +407,33 @@ function renderCaseDetails(caseData) {
                     </div>
                 </div>
             </div>
+            
+            ${caseData.ml_anomaly_score > 0.7 && caseData.anomaly_details ? `
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-exclamation-triangle text-danger me-2"></i>
+                            Anomaly Details
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-danger">
+                            <i class="fas fa-search me-2"></i>
+                            <strong>High Anomaly Detected - Detailed Analysis:</strong>
+                        </div>
+                        ${caseData.anomaly_details.map(detail => `
+                            <div class="alert alert-${detail.severity === 'Critical' ? 'danger' : detail.severity === 'High' ? 'warning' : detail.severity === 'Medium' ? 'info' : 'secondary'} mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <strong>${detail.type}</strong>
+                                    <span class="badge bg-${detail.severity === 'Critical' ? 'danger' : detail.severity === 'High' ? 'warning' : detail.severity === 'Medium' ? 'info' : 'secondary'}">${detail.severity}</span>
+                                </div>
+                                <small class="mt-1 d-block">${detail.description}</small>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>` : ''}
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
@@ -439,6 +466,42 @@ function renderCaseDetails(caseData) {
                 </div>
             </div>
         </div>
+        
+        ${caseData.ml_anomaly_score > 0.7 && caseData.anomaly_details ? `
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Anomaly Analysis - High Risk Email
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-danger mb-3">
+                            <i class="fas fa-search me-2"></i>
+                            <strong>High Anomaly Detected (Score: ${caseData.ml_anomaly_score.toFixed(2)})</strong>
+                            <br><small>The following anomalies were identified in this email:</small>
+                        </div>
+                        <div class="row">
+                            ${caseData.anomaly_details.map(detail => `
+                                <div class="col-md-6 mb-3">
+                                    <div class="alert alert-${detail.severity === 'Critical' ? 'danger' : detail.severity === 'High' ? 'warning' : detail.severity === 'Medium' ? 'info' : 'secondary'} mb-0">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <strong>${detail.type}</strong>
+                                                <br><small>${detail.description}</small>
+                                            </div>
+                                            <span class="badge bg-${detail.severity === 'Critical' ? 'danger' : detail.severity === 'High' ? 'warning' : detail.severity === 'Medium' ? 'info' : 'secondary'}">${detail.severity}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>` : ''}
         
         ${caseData.notes ? `
         <div class="row mt-3">

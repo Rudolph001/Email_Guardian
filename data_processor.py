@@ -248,6 +248,12 @@ class DataProcessor:
                     record['ml_cluster'] = int(clusters[i])
                 else:
                     record['ml_cluster'] = -1
+                
+                # Add detailed anomaly analysis for high-anomaly emails
+                if record['ml_anomaly_score'] > 0.7:
+                    record['anomaly_details'] = self.ml_engine.analyze_anomaly_details(record)
+                else:
+                    record['anomaly_details'] = []
             
             return processed_data
             

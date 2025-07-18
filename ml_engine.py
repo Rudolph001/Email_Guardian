@@ -124,6 +124,93 @@ class MLEngine:
             self.logger.error(f"Error in anomaly detection: {str(e)}")
             return np.zeros(features.shape[0])
     
+    def analyze_anomaly_details(self, email_data):
+        """Analyze specific anomaly details for a single email"""
+        anomaly_details = []
+        
+        try:
+            # Check for unusual time patterns
+            if '_time' in email_data:
+                email_time = pd.to_datetime(email_data['_time'], errors='coerce')
+                if not pd.isna(email_time):
+                    hour = email_time.hour
+                    if hour < 6 or hour > 22:  # Outside business hours
+                        anomaly_details.append({
+                            'type': 'Temporal Anomaly',
+                            'description': f'Email sent at unusual hour: {hour}:00',
+                            'severity': 'Medium'
+                        })
+                    
+                    weekday = email_time.weekday()
+                    if weekday >= 5:  # Weekend
+                        anomaly_details.append({
+                            'type': 'Temporal Anomaly',
+                            'description': 'Email sent during weekend',
+                            'severity': 'Low'
+                        })
+            
+            # Check for content-based anomalies
+            if email_data.get('wordlist_attachment') == 'Yes':
+                anomaly_details.append({
+                    'type': 'Content Anomaly',
+                    'description': 'Attachment contains suspicious keywords',
+                    'severity': 'High'
+                })
+            
+            if email_data.get('wordlist_subject') == 'Yes':
+                anomaly_details.append({
+                    'type': 'Content Anomaly',
+                    'description': 'Subject line contains suspicious keywords',
+                    'severity': 'High'
+                })
+            
+            # Check for behavioral anomalies
+            if email_data.get('leaver') == 'Yes':
+                anomaly_details.append({
+                    'type': 'Behavioral Anomaly',
+                    'description': 'Email from user marked as leaver',
+                    'severity': 'Critical'
+                })
+            
+            # Check for domain-based anomalies
+            domain = email_data.get('recipients_email_domain', '')
+            if domain and not any(trusted in domain.lower() for trusted in ['gmail.com', 'outlook.com', 'company.com']):
+                anomaly_details.append({
+                    'type': 'Domain Anomaly',
+                    'description': f'Email sent to potentially suspicious domain: {domain}',
+                    'severity': 'Medium'
+                })
+            
+            # Check for attachment anomalies
+            if email_data.get('has_attachments') and email_data.get('attachments'):
+                attachments = email_data.get('attachments', '')
+                if len(attachments.split(',')) > 3:
+                    anomaly_details.append({
+                        'type': 'Attachment Anomaly',
+                        'description': f'Unusually high number of attachments: {len(attachments.split(","))}',
+                        'severity': 'Medium'
+                    })
+            
+            # Check for subject length anomalies
+            subject = email_data.get('subject', '')
+            if len(subject) > 100:
+                anomaly_details.append({
+                    'type': 'Content Anomaly',
+                    'description': f'Unusually long subject line: {len(subject)} characters',
+                    'severity': 'Low'
+                })
+            elif len(subject) < 5:
+                anomaly_details.append({
+                    'type': 'Content Anomaly',
+                    'description': 'Unusually short subject line',
+                    'severity': 'Low'
+                })
+            
+        except Exception as e:
+            self.logger.error(f"Error analyzing anomaly details: {str(e)}")
+        
+        return anomaly_details
+    
     def _classify_risk_levels(self, df, anomaly_scores):
         """Classify emails into risk levels based on multiple factors"""
         risk_levels = []
