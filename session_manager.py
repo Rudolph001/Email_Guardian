@@ -505,21 +505,48 @@ Session ID: {session_id}
         return stats
 
     def delete_session(self, session_id: str) -> Dict:
-        """Delete a processing session"""
+        """Delete a session and all its data from all storage locations"""
         try:
-            sessions = self.load_sessions()
-
-            if session_id not in sessions:
-                return {'success': False, 'error': 'Session not found'}
-
-            # Remove the session
-            del sessions[session_id]
-
-            if self.save_sessions(sessions):
-                self.logger.info(f"Successfully deleted session {session_id}")
-                return {'success': True}
-            else:
-                return {'success': False, 'error': 'Failed to save sessions after deletion'}
+            import os
+            
+            # Delete from regular sessions file
+            regular_sessions = {}
+            if os.path.exists(self.sessions_file):
+                with open(self.sessions_file, 'r') as f:
+                    regular_sessions = json.load(f)
+                
+                if session_id in regular_sessions:
+                    del regular_sessions[session_id]
+                    with open(self.sessions_file, 'w') as f:
+                        json.dump(regular_sessions, f, indent=2, default=str)
+                    self.logger.info(f"Deleted session {session_id} from regular sessions file")
+            
+            # Delete from compressed sessions file
+            compressed_file = self.sessions_file + '.gz'
+            if os.path.exists(compressed_file):
+                import gzip
+                try:
+                    with gzip.open(compressed_file, 'rt', encoding='utf-8') as f:
+                        compressed_sessions = json.load(f)
+                    
+                    if session_id in compressed_sessions:
+                        del compressed_sessions[session_id]
+                        with gzip.open(compressed_file, 'wt', encoding='utf-8') as f:
+                            json.dump(compressed_sessions, f, default=str, separators=(',', ':'))
+                        self.logger.info(f"Deleted session {session_id} from compressed sessions file")
+                except Exception as e:
+                    self.logger.error(f"Error updating compressed sessions: {e}")
+            
+            # Delete separately stored data file
+            data_dir = 'data/session_data'
+            if os.path.exists(data_dir):
+                data_file = os.path.join(data_dir, f"{session_id}_data.json.gz")
+                if os.path.exists(data_file):
+                    os.remove(data_file)
+                    self.logger.info(f"Deleted session data file: {data_file}")
+            
+            self.logger.info(f"Successfully deleted session {session_id} from all storage locations")
+            return {'success': True}
 
         except Exception as e:
             self.logger.error(f"Error deleting session {session_id}: {str(e)}")
