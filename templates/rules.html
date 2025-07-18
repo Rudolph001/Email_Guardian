@@ -364,12 +364,12 @@ function createRule() {
     actionCounter = 0;
     document.getElementById('conditions-container').innerHTML = '';
     document.getElementById('actions-container').innerHTML = '';
-    
+
     // Add a default condition
     addCondition();
     // Add a default action
     addAction();
-    
+
     const modal = new bootstrap.Modal(document.getElementById('createRuleModal'));
     modal.show();
 }
@@ -379,8 +379,19 @@ function addCondition() {
     const container = document.getElementById('conditions-container');
     const newRow = document.createElement('div');
     newRow.className = 'condition-row mb-2';
+
+    // Show logic dropdown only for conditions after the first one
+    const showLogic = conditionCounter > 1;
+
     newRow.innerHTML = `
-        <div class="row">
+        <div class="row align-items-center">
+            ${showLogic ? `
+            <div class="col-md-1">
+                <select class="form-select" name="condition_logic_${conditionCounter}">
+                    <option value="AND">AND</option>
+                    <option value="OR">OR</option>
+                </select>
+            </div>` : '<div class="col-md-1"></div>'}
             <div class="col-md-4">
                 <select class="form-select" name="condition_field_${conditionCounter}" onchange="updateConditionValue(this, ${conditionCounter})">
                     <option value="">Select Field</option>
@@ -401,21 +412,13 @@ function addCondition() {
                     <option value="in_list">In List (comma-separated)</option>
                 </select>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <input type="text" class="form-control" name="condition_value_${conditionCounter}" placeholder="Value" id="condition_value_${conditionCounter}">
-                <small class="text-muted" id="condition_value_help_${conditionCounter}">Enter a single value</small>
             </div>
             <div class="col-md-1">
-                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeCondition(this)">
-                    <i class="fas fa-minus"></i>
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeCondition(this)" ${conditionCounter === 1 ? 'style="visibility: hidden;"' : ''}>
+                    <i class="fas fa-trash"></i>
                 </button>
-            </div>
-        </div>
-        <div class="row mt-2">
-            <div class="col-md-11">
-                <div class="alert alert-success py-2" id="condition_values_${conditionCounter}" style="display: none;">
-                    <small><strong>Common Values:</strong> <span id="condition_values_list_${conditionCounter}"></span></small>
-                </div>
             </div>
         </div>
     `;
@@ -472,11 +475,11 @@ function updateConditionOperator(selectElement, conditionId) {
 function updateConditionOperatorHelp(conditionId) {
     const operatorSelect = document.querySelector(`select[name="condition_operator_${conditionId}"]`);
     const valueHelp = document.getElementById(`condition_value_help_${conditionId}`);
-    
+
     if (!operatorSelect || !valueHelp) return;
-    
+
     const operator = operatorSelect.value;
-    
+
     switch (operator) {
         case 'equals':
             valueHelp.textContent = 'Enter a single value';
@@ -496,7 +499,33 @@ function updateConditionOperatorHelp(conditionId) {
 }
 
 function removeCondition(button) {
-    button.closest('.condition-row').remove();
+    const row = button.closest('.condition-row');
+    if (row) {
+        row.remove();
+        // Update logic display for remaining conditions
+        updateConditionLogicDisplay();
+    }
+}
+
+function updateConditionLogicDisplay() {
+    const rows = document.querySelectorAll('.condition-row');
+    rows.forEach((row, index) => {
+        const logicCol = row.querySelector('.col-md-1:first-child');
+        if (index === 0) {
+            // First condition shouldn't show logic
+            logicCol.innerHTML = '';
+        } else {
+            // Ensure other conditions have logic selector
+            if (!logicCol.querySelector('select')) {
+                logicCol.innerHTML = `
+                    <select class="form-select" name="condition_logic_${index + 1}">
+                        <option value="AND">AND</option>
+                        <option value="OR">OR</option>
+                    </select>
+                `;
+            }
+        }
+    });
 }
 
 function addAction() {
@@ -505,111 +534,101 @@ function addAction() {
     const newRow = document.createElement('div');
     newRow.className = 'action-row mb-2';
     newRow.innerHTML = `
-        <div class="row">
-            <div class="col-md-4">
+        <div class="row align-items-center">
+            <div class="col-md-5">
                 <select class="form-select" name="action_type_${actionCounter}" onchange="updateActionValue(this, ${actionCounter})">
                     <option value="">Select Action</option>
-                    <option value="mark_priority">Set Priority</option>
+                    <option value="mark_priority">Mark Priority</option>
                     <option value="escalate">Escalate</option>
-                    <option value="notify">Send Notification</option>
+                    <option value="notify">Notify</option>
                     <option value="block">Block Email</option>
                     <option value="flag">Add Flag</option>
                 </select>
             </div>
-            <div class="col-md-7">
+            <div class="col-md-6">
                 <input type="text" class="form-control" name="action_value_${actionCounter}" placeholder="Action Value" id="action_value_${actionCounter}">
             </div>
             <div class="col-md-1">
-                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeAction(this)">
-                    <i class="fas fa-minus"></i>
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeAction(this)" ${actionCounter === 1 ? 'style="visibility: hidden;"' : ''}>
+                    <i class="fas fa-trash"></i>
                 </button>
-            </div>
-        </div>
-        <div class="row mt-2">
-            <div class="col-md-11">
-                <div class="alert alert-info py-2" id="action_help_${actionCounter}" style="display: none;">
-                    <small><strong>Help:</strong> <span id="action_help_text_${actionCounter}"></span></small>
-                </div>
             </div>
         </div>
     `;
     container.appendChild(newRow);
 }
 
-function updateActionValue(selectElement, actionId) {
-    const actionType = selectElement.value;
-    const valueInput = document.getElementById(`action_value_${actionId}`);
-    const helpDiv = document.getElementById(`action_help_${actionId}`);
-    const helpText = document.getElementById(`action_help_text_${actionId}`);
-
-    // Clear previous values
-    valueInput.value = '';
-    helpDiv.style.display = 'none';
-
-    if (actionType === 'mark_priority') {
-        valueInput.placeholder = 'Priority level';
-        helpText.innerHTML = 'Enter: <code>Critical</code>, <code>High</code>, <code>Medium</code>, or <code>Low</code>';
-        helpDiv.style.display = 'block';
-    } else if (actionType === 'escalate') {
-        valueInput.placeholder = 'true or false';
-        helpText.innerHTML = 'Enter: <code>true</code> to escalate, <code>false</code> to not escalate';
-        helpDiv.style.display = 'block';
-    } else if (actionType === 'notify') {
-        valueInput.placeholder = 'Notification message';
-        helpText.innerHTML = 'Enter a custom notification message to display';
-        helpDiv.style.display = 'block';
-    } else if (actionType === 'block') {
-        valueInput.placeholder = 'true or false';
-        helpText.innerHTML = 'Enter: <code>true</code> to block the email';
-        helpDiv.style.display = 'block';
-    } else if (actionType === 'flag') {
-        valueInput.placeholder = 'Flag name';
-        helpText.innerHTML = 'Enter a flag name like: <code>high_risk</code>, <code>suspicious</code>, <code>reviewed</code>';
-        helpDiv.style.display = 'block';
-    } else {
-        valueInput.placeholder = 'Action value';
-        helpDiv.style.display = 'none';
+function removeAction(button) {
+    const row = button.closest('.action-row');
+    if (row) {
+        row.remove();
     }
 }
 
-function removeAction(button) {
-    button.closest('.action-row').remove();
+function updateActionValue(selectEl, counter) {
+    const valueInput = document.getElementById(`action_value_${counter}`);
+    const actionType = selectEl.value;
+
+    if (actionType === 'mark_priority') {
+        valueInput.placeholder = 'Low, Medium, High, Critical';
+    } else if (actionType === 'escalate') {
+        valueInput.placeholder = 'true or false';
+    } else if (actionType === 'notify') {
+        valueInput.placeholder = 'Notification message';
+    } else if (actionType === 'block') {
+        valueInput.placeholder = 'true or false';
+    } else if (actionType === 'flag') {
+        valueInput.placeholder = 'Flag name';
+    } else {
+        valueInput.placeholder = 'Action Value';
+    }
 }
 
 function buildRuleData() {
-    // Collect conditions
     const conditions = [];
+    const actions = [];
+
+    // Build conditions
     const conditionRows = document.querySelectorAll('.condition-row');
     conditionRows.forEach((row, index) => {
-        const field = row.querySelector('select[name^="condition_field_"]').value;
-        const operator = row.querySelector('select[name^="condition_operator_"]').value;
-        const value = row.querySelector('input[name^="condition_value_"]').value;
+        const fieldEl = row.querySelector(`[name^="condition_field_"]`);
+        const operatorEl = row.querySelector(`[name^="condition_operator_"]`);
+        const valueEl = row.querySelector(`[name^="condition_value_"]`);
+        const logicEl = row.querySelector(`[name^="condition_logic_"]`);
 
-        if (field && operator && value) {
-            conditions.push({
-                field: field,
-                operator: operator,
-                value: value
-            });
+        if (fieldEl && operatorEl && valueEl && fieldEl.value && valueEl.value) {
+            const condition = {
+                field: fieldEl.value,
+                operator: operatorEl.value,
+                value: valueEl.value
+            };
+
+            // Add logic operator for conditions after the first one
+            if (index > 0 && logicEl && logicEl.value) {
+                condition.logic = logicEl.value;
+            }
+
+            conditions.push(condition);
         }
     });
 
-    // Collect actions
-    const actions = [];
+    // Build actions
     const actionRows = document.querySelectorAll('.action-row');
-    actionRows.forEach((row, index) => {
-        const type = row.querySelector('select[name^="action_type_"]').value;
-        const value = row.querySelector('input[name^="action_value_"]').value;
+    actionRows.forEach((row) => {
+        const typeEl = row.querySelector(`[name^="action_type_"]`);
+        const valueEl = row.querySelector(`[name^="action_value_"]`);
 
-        if (type && value) {
-            // Convert string values to appropriate types
-            let finalValue = value;
-            if (type === 'escalate' && (value.toLowerCase() === 'true' || value.toLowerCase() === 'false')) {
-                finalValue = value.toLowerCase() === 'true';
+        if (typeEl && valueEl && typeEl.value && valueEl.value) {
+            let finalValue = valueEl.value;
+
+            // Convert string boolean to actual boolean
+            if (typeEl.value === 'escalate' && 
+                (finalValue.toLowerCase() === 'true' || finalValue.toLowerCase() === 'false')) {
+                finalValue = finalValue.toLowerCase() === 'true';
             }
-            
+
             actions.push({
-                type: type,
+                type: typeEl.value,
                 value: finalValue
             });
         }
@@ -625,12 +644,12 @@ function viewRuleFromData(button) {
         const id = button.dataset.ruleId;
         const name = button.dataset.ruleName;
         const description = button.dataset.ruleDescription;
-        
+
         // Parse JSON directly since we're using single quotes now
         const conditions = JSON.parse(button.dataset.ruleConditions || '[]');
         const actions = JSON.parse(button.dataset.ruleActions || '[]');
         const priority = button.dataset.rulePriority;
-        
+
         viewRule(id, name, description, conditions, actions, priority);
     } catch (error) {
         console.error('Error viewing rule:', error);
@@ -645,13 +664,13 @@ function editRuleFromData(button) {
         const id = button.dataset.ruleId;
         const name = button.dataset.ruleName;
         const description = button.dataset.ruleDescription;
-        
+
         // Parse JSON directly since we're using single quotes now
         const conditions = JSON.parse(button.dataset.ruleConditions || '[]');
         const actions = JSON.parse(button.dataset.ruleActions || '[]');
         const priority = button.dataset.rulePriority;
         const active = button.dataset.ruleActive === 'true';
-        
+
         editRule(id, name, description, conditions, actions, priority, active);
     } catch (error) {
         console.error('Error editing rule:', error);

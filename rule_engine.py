@@ -204,38 +204,47 @@ class RuleEngine:
         if not conditions:
             return True
 
-        results = []
-        current_logic = 'AND'  # Default logic
+        if len(conditions) == 1:
+            # Single condition
+            condition = conditions[0]
+            field = condition.get('field', '')
+            operator = condition.get('operator', 'equals')
+            value = condition.get('value', '')
+            field_value = email_data.get(field, '')
+            
+            if operator in self.operators:
+                return self.operators[operator](field_value, value)
+            return False
 
-        for condition in conditions:
+        # Multiple conditions - build expression
+        result = None
+        
+        for i, condition in enumerate(conditions):
             field = condition.get('field', '')
             operator = condition.get('operator', 'equals')
             value = condition.get('value', '')
             logic = condition.get('logic', 'AND')
-
+            
             # Get field value from email data
             field_value = email_data.get(field, '')
-
-            # Evaluate condition
+            
+            # Evaluate current condition
             if operator in self.operators:
                 condition_result = self.operators[operator](field_value, value)
             else:
                 condition_result = False
-
-            # Apply logic
-            if not results:
+            
+            if i == 0:
                 # First condition
-                results.append(condition_result)
+                result = condition_result
             else:
-                if current_logic == 'AND':
-                    results[-1] = results[-1] and condition_result
-                elif current_logic == 'OR':
-                    results.append(condition_result)
-
-            current_logic = logic
-
-        # Final result
-        return any(results) if results else False
+                # Apply logic from current condition to combine with previous result
+                if logic == 'AND':
+                    result = result and condition_result
+                elif logic == 'OR':
+                    result = result or condition_result
+        
+        return result if result is not None else False
 
     def _process_action(self, action: Dict, results: Dict):
         """Process a single action"""
