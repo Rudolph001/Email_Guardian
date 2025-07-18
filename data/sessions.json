@@ -23,7 +23,7 @@
       "policy_name"
     ],
     "created_at": "2025-07-18T12:27:38.231300",
-    "updated_at": "2025-07-18T12:27:38.375673",
+    "updated_at": "2025-07-18T12:36:28.514677",
     "status": "active",
     "total_records": 0,
     "processed_records": 9,
@@ -45,7 +45,7 @@
         "wordlist_subject": "salary",
         "bunit": "HR",
         "department": "Recruitment",
-        "status": "Critical",
+        "status": "Escalated",
         "user_response": "a",
         "final_outcome": "f",
         "policy_name": "policy_A",
@@ -78,7 +78,9 @@
         "ml_anomaly_score": 0.6642795040426682,
         "ml_risk_level": "Low",
         "ml_cluster": -1,
-        "anomaly_details": []
+        "anomaly_details": [],
+        "notes": "",
+        "updated_at": "2025-07-18T12:36:28.514389"
       },
       {
         "_time": "2025-07-06T08:24:12.280656",

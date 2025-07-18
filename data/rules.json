@@ -13,17 +13,13 @@
     "actions": [
       {
         "type": "mark_priority",
-        "value": "High"
-      },
-      {
-        "type": "escalate",
-        "value": true
+        "value": "Critical"
       }
     ],
     "priority": 1,
     "active": true,
     "created_at": "2025-01-18T00:00:00",
-    "updated_at": "2025-01-18T00:00:00"
+    "updated_at": "2025-07-18T12:34:17.331896"
   },
   {
     "id": 2,
