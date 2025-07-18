@@ -492,6 +492,12 @@ def update_case_status(session_id, record_id):
             record['notes'] = notes
             record['updated_at'] = datetime.now().isoformat()
             updated = True
+            
+            # Also update in session cases data for proper tracking
+            if new_status.lower() == 'escalate':
+                session_manager.update_case_status(session_id, i, 'escalate')
+                app.logger.info(f"Case {record_id} escalated in session {session_id}")
+            
             break
 
     if updated:
@@ -502,6 +508,43 @@ def update_case_status(session_id, record_id):
         app.logger.error(f"Record ID {record_id} not found in session {session_id}")
         app.logger.error(f"Available record IDs: {[r.get('record_id') for r in processed_data]}")
         return jsonify({'error': 'Case not found'}), 404
+
+@app.route('/api/case/<session_id>/<record_id>/escalate', methods=['POST'])
+def escalate_case(session_id, record_id):
+    """API endpoint specifically for escalating cases"""
+    session_manager = SessionManager()
+    processed_data = session_manager.get_processed_data(session_id)
+
+    if not processed_data:
+        return jsonify({'error': 'Session not found'}), 404
+
+    # Find the record and escalate it
+    updated = False
+    for i, record in enumerate(processed_data):
+        if (record.get('record_id') == record_id or 
+            str(record.get('record_id')) == record_id or
+            str(i) == record_id):
+            
+            # Update the session case status
+            result = session_manager.update_case_status(session_id, i, 'escalate')
+            
+            if result['success']:
+                # Also update the record itself
+                record['status'] = 'Escalated'
+                record['updated_at'] = datetime.now().isoformat()
+                session_manager.update_processed_data(session_id, processed_data)
+                
+                app.logger.info(f"Successfully escalated case {record_id} (index {i}) in session {session_id}")
+                return jsonify({
+                    'success': True, 
+                    'message': 'Case escalated successfully',
+                    'redirect_url': url_for('escalation_dashboard', session_id=session_id)
+                })
+            else:
+                return jsonify({'error': 'Failed to escalate case'}), 500
+
+    app.logger.error(f"Record ID {record_id} not found in session {session_id}")
+    return jsonify({'error': 'Case not found'}), 404
 
 @app.route('/api/escalation/<session_id>/<record_id>/resolve', methods=['POST'])
 def resolve_escalation(session_id, record_id):
@@ -672,6 +715,9 @@ def case_action(session_id, record_id):
                 draft_email = session_manager.generate_draft_email(session_id, record_id)
                 # In a real implementation, this would integrate with Outlook
                 flash(f'Draft email prepared for escalation', 'info')
+                
+                # Log escalation for debugging
+                app.logger.info(f"Escalated case {record_id} in session {session_id}")
         else:
             flash(f'Error {action}ing case: {result["error"]}', 'error')
 

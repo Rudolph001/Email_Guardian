@@ -226,7 +226,7 @@
                                     <i class="fas fa-check"></i>
                                 </button>
                                 <button class="btn btn-outline-danger btn-sm" 
-                                        onclick="updateCaseStatus('{{ session.session_id }}', '{{ case.get('record_id', '') }}', 'Escalated')"
+                                        onclick="escalateCase('{{ session.session_id }}', '{{ case.get('record_id', '') }}')"
                                         title="Escalate">
                                     <i class="fas fa-exclamation-triangle"></i>
                                 </button>
@@ -313,11 +313,11 @@ let currentSessionId = null;
 function viewCaseDetails(sessionId, recordId) {
     currentSessionId = sessionId;
     currentCaseId = recordId;
-    
+
     // Show modal
     const modal = new bootstrap.Modal(document.getElementById('caseDetailsModal'));
     modal.show();
-    
+
     // Load case details
     fetch(`/api/case/${sessionId}/${recordId}`)
         .then(response => response.json())
@@ -339,7 +339,7 @@ function viewCaseDetails(sessionId, recordId) {
 
 function renderCaseDetails(caseData) {
     const mlExplanations = caseData.ml_explanations || {};
-    
+
     const content = `
         <div class="row">
             <!-- Email Information -->
@@ -428,7 +428,7 @@ function renderCaseDetails(caseData) {
                 </div>
             </div>
         </div>
-        
+
         <div class="row mt-3">
             <div class="col-md-6">
                 <div class="card">
@@ -467,7 +467,7 @@ function renderCaseDetails(caseData) {
                     </div>
                 </div>
             </div>
-            
+
             ${caseData.ml_anomaly_score > 0.7 ? `
             <div class="col-md-6">
                 <div class="card">
@@ -547,7 +547,7 @@ function renderCaseDetails(caseData) {
                 </div>
             </div>
         </div>
-        
+
         ${caseData.ml_anomaly_score > 0.7 && caseData.anomaly_details ? `
         <div class="row mt-3">
             <div class="col-12">
@@ -583,7 +583,7 @@ function renderCaseDetails(caseData) {
                 </div>
             </div>
         </div>` : ''}
-        
+
         ${caseData.notes ? `
         <div class="row mt-3">
             <div class="col-12">
@@ -597,7 +597,7 @@ function renderCaseDetails(caseData) {
                 </div>
             </div>
         </div>` : ''}
-        
+
         <!-- ML Analysis Explanations -->
         <div class="row mt-3">
             <div class="col-12">
@@ -679,7 +679,7 @@ function renderCaseDetails(caseData) {
             </div>
         </div>
     `;
-    
+
     document.getElementById('caseDetailsContent').innerHTML = content;
 }
 
@@ -719,39 +719,27 @@ function getStatusBadgeColor(status) {
 }
 
 function updateCaseStatus(sessionId, recordId, newStatus) {
-    currentSessionId = sessionId;
-    currentCaseId = recordId;
-    
-    document.getElementById('newStatus').value = newStatus;
-    
-    const modal = new bootstrap.Modal(document.getElementById('updateStatusModal'));
-    modal.show();
-}
-
-function confirmStatusUpdate() {
-    const newStatus = document.getElementById('newStatus').value;
-    const notes = document.getElementById('statusNotes').value;
-    
-    if (!newStatus) {
-        alert('Please select a status');
+    if (newStatus === 'Clear' && !confirm('Are you sure you want to clear this case?')) {
         return;
     }
-    
-    fetch(`/api/case/${currentSessionId}/${currentCaseId}/update`, {
+
+    if (newStatus === 'Escalate' && !confirm('Are you sure you want to escalate this case? This will move it to the escalation dashboard.')) {
+        return;
+    }
+
+    fetch(`/api/case/${sessionId}/${recordId}/update`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
             status: newStatus,
-            notes: notes
+            notes: `Status updated to ${newStatus} at ${new Date().toISOString()}`
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Close modal and reload page
-            bootstrap.Modal.getInstance(document.getElementById('updateStatusModal')).hide();
             location.reload();
         } else {
             alert('Error updating status: ' + data.error);
@@ -759,6 +747,35 @@ function confirmStatusUpdate() {
     })
     .catch(error => {
         alert('Error updating status: ' + error.message);
+    });
+}
+
+function escalateCase(sessionId, recordId) {
+    if (!confirm('Are you sure you want to escalate this case? This will move it to the escalation dashboard.')) {
+        return;
+    }
+
+    fetch(`/api/case/${sessionId}/${recordId}/escalate`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Case escalated successfully! Redirecting to escalationdashboard...');
+            if (data.redirect_url) {
+                window.location.href = data.redirect_url;
+            } else {
+                location.reload();
+            }
+        } else {
+            alert('Error escalating case: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error escalating case: ' + error.message);
     });
 }
 
