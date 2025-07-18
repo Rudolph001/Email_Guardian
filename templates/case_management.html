@@ -99,7 +99,7 @@
                         <th>Risk Level</th>
                         <th>Rule Matches</th>
                         <th>Status</th>
-                        <th>Actions</th>
+                        <th style="width: 180px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -177,32 +177,28 @@
                             <span class="badge bg-secondary">{{ status }}</span>
                             {% endif %}
                         </td>
-                        <td class="actions-column" style="position: relative;">
-                            <div class="btn-group btn-group-sm">
+                        <td class="actions-column">
+                            <div class="d-flex gap-1 flex-wrap">
                                 <button class="btn btn-outline-primary btn-sm" 
                                         onclick="viewCaseDetails('{{ session.session_id }}', '{{ case.get('record_id', '') }}')"
                                         title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <div class="dropdown">
-                                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
-                                            type="button" data-bs-toggle="dropdown" 
-                                            aria-expanded="false"
-                                            id="dropdownMenuButton-{{ loop.index }}">
-                                        <i class="fas fa-cog"></i>
-                                    </button>
-                                    <ul class="dropdown-menu" style="position: absolute; right: 0; top: 100%; z-index: 1060; min-width: 180px;">
-                                        <li><a class="dropdown-item" href="#" onclick="updateCaseStatus('{{ session.session_id }}', '{{ case.get('record_id', '') }}', 'Cleared')">
-                                            <i class="fas fa-check text-success me-2"></i>Mark as Cleared
-                                        </a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="updateCaseStatus('{{ session.session_id }}', '{{ case.get('record_id', '') }}', 'Escalated')">
-                                            <i class="fas fa-exclamation-triangle text-danger me-2"></i>Escalate
-                                        </a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="updateCaseStatus('{{ session.session_id }}', '{{ case.get('record_id', '') }}', 'Under Review')">
-                                            <i class="fas fa-clock text-warning me-2"></i>Under Review
-                                        </a></li>
-                                    </ul>
-                                </div>
+                                <button class="btn btn-outline-success btn-sm" 
+                                        onclick="updateCaseStatus('{{ session.session_id }}', '{{ case.get('record_id', '') }}', 'Cleared')"
+                                        title="Mark as Cleared">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button class="btn btn-outline-danger btn-sm" 
+                                        onclick="updateCaseStatus('{{ session.session_id }}', '{{ case.get('record_id', '') }}', 'Escalated')"
+                                        title="Escalate">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </button>
+                                <button class="btn btn-outline-warning btn-sm" 
+                                        onclick="updateCaseStatus('{{ session.session_id }}', '{{ case.get('record_id', '') }}', 'Under Review')"
+                                        title="Under Review">
+                                    <i class="fas fa-clock"></i>
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -516,23 +512,13 @@ function exportCaseReport() {
     alert('Export functionality would be implemented here');
 }
 
-// Fix dropdown positioning on load
+// Initialize tooltips for action buttons
 document.addEventListener('DOMContentLoaded', function() {
-    // Ensure all dropdown menus are positioned correctly
-    const dropdowns = document.querySelectorAll('.actions-column .dropdown-menu');
-    dropdowns.forEach(function(dropdown) {
-        dropdown.style.position = 'absolute';
-        dropdown.style.right = '0';
-        dropdown.style.left = 'auto';
-        dropdown.style.top = '100%';
-        dropdown.style.zIndex = '1060';
-        dropdown.style.minWidth = '180px';
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
     });
-    
-    // Force repaint to ensure styles are applied
-    document.body.style.display = 'none';
-    document.body.offsetHeight; // Trigger reflow
-    document.body.style.display = '';
 });
 </script>
 {% endblock %}

@@ -662,6 +662,25 @@ code {
     position: relative;
 }
 
+/* Actions column styling */
+.actions-column {
+    width: 180px;
+    min-width: 180px;
+}
+
+.actions-column .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    border-radius: 0.25rem;
+    min-width: 32px;
+    height: 32px;
+}
+
+.actions-column .d-flex {
+    justify-content: flex-start;
+    align-items: center;
+}
+
 /* Ensure table container allows dropdowns to overflow */
 .card-body {
     overflow: visible !important;
