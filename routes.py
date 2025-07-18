@@ -854,6 +854,69 @@ def debug_data(session_id):
         app.logger.error(f"Error getting debug data: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/bau_analysis/<session_id>')
+def bau_analysis(session_id):
+    """API endpoint for BAU (Business As Usual) analysis"""
+    try:
+        session_manager = SessionManager()
+        processed_data = session_manager.get_processed_data(session_id)
+
+        if not processed_data:
+            return jsonify({'error': 'No data found'}), 404
+
+        # Convert to DataFrame for BAU analysis
+        df = pd.DataFrame(processed_data)
+        ml_engine = MLEngine()
+        bau_results = ml_engine.detect_bau_emails(df)
+
+        return jsonify(bau_results)
+
+    except Exception as e:
+        app.logger.error(f"Error getting BAU analysis: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/whitelist_bau/<session_id>', methods=['POST'])
+def whitelist_bau_domains(session_id):
+    """API endpoint to whitelist BAU domain pairs"""
+    try:
+        domain_pairs = request.json.get('domain_pairs', [])
+        
+        if not domain_pairs:
+            return jsonify({'error': 'No domain pairs provided'}), 400
+
+        # Extract recipient domains from domain pairs
+        recipient_domains = []
+        for pair in domain_pairs:
+            # Format: "sender_domain -> recipient_domain"
+            if ' -> ' in pair:
+                recipient_domain = pair.split(' -> ')[1].strip()
+                recipient_domains.append(recipient_domain)
+
+        # Update whitelist
+        session_manager = SessionManager()
+        current_whitelist = session_manager.get_whitelists()
+        existing_domains = set(current_whitelist.get('domains', []))
+        
+        # Add new domains
+        new_domains = set(recipient_domains)
+        updated_domains = list(existing_domains.union(new_domains))
+        
+        result = session_manager.update_whitelist(updated_domains)
+        
+        if result['success']:
+            return jsonify({
+                'success': True,
+                'message': f'Added {len(new_domains)} new domains to whitelist',
+                'new_domains': list(new_domains),
+                'total_domains': len(updated_domains)
+            })
+        else:
+            return jsonify({'error': result['error']}), 500
+
+    except Exception as e:
+        app.logger.error(f"Error whitelisting BAU domains: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/reprocess_rules/<session_id>', methods=['POST'])
 def reprocess_rules(session_id):
     """Reprocess existing session data with proper escalation logic"""

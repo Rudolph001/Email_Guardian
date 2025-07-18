@@ -229,6 +229,161 @@
             </div>
             <div class="card-body">
                 <div class="row">
+                    <!-- ML Insights Section -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5><i class="fas fa-brain"></i> ML Analysis Insights</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <small class="text-muted">Risk Distribution</small>
+                                        {% if ml_insights.risk_distribution %}
+                                            {% for risk, count in ml_insights.risk_distribution.items() %}
+                                                <div class="d-flex justify-content-between">
+                                                    <span class="badge badge-{{ 'danger' if risk == 'Critical' else 'warning' if risk == 'High' else 'info' if risk == 'Medium' else 'success' }}">{{ risk }}</span>
+                                                    <span>{{ count }}</span>
+                                                </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <span class="text-muted">No risk data available</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <small class="text-muted">Anomalies</small>
+                                        <div class="d-flex justify-content-between">
+                                            <span>High Anomaly Count:</span>
+                                            <span class="badge badge-warning">{{ ml_insights.anomaly_summary.high_anomaly_count }}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between">
+                                            <span>Anomaly %:</span>
+                                            <span>{{ "%.1f"|format(ml_insights.anomaly_summary.anomaly_percentage) }}%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-3">
+                                <small class="text-muted">Patterns Detected</small>
+                                <div class="d-flex justify-content-between">
+                                    <span>Total Patterns:</span>
+                                    <span class="badge badge-info">{{ ml_insights.pattern_summary.total_patterns }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Critical Patterns:</span>
+                                    <span class="badge badge-danger">{{ ml_insights.pattern_summary.critical_patterns }}</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>High Patterns:</span>
+                                    <span class="badge badge-warning">{{ ml_insights.pattern_summary.high_patterns }}</span>
+                                </div>
+                            </div>
+
+                            {% if ml_insights.recommendations %}
+                                <div class="mt-3">
+                                    <small class="text-muted">Recommendations</small>
+                                    {% for rec in ml_insights.recommendations %}
+                                        <div class="alert alert-info alert-sm">{{ rec }}</div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BAU Analysis Section -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5><i class="fas fa-exchange-alt"></i> BAU Email Analysis</h5>
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshBAUAnalysis()">
+                                <i class="fas fa-sync"></i> Refresh
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div id="bau-loading" class="text-center" style="display: none;">
+                                <i class="fas fa-spinner fa-spin"></i> Analyzing BAU patterns...
+                            </div>
+                            <div id="bau-content">
+                                {% if ml_insights.bau_analysis %}
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <small class="text-muted">BAU Statistics</small>
+                                                <div class="d-flex justify-content-between">
+                                                    <span>BAU Candidates:</span>
+                                                    <span class="badge badge-success">{{ ml_insights.bau_analysis.bau_candidates_count }}</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between">
+                                                    <span>BAU Percentage:</span>
+                                                    <span>{{ "%.1f"|format(ml_insights.bau_analysis.bau_percentage) }}%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <small class="text-muted">Volume Analysis</small>
+                                                <div class="d-flex justify-content-between">
+                                                    <span>High Volume Pairs:</span>
+                                                    <span class="badge badge-info">{{ ml_insights.bau_analysis.high_volume_pairs|length }}</span>
+                                                </div>
+                                                <div class="d-flex justify-content-between">
+                                                    <span>Unique Domains:</span>
+                                                    <span>{{ ml_insights.bau_analysis.unique_domain_pairs }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {% if ml_insights.bau_analysis.bau_candidates %}
+                                        <div class="mt-3">
+                                            <small class="text-muted">Whitelist Candidates</small>
+                                            <div class="bau-candidates-list" style="max-height: 200px; overflow-y: auto;">
+                                                {% for candidate in ml_insights.bau_analysis.bau_candidates[:5] %}
+                                                    <div class="border rounded p-2 mb-2 bg-light">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <div>
+                                                                <strong>{{ candidate.domain_pair }}</strong>
+                                                                <br>
+                                                                <small class="text-muted">{{ candidate.volume }} emails</small>
+                                                            </div>
+                                                            <div>
+                                                                <span class="badge badge-{{ 'success' if candidate.confidence == 'Very High' else 'warning' if candidate.confidence == 'High' else 'info' }}">
+                                                                    {{ candidate.confidence }}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <small class="text-muted">{{ candidate.recommendation }}</small>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+
+                                            {% if ml_insights.bau_analysis.bau_candidates|length > 0 %}
+                                                <div class="mt-3">
+                                                    <button class="btn btn-success btn-sm" onclick="showBAUModal()">
+                                                        <i class="fas fa-plus"></i> View All & Whitelist
+                                                    </button>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="text-center text-muted">
+                                        <i class="fas fa-chart-line fa-2x mb-2"></i>
+                                        <p>No BAU analysis available yet</p>
+                                        <button class="btn btn-primary btn-sm" onclick="refreshBAUAnalysis()">
+                                            Run BAU Analysis
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
                     <div class="col-md-4">
                         <h6>Anomaly Detection</h6>
                         <p class="text-muted">
@@ -414,4 +569,256 @@ new Chart(domainCtx, {
         });
     }
 </script>
-{% endblock %}
+    <!-- BAU Analysis Modal -->
+    <div class="modal fade" id="bauModal" tabindex="-1" aria-labelledby="bauModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="bauModalLabel">BAU Email Analysis & Whitelisting</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="bauModalContent">
+                        <div class="text-center">
+                            <i class="fas fa-spinner fa-spin"></i> Loading BAU analysis...
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-success" id="whitelistSelectedBtn" onclick="whitelistSelected()" disabled>
+                        <i class="fas fa-check"></i> Whitelist Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        let bauAnalysisData = null;
+        let selectedBauCandidates = [];
+
+        // Auto-refresh dashboard every 30 seconds
+        setInterval(function() {
+            location.reload();
+        }, 30000);
+
+        function refreshBAUAnalysis() {
+            const sessionId = '{{ session.session_id }}';
+            const bauContent = document.getElementById('bau-content');
+            const bauLoading = document.getElementById('bau-loading');
+
+            bauLoading.style.display = 'block';
+            bauContent.style.display = 'none';
+
+            fetch(`/api/bau_analysis/${sessionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    bauAnalysisData = data;
+                    updateBAUDisplay(data);
+                    bauLoading.style.display = 'none';
+                    bauContent.style.display = 'block';
+                })
+                .catch(error => {
+                    console.error('Error fetching BAU analysis:', error);
+                    bauLoading.style.display = 'none';
+                    bauContent.style.display = 'block';
+                    bauContent.innerHTML = '<div class="alert alert-danger">Error loading BAU analysis</div>';
+                });
+        }
+
+        function updateBAUDisplay(data) {
+            const bauContent = document.getElementById('bau-content');
+            const stats = data.bau_stats;
+
+            bauContent.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <small class="text-muted">BAU Statistics</small>
+                            <div class="d-flex justify-content-between">
+                                <span>BAU Candidates:</span>
+                                <span class="badge badge-success">${stats.bau_candidates_count}</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>BAU Percentage:</span>
+                                <span>${stats.bau_percentage.toFixed(1)}%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <small class="text-muted">Volume Analysis</small>
+                            <div class="d-flex justify-content-between">
+                                <span>High Volume Pairs:</span>
+                                <span class="badge badge-info">${data.high_volume_pairs.length}</span>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Unique Domains:</span>
+                                <span>${stats.unique_domain_pairs}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ${data.bau_candidates.length > 0 ? `
+                    <div class="mt-3">
+                        <small class="text-muted">Top BAU Candidates</small>
+                        <div class="bau-candidates-list" style="max-height: 200px; overflow-y: auto;">
+                            ${data.bau_candidates.slice(0, 5).map(candidate => `
+                                <div class="border rounded p-2 mb-2 bg-light">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>${candidate.domain_pair}</strong>
+                                            <br>
+                                            <small class="text-muted">${candidate.volume} emails</small>
+                                        </div>
+                                        <div>
+                                            <span class="badge badge-${candidate.confidence === 'Very High' ? 'success' : candidate.confidence === 'High' ? 'warning' : 'info'}">
+                                                ${candidate.confidence}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <small class="text-muted">${candidate.recommendation}</small>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-success btn-sm" onclick="showBAUModal()">
+                                <i class="fas fa-plus"></i> View All & Whitelist
+                            </button>
+                        </div>
+                    </div>
+                ` : '<div class="text-center text-muted mt-3">No BAU candidates found</div>'}
+            `;
+        }
+
+        function showBAUModal() {
+            if (!bauAnalysisData) {
+                refreshBAUAnalysis();
+                return;
+            }
+
+            const modalContent = document.getElementById('bauModalContent');
+            const candidates = bauAnalysisData.bau_candidates;
+
+            modalContent.innerHTML = `
+                <div class="mb-3">
+                    <h6>BAU Email Candidates for Whitelisting</h6>
+                    <p class="text-muted">Select domain pairs to add to your whitelist. These represent high-volume, business-related email communications.</p>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                                </th>
+                                <th>Domain Pair</th>
+                                <th>Volume</th>
+                                <th>Confidence</th>
+                                <th>Recommendation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${candidates.map((candidate, index) => `
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="bau-checkbox" data-index="${index}" 
+                                               data-pair="${candidate.domain_pair}" onchange="updateWhitelistButton()">
+                                    </td>
+                                    <td><strong>${candidate.domain_pair}</strong></td>
+                                    <td><span class="badge badge-primary">${candidate.volume}</span></td>
+                                    <td>
+                                        <span class="badge badge-${candidate.confidence === 'Very High' ? 'success' : candidate.confidence === 'High' ? 'warning' : 'info'}">
+                                            ${candidate.confidence}
+                                        </span>
+                                    </td>
+                                    <td><small>${candidate.recommendation}</small></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            const modal = new bootstrap.Modal(document.getElementById('bauModal'));
+            modal.show();
+        }
+
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.bau-checkbox');
+
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+
+            updateWhitelistButton();
+        }
+
+        function updateWhitelistButton() {
+            const checkedBoxes = document.querySelectorAll('.bau-checkbox:checked');
+            const whitelistBtn = document.getElementById('whitelistSelectedBtn');
+
+            whitelistBtn.disabled = checkedBoxes.length === 0;
+            whitelistBtn.textContent = checkedBoxes.length > 0 ? 
+                `Whitelist ${checkedBoxes.length} Selected` : 
+                'Whitelist Selected';
+
+            selectedBauCandidates = Array.from(checkedBoxes).map(cb => cb.dataset.pair);
+        }
+
+        function whitelistSelected() {
+            if (selectedBauCandidates.length === 0) {
+                alert('Please select at least one domain pair to whitelist.');
+                return;
+            }
+
+            const sessionId = '{{ session.session_id }}';
+            const whitelistBtn = document.getElementById('whitelistSelectedBtn');
+
+            whitelistBtn.disabled = true;
+            whitelistBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            fetch(`/api/whitelist_bau/${sessionId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    domain_pairs: selectedBauCandidates
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`Successfully added ${data.new_domains.length} domains to whitelist!\nNew domains: ${data.new_domains.join(', ')}`);
+
+                    // Close modal and refresh page
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('bauModal'));
+                    modal.hide();
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error whitelisting domains. Please try again.');
+            })
+            .finally(() => {
+                whitelistBtn.disabled = false;
+                whitelistBtn.innerHTML = '<i class="fas fa-check"></i> Whitelist Selected';
+            });
+        }
+
+        // Load initial BAU analysis on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshBAUAnalysis();
+        });
+    </script>
+</body>
+</html>

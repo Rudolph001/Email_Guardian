@@ -475,6 +475,167 @@ class MLEngine:
 
         return insights
 
+    def detect_bau_emails(self, df):
+        """Detect BAU (Business As Usual) emails - high volume business communications"""
+        try:
+            bau_analysis = {
+                'sender_domain_patterns': {},
+                'recipient_domain_patterns': {},
+                'high_volume_pairs': [],
+                'business_communication_clusters': [],
+                'bau_candidates': [],
+                'bau_stats': {}
+            }
+
+            # Analyze sender to recipient domain patterns
+            domain_pairs = {}
+            sender_volumes = {}
+            recipient_volumes = {}
+
+            for index, row in df.iterrows():
+                sender = row.get('sender', '')
+                recipient_domain = row.get('recipients_email_domain', '')
+                
+                # Extract sender domain
+                sender_domain = sender.split('@')[-1] if '@' in sender else sender
+                
+                # Count volumes
+                sender_volumes[sender] = sender_volumes.get(sender, 0) + 1
+                recipient_volumes[recipient_domain] = recipient_volumes.get(recipient_domain, 0) + 1
+                
+                # Track domain pairs
+                pair_key = f"{sender_domain} -> {recipient_domain}"
+                if pair_key not in domain_pairs:
+                    domain_pairs[pair_key] = {
+                        'count': 0,
+                        'senders': set(),
+                        'subjects': set(),
+                        'has_attachments': 0,
+                        'business_keywords': 0
+                    }
+                
+                domain_pairs[pair_key]['count'] += 1
+                domain_pairs[pair_key]['senders'].add(sender)
+                domain_pairs[pair_key]['subjects'].add(row.get('subject', ''))
+                
+                if row.get('has_attachments'):
+                    domain_pairs[pair_key]['has_attachments'] += 1
+                
+                # Check for business keywords in subject
+                subject = str(row.get('subject', '')).lower()
+                if any(keyword in subject for keyword in ['report', 'invoice', 'contract', 'meeting', 'proposal']):
+                    domain_pairs[pair_key]['business_keywords'] += 1
+
+            # Identify high-volume BAU patterns (threshold: >5 emails)
+            bau_threshold = 5
+            for pair_key, data in domain_pairs.items():
+                if data['count'] >= bau_threshold:
+                    bau_score = self._calculate_bau_score(data)
+                    
+                    bau_analysis['high_volume_pairs'].append({
+                        'pair': pair_key,
+                        'volume': data['count'],
+                        'unique_senders': len(data['senders']),
+                        'unique_subjects': len(data['subjects']),
+                        'attachment_ratio': data['has_attachments'] / data['count'],
+                        'business_keyword_ratio': data['business_keywords'] / data['count'],
+                        'bau_score': bau_score,
+                        'bau_likelihood': self._get_bau_likelihood(bau_score)
+                    })
+
+            # Sort by BAU score (highest first)
+            bau_analysis['high_volume_pairs'].sort(key=lambda x: x['bau_score'], reverse=True)
+
+            # Generate BAU candidates for whitelisting
+            for pair_data in bau_analysis['high_volume_pairs']:
+                if pair_data['bau_likelihood'] in ['High', 'Very High']:
+                    bau_analysis['bau_candidates'].append({
+                        'domain_pair': pair_data['pair'],
+                        'volume': pair_data['volume'],
+                        'confidence': pair_data['bau_likelihood'],
+                        'recommendation': self._get_bau_recommendation(pair_data)
+                    })
+
+            # Calculate BAU statistics
+            total_emails = len(df)
+            high_volume_emails = sum(pair['volume'] for pair in bau_analysis['high_volume_pairs'])
+            
+            bau_analysis['bau_stats'] = {
+                'total_emails': total_emails,
+                'high_volume_emails': high_volume_emails,
+                'bau_percentage': (high_volume_emails / total_emails * 100) if total_emails > 0 else 0,
+                'unique_domain_pairs': len(domain_pairs),
+                'bau_candidates_count': len(bau_analysis['bau_candidates']),
+                'top_sender_domains': dict(sorted(
+                    {sender.split('@')[-1]: count for sender, count in sender_volumes.items()}.items(),
+                    key=lambda x: x[1], reverse=True
+                )[:10]),
+                'top_recipient_domains': dict(sorted(recipient_volumes.items(), key=lambda x: x[1], reverse=True)[:10])
+            }
+
+            return bau_analysis
+
+        except Exception as e:
+            self.logger.error(f"Error in BAU detection: {str(e)}")
+            return {
+                'sender_domain_patterns': {},
+                'recipient_domain_patterns': {},
+                'high_volume_pairs': [],
+                'business_communication_clusters': [],
+                'bau_candidates': [],
+                'bau_stats': {}
+            }
+
+    def _calculate_bau_score(self, data):
+        """Calculate BAU likelihood score (0-100)"""
+        score = 0
+        
+        # Volume factor (0-30 points)
+        volume_score = min(30, data['count'] * 2)
+        score += volume_score
+        
+        # Sender diversity (0-20 points) - multiple senders indicate business process
+        sender_diversity = min(20, len(data['senders']) * 4)
+        score += sender_diversity
+        
+        # Subject diversity (0-20 points) - varied subjects indicate legitimate business
+        subject_diversity = min(20, len(data['subjects']) * 2)
+        score += subject_diversity
+        
+        # Attachment ratio (0-15 points) - business emails often have attachments
+        attachment_score = data['has_attachments'] / data['count'] * 15
+        score += attachment_score
+        
+        # Business keyword ratio (0-15 points)
+        business_score = data['business_keywords'] / data['count'] * 15
+        score += business_score
+        
+        return min(100, score)
+
+    def _get_bau_likelihood(self, score):
+        """Convert BAU score to likelihood category"""
+        if score >= 80:
+            return 'Very High'
+        elif score >= 60:
+            return 'High'
+        elif score >= 40:
+            return 'Medium'
+        elif score >= 20:
+            return 'Low'
+        else:
+            return 'Very Low'
+
+    def _get_bau_recommendation(self, pair_data):
+        """Generate recommendation for BAU pair"""
+        if pair_data['bau_likelihood'] == 'Very High':
+            return 'Strongly recommend whitelisting - Clear business communication pattern'
+        elif pair_data['bau_likelihood'] == 'High':
+            return 'Recommend whitelisting - Likely legitimate business emails'
+        elif pair_data['bau_likelihood'] == 'Medium':
+            return 'Review manually - Mixed signals in communication pattern'
+        else:
+            return 'Monitor - Insufficient data for confident classification'
+
     def get_insights(self, processed_data):
         """Get ML insights for dashboard display"""
         if not processed_data:
@@ -490,6 +651,11 @@ class MLEngine:
                     'critical_patterns': 0,
                     'high_patterns': 0
                 },
+                'bau_analysis': {
+                    'bau_candidates_count': 0,
+                    'bau_percentage': 0,
+                    'high_volume_pairs': []
+                },
                 'recommendations': []
             }
 
@@ -498,6 +664,9 @@ class MLEngine:
 
         # Perform ML analysis
         ml_results = self.analyze_emails(df)
+
+        # Perform BAU analysis
+        bau_results = self.detect_bau_emails(df)
 
         # Return the insights with proper structure
         insights = ml_results['insights']
@@ -519,6 +688,11 @@ class MLEngine:
         for field in ['total_patterns', 'critical_patterns', 'high_patterns']:
             if field not in insights['pattern_summary']:
                 insights['pattern_summary'][field] = 0
+
+        # Add BAU analysis
+        insights['bau_analysis'] = bau_results['bau_stats']
+        insights['bau_analysis']['high_volume_pairs'] = bau_results['high_volume_pairs'][:10]  # Top 10
+        insights['bau_analysis']['bau_candidates'] = bau_results['bau_candidates']
 
         return insights
 
