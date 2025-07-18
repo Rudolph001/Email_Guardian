@@ -200,8 +200,21 @@ def escalation_dashboard(session_id):
     # Get processed data
     processed_data = session_manager.get_processed_data(session_id)
     
-    # Filter only escalated cases
-    escalated_cases = [d for d in processed_data if d.get('status', '').lower() == 'escalated'] if processed_data else []
+    # Debug logging
+    app.logger.info(f"Escalation dashboard - Total records: {len(processed_data) if processed_data else 0}")
+    
+    # Filter only escalated cases - be more flexible with status matching
+    escalated_cases = []
+    if processed_data:
+        for i, d in enumerate(processed_data):
+            status = d.get('status', 'Active').lower()
+            if status == 'escalated':
+                # Ensure record has an ID for actions
+                if 'record_id' not in d:
+                    d['record_id'] = str(i)
+                escalated_cases.append(d)
+    
+    app.logger.info(f"Escalation dashboard - Escalated cases found: {len(escalated_cases)}")
     
     # Get filter parameters
     risk_filter = request.args.get('risk_filter', 'all')
@@ -235,6 +248,8 @@ def escalation_dashboard(session_id):
                         search_lower in d.get('sender', '').lower() or 
                         search_lower in d.get('subject', '').lower() or 
                         search_lower in d.get('recipients', '').lower()]
+    
+    app.logger.info(f"Escalation dashboard - Filtered escalations: {len(filtered_data)}")
     
     # Get unique values for filter dropdowns
     risk_levels = list(set(d.get('ml_risk_level', 'Unknown') for d in escalated_cases if escalated_cases))
