@@ -120,7 +120,7 @@
                             <hr>
                             <h6 class="fw-bold mb-2">Recent Domains:</h6>
                             <div class="list-group list-group-flush">
-                                {% for domain in whitelists.domains|sort[:5] %}
+                                {% for domain in (whitelists.domains|sort)[:5] %}
                                 <div class="list-group-item border-0 px-0 py-1">
                                     <code class="small">{{ domain }}</code>
                                 </div>
