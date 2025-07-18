@@ -26,26 +26,26 @@ def upload_file():
     if 'file' not in request.files:
         flash('No file selected', 'error')
         return redirect(url_for('index'))
-    
+
     file = request.files['file']
     if file.filename == '':
         flash('No file selected', 'error')
         return redirect(url_for('index'))
-    
+
     if file and file.filename.lower().endswith('.csv'):
         try:
             # Generate unique session ID
             session_id = str(uuid.uuid4())[:8]
             filename = secure_filename(file.filename)
-            
+
             # Save uploaded file
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], f"{session_id}_{filename}")
             file.save(file_path)
-            
+
             # Process CSV file
             processor = DataProcessor()
             result = processor.process_csv(file_path, session_id, filename)
-            
+
             if result['success']:
                 stats = result.get('processing_stats', {})
                 steps = stats.get('processing_steps', [])
@@ -55,7 +55,7 @@ def upload_file():
             else:
                 flash(f'Error processing file: {result["error"]}', 'error')
                 return redirect(url_for('index'))
-                
+
         except Exception as e:
             flash(f'Error uploading file: {str(e)}', 'error')
             return redirect(url_for('index'))
@@ -71,15 +71,15 @@ def dashboard(session_id):
     if not session_data:
         flash('Session not found', 'error')
         return redirect(url_for('index'))
-    
+
     # Get processed data and separate by dashboard type
     all_processed_data = session_manager.get_processed_data(session_id)
     app.logger.info(f"Retrieved {len(all_processed_data) if all_processed_data else 0} processed records for session {session_id}")
-    
+
     # Separate data by dashboard type
     escalated_data = []
     case_management_data = []
-    
+
     if all_processed_data:
         for record in all_processed_data:
             dashboard_type = record.get('dashboard_type', 'case_management')
@@ -87,11 +87,11 @@ def dashboard(session_id):
                 escalated_data.append(record)
             else:
                 case_management_data.append(record)
-    
+
     # Get processing statistics
     processing_stats = session_data.get('processing_stats', {})
     processing_steps = processing_stats.get('processing_steps', [])
-    
+
     # Get ML insights for case management data only
     ml_engine = MLEngine()
     try:
@@ -129,7 +129,7 @@ def dashboard(session_id):
             },
             'recommendations': []
         }
-    
+
     return render_template('dashboard.html',
                          session=session_data,
                          escalated_data=escalated_data,
@@ -147,19 +147,19 @@ def case_management(session_id):
     if not session_data:
         flash('Session not found', 'error')
         return redirect(url_for('index'))
-    
+
     # Get processed data
     all_processed_data = session_manager.get_processed_data(session_id)
-    
+
     # Count escalated cases for the badge
     escalated_count = 0
     non_escalated_data = []
-    
+
     if all_processed_data:
         for i, d in enumerate(all_processed_data):
             dashboard_type = d.get('dashboard_type', 'case_management')
             status = d.get('status', 'Active').lower()
-            
+
             # Count escalated cases
             if dashboard_type == 'escalation' or status == 'escalated':
                 escalated_count += 1
@@ -169,41 +169,41 @@ def case_management(session_id):
                 if 'record_id' not in d:
                     d['record_id'] = str(i)
                 non_escalated_data.append(d)
-    
+
     processed_data = non_escalated_data
-    
+
     # Get filter parameters
     risk_filter = request.args.get('risk_filter', 'all')
     rule_filter = request.args.get('rule_filter', 'all')
     status_filter = request.args.get('status_filter', 'all')
     search_query = request.args.get('search', '')
-    
+
     # Apply filters
     filtered_data = processed_data if processed_data else []
-    
+
     if risk_filter != 'all':
         filtered_data = [d for d in filtered_data if d.get('ml_risk_level', '').lower() == risk_filter.lower()]
-    
+
     if rule_filter != 'all':
         if rule_filter == 'matched':
             filtered_data = [d for d in filtered_data if d.get('rule_results', {}).get('matched_rules')]
         elif rule_filter == 'unmatched':
             filtered_data = [d for d in filtered_data if not d.get('rule_results', {}).get('matched_rules')]
-    
+
     if status_filter != 'all':
         filtered_data = [d for d in filtered_data if d.get('status', '').lower() == status_filter.lower()]
-    
+
     if search_query:
         search_lower = search_query.lower()
         filtered_data = [d for d in filtered_data if 
                         search_lower in d.get('sender', '').lower() or 
                         search_lower in d.get('subject', '').lower() or 
                         search_lower in d.get('recipients', '').lower()]
-    
+
     # Get unique values for filter dropdowns (exclude 'Escalated' since those cases are in escalation dashboard)
     risk_levels = list(set(d.get('ml_risk_level', 'Unknown') for d in processed_data if processed_data))
     statuses = list(set(d.get('status', 'Active') for d in processed_data if processed_data and d.get('status', 'Active').lower() != 'escalated'))
-    
+
     return render_template('case_management.html', 
                          session=session_data,
                          cases=filtered_data,
@@ -225,13 +225,13 @@ def escalation_dashboard(session_id):
     if not session_data:
         flash('Session not found', 'error')
         return redirect(url_for('index'))
-    
+
     # Get processed data
     processed_data = session_manager.get_processed_data(session_id)
-    
+
     # Debug logging
     app.logger.info(f"Escalation dashboard - Total records: {len(processed_data) if processed_data else 0}")
-    
+
     # Filter only escalated cases - check both status and dashboard_type
     escalated_cases = []
     if processed_data:
@@ -239,34 +239,34 @@ def escalation_dashboard(session_id):
             # Check if record is marked for escalation dashboard
             dashboard_type = d.get('dashboard_type', 'case_management')
             status = d.get('status', 'Active').lower()
-            
+
             # Include records that are either explicitly escalated or assigned to escalation dashboard
             if dashboard_type == 'escalation' or status == 'escalated':
                 # Ensure record has an ID for actions
                 if 'record_id' not in d:
                     d['record_id'] = str(i)
                 escalated_cases.append(d)
-    
+
     app.logger.info(f"Escalation dashboard - Escalated cases found: {len(escalated_cases)}")
-    
+
     # Get filter parameters
     risk_filter = request.args.get('risk_filter', 'all')
     rule_filter = request.args.get('rule_filter', 'all')
     priority_filter = request.args.get('priority_filter', 'all')
     search_query = request.args.get('search', '')
-    
+
     # Apply additional filters
     filtered_data = escalated_cases
-    
+
     if risk_filter != 'all':
         filtered_data = [d for d in filtered_data if d.get('ml_risk_level', '').lower() == risk_filter.lower()]
-    
+
     if rule_filter != 'all':
         if rule_filter == 'matched':
             filtered_data = [d for d in filtered_data if d.get('rule_results', {}).get('matched_rules')]
         elif rule_filter == 'unmatched':
             filtered_data = [d for d in filtered_data if not d.get('rule_results', {}).get('matched_rules')]
-    
+
     if priority_filter != 'all':
         if priority_filter == 'high':
             filtered_data = [d for d in filtered_data if d.get('ml_risk_level', '').lower() in ['critical', 'high']]
@@ -274,20 +274,20 @@ def escalation_dashboard(session_id):
             filtered_data = [d for d in filtered_data if d.get('ml_risk_level', '').lower() == 'medium']
         elif priority_filter == 'low':
             filtered_data = [d for d in filtered_data if d.get('ml_risk_level', '').lower() == 'low']
-    
+
     if search_query:
         search_lower = search_query.lower()
         filtered_data = [d for d in filtered_data if 
                         search_lower in d.get('sender', '').lower() or 
                         search_lower in d.get('subject', '').lower() or 
                         search_lower in d.get('recipients', '').lower()]
-    
+
     app.logger.info(f"Escalation dashboard - Filtered escalations: {len(filtered_data)}")
-    
+
     # Get unique values for filter dropdowns
     risk_levels = list(set(d.get('ml_risk_level', 'Unknown') for d in escalated_cases if escalated_cases))
     priorities = ['High', 'Medium', 'Low']
-    
+
     return render_template('escalation_dashboard.html', 
                          session=session_data,
                          escalations=filtered_data,
@@ -305,10 +305,10 @@ def get_case_details(session_id, record_id):
     """API endpoint to get detailed case information for popup"""
     session_manager = SessionManager()
     processed_data = session_manager.get_processed_data(session_id)
-    
+
     if not processed_data:
         return jsonify({'error': 'Session not found'}), 404
-    
+
     # Find the specific record - try multiple ID formats
     case_data = None
     for i, record in enumerate(processed_data):
@@ -321,13 +321,13 @@ def get_case_details(session_id, record_id):
             if 'record_id' not in record:
                 record['record_id'] = str(i)
             break
-    
+
     if not case_data:
         app.logger.error(f"Record ID {record_id} not found in session {session_id}")
         app.logger.error(f"Available records: {len(processed_data)}")
         app.logger.error(f"Available record IDs: {[r.get('record_id', 'None') for r in processed_data[:5]]}")
         return jsonify({'error': 'Case not found'}), 404
-    
+
     # Clean NaN values before JSON serialization
     def clean_nan_values(data):
         if isinstance(data, dict):
@@ -340,13 +340,13 @@ def get_case_details(session_id, record_id):
             return None
         else:
             return data
-    
+
     cleaned_case_data = clean_nan_values(case_data)
-    
+
     # Add detailed ML explanations for better user understanding
     ml_explanations = generate_ml_explanations(cleaned_case_data)
     cleaned_case_data['ml_explanations'] = ml_explanations
-    
+
     return jsonify(cleaned_case_data)
 
 def generate_ml_explanations(case_data):
@@ -358,11 +358,11 @@ def generate_ml_explanations(case_data):
         'behavioral_patterns': [],
         'recommendations': []
     }
-    
+
     # Risk Level Analysis
     risk_level = case_data.get('ml_risk_level', 'Unknown')
     anomaly_score = case_data.get('ml_anomaly_score', 0)
-    
+
     if risk_level == 'Critical':
         explanations['risk_analysis'].append("This email shows multiple high-risk indicators that require immediate attention.")
     elif risk_level == 'High':
@@ -371,7 +371,7 @@ def generate_ml_explanations(case_data):
         explanations['risk_analysis'].append("Some unusual characteristics found, but within acceptable risk tolerance.")
     elif risk_level == 'Low':
         explanations['risk_analysis'].append("Email appears normal with minimal security concerns.")
-    
+
     # Anomaly Score Explanation
     if anomaly_score > 0.8:
         explanations['anomaly_factors'].append("Highly unusual email patterns detected - significantly different from normal communication.")
@@ -384,14 +384,14 @@ def generate_ml_explanations(case_data):
         explanations['anomaly_factors'].append("Factors: Slightly unusual timing or communication patterns.")
     else:
         explanations['anomaly_factors'].append("Email follows typical communication patterns with no significant anomalies.")
-    
+
     # Attachment Analysis
     attachment_type = case_data.get('attachment_classification', 'Unknown')
     has_attachments = case_data.get('has_attachments', False)
-    
+
     # Debug logging
     app.logger.info(f"Attachment classification debug: {attachment_type}, has_attachments: {has_attachments}")
-    
+
     if has_attachments:
         if attachment_type == 'Personal':
             explanations['attachment_analysis'].append("⚠️ Personal attachments detected - may indicate data exfiltration risk.")
@@ -407,7 +407,7 @@ def generate_ml_explanations(case_data):
             explanations['attachment_analysis'].append("Manual review recommended to determine file content and purpose.")
     else:
         explanations['attachment_analysis'].append("📧 No attachments detected - text-only communication.")
-    
+
     # Behavioral Patterns
     cluster = case_data.get('ml_cluster', -1)
     if cluster >= 0:
@@ -416,7 +416,7 @@ def generate_ml_explanations(case_data):
     else:
         explanations['behavioral_patterns'].append("Email doesn't fit into any established communication pattern.")
         explanations['behavioral_patterns'].append("This uniqueness may indicate unusual or suspicious activity.")
-    
+
     # Domain Analysis
     domain_classification = case_data.get('domain_classification', 'Unknown')
     if domain_classification == 'Personal':
@@ -424,7 +424,7 @@ def generate_ml_explanations(case_data):
         explanations['behavioral_patterns'].append("This may violate company policies and increase security risks.")
     elif domain_classification == 'Corporate':
         explanations['behavioral_patterns'].append("✅ Corporate email domain - appropriate for business use.")
-    
+
     # Recommendations based on analysis
     if risk_level in ['Critical', 'High']:
         explanations['recommendations'].append("🔴 Immediate Action Required")
@@ -439,7 +439,7 @@ def generate_ml_explanations(case_data):
         explanations['recommendations'].append("🟢 Standard Processing")
         explanations['recommendations'].append("• No immediate action required")
         explanations['recommendations'].append("• Continue routine monitoring")
-    
+
     return explanations
 
 @app.route('/api/case/<session_id>/<record_id>/update', methods=['POST'])
@@ -447,13 +447,13 @@ def update_case_status(session_id, record_id):
     """API endpoint to update case status"""
     session_manager = SessionManager()
     processed_data = session_manager.get_processed_data(session_id)
-    
+
     if not processed_data:
         return jsonify({'error': 'Session not found'}), 404
-    
+
     new_status = request.json.get('status')
     notes = request.json.get('notes', '')
-    
+
     # Find and update the record - try multiple ID formats
     updated = False
     for i, record in enumerate(processed_data):
@@ -466,7 +466,7 @@ def update_case_status(session_id, record_id):
             record['updated_at'] = datetime.now().isoformat()
             updated = True
             break
-    
+
     if updated:
         # Save updated data back to session
         session_manager.update_processed_data(session_id, processed_data)
@@ -481,14 +481,14 @@ def resolve_escalation(session_id, record_id):
     """API endpoint to resolve escalated cases"""
     session_manager = SessionManager()
     processed_data = session_manager.get_processed_data(session_id)
-    
+
     if not processed_data:
         return jsonify({'error': 'Session not found'}), 404
-    
+
     resolution = request.json.get('resolution')
     resolution_notes = request.json.get('resolution_notes', '')
     new_status = request.json.get('new_status', 'Resolved')
-    
+
     # Find and update the record - try multiple ID formats
     updated = False
     for i, record in enumerate(processed_data):
@@ -503,7 +503,7 @@ def resolve_escalation(session_id, record_id):
             record['updated_at'] = datetime.now().isoformat()
             updated = True
             break
-    
+
     if updated:
         # Save updated data back to session
         session_manager.update_processed_data(session_id, processed_data)
@@ -518,10 +518,10 @@ def generate_escalation_email(session_id, record_id):
     """API endpoint to generate escalation email"""
     session_manager = SessionManager()
     processed_data = session_manager.get_processed_data(session_id)
-    
+
     if not processed_data:
         return jsonify({'error': 'Session not found'}), 404
-    
+
     # Find the record
     found_record = None
     record_index = None
@@ -532,13 +532,13 @@ def generate_escalation_email(session_id, record_id):
             found_record = record
             record_index = i
             break
-    
+
     if not found_record:
         return jsonify({'error': 'Escalation not found'}), 404
-    
+
     # Generate the draft email
     result = session_manager.generate_draft_email(session_id, record_index)
-    
+
     if result['success']:
         return jsonify({
             'success': True, 
@@ -575,18 +575,18 @@ def create_rule():
             'priority': int(request.form.get('priority', 1)),
             'active': request.form.get('active') == 'on'
         }
-        
+
         rule_engine = RuleEngine()
         result = rule_engine.create_rule(rule_data)
-        
+
         if result['success']:
             flash('Rule created successfully', 'success')
         else:
             flash(f'Error creating rule: {result["error"]}', 'error')
-            
+
     except Exception as e:
         flash(f'Error creating rule: {str(e)}', 'error')
-    
+
     return redirect(url_for('rules'))
 
 @app.route('/rules/<int:rule_id>/update', methods=['POST'])
@@ -601,18 +601,18 @@ def update_rule(rule_id):
             'priority': int(request.form.get('priority', 1)),
             'active': request.form.get('active') == 'on'
         }
-        
+
         rule_engine = RuleEngine()
         result = rule_engine.update_rule(rule_id, rule_data)
-        
+
         if result['success']:
             flash('Rule updated successfully', 'success')
         else:
             flash(f'Error updating rule: {result["error"]}', 'error')
-            
+
     except Exception as e:
         flash(f'Error updating rule: {str(e)}', 'error')
-    
+
     return redirect(url_for('rules'))
 
 @app.route('/rules/<int:rule_id>/delete', methods=['POST'])
@@ -620,12 +620,12 @@ def delete_rule(rule_id):
     """Delete a rule"""
     rule_engine = RuleEngine()
     result = rule_engine.delete_rule(rule_id)
-    
+
     if result['success']:
         flash('Rule deleted successfully', 'success')
     else:
         flash(f'Error deleting rule: {result["error"]}', 'error')
-    
+
     return redirect(url_for('rules'))
 
 @app.route('/case/<session_id>/<int:record_id>/action', methods=['POST'])
@@ -633,13 +633,13 @@ def case_action(session_id, record_id):
     """Handle case actions (clear, escalate)"""
     action = request.form.get('action')
     session_manager = SessionManager()
-    
+
     if action in ['clear', 'escalate']:
         result = session_manager.update_case_status(session_id, record_id, action)
-        
+
         if result['success']:
             flash(f'Case {action}d successfully', 'success')
-            
+
             # If escalating, prepare draft email
             if action == 'escalate':
                 draft_email = session_manager.generate_draft_email(session_id, record_id)
@@ -647,7 +647,7 @@ def case_action(session_id, record_id):
                 flash(f'Draft email prepared for escalation', 'info')
         else:
             flash(f'Error {action}ing case: {result["error"]}', 'error')
-    
+
     return redirect(url_for('dashboard', session_id=session_id))
 
 @app.route('/admin/whitelist', methods=['POST'])
@@ -655,15 +655,15 @@ def update_whitelist():
     """Update whitelist domains"""
     domains = request.form.get('domains', '').split('\n')
     domains = [domain.strip() for domain in domains if domain.strip()]
-    
+
     session_manager = SessionManager()
     result = session_manager.update_whitelist(domains)
-    
+
     if result['success']:
         flash('Whitelist updated successfully', 'success')
     else:
         flash(f'Error updating whitelist: {result["error"]}', 'error')
-    
+
     return redirect(url_for('admin'))
 
 @app.route('/admin/attachment-keywords', methods=['POST'])
@@ -672,26 +672,26 @@ def update_attachment_keywords():
     business_keywords = request.form.get('business_keywords', '').split('\n')
     personal_keywords = request.form.get('personal_keywords', '').split('\n')
     suspicious_keywords = request.form.get('suspicious_keywords', '').split('\n')
-    
+
     # Clean and filter keywords
     business_keywords = [kw.strip().lower() for kw in business_keywords if kw.strip()]
     personal_keywords = [kw.strip().lower() for kw in personal_keywords if kw.strip()]
     suspicious_keywords = [kw.strip().lower() for kw in suspicious_keywords if kw.strip()]
-    
+
     keywords_data = {
         'business_keywords': business_keywords,
         'personal_keywords': personal_keywords,
         'suspicious_keywords': suspicious_keywords
     }
-    
+
     session_manager = SessionManager()
     result = session_manager.update_attachment_keywords(keywords_data)
-    
+
     if result['success']:
         flash('Attachment keywords updated successfully', 'success')
     else:
         flash(f'Error updating attachment keywords: {result["error"]}', 'error')
-    
+
     return redirect(url_for('admin'))
 
 @app.route('/delete_session/<session_id>', methods=['POST'])
@@ -699,12 +699,12 @@ def delete_session(session_id):
     """Delete a processing session"""
     session_manager = SessionManager()
     result = session_manager.delete_session(session_id)
-    
+
     if result['success']:
         flash(f'Session {session_id} deleted successfully', 'success')
     else:
         flash(f'Error deleting session: {result["error"]}', 'error')
-    
+
     return redirect(url_for('admin'))
 
 @app.route('/export/<session_id>')
@@ -715,16 +715,16 @@ def export_session(session_id):
     if not session_data:
         flash('Session not found', 'error')
         return redirect(url_for('index'))
-    
+
     export_data = session_manager.export_session(session_id)
-    
+
     # Create export file
     export_filename = f"email_guardian_export_{session_id}.json"
     export_path = os.path.join(app.config['UPLOAD_FOLDER'], export_filename)
-    
+
     with open(export_path, 'w') as f:
         json.dump(export_data, f, indent=2, default=str)
-    
+
     return send_from_directory(app.config['UPLOAD_FOLDER'], export_filename, as_attachment=True)
 
 @app.route('/api/ml_insights/<session_id>')
@@ -749,10 +749,10 @@ def debug_data(session_id):
     try:
         session_manager = SessionManager()
         processed_data = session_manager.get_processed_data(session_id)
-        
+
         if not processed_data:
             return jsonify({'error': 'No data found'}), 404
-        
+
         # Show first few records with attachment data
         debug_info = []
         for i, record in enumerate(processed_data[:5]):  # Show first 5 records
@@ -766,17 +766,17 @@ def debug_data(session_id):
                 'attachment_classification': record.get('attachment_classification', 'N/A'),
                 'ml_risk_level': record.get('ml_risk_level', 'N/A')
             })
-        
+
         # Also show attachment keywords
         keywords_data = session_manager.get_attachment_keywords()
-        
+
         return jsonify({
             'debug_records': debug_info,
             'business_keywords': keywords_data.get('business_keywords', [])[:10],
             'personal_keywords': keywords_data.get('personal_keywords', [])[:10],
             'total_records': len(processed_data)
         })
-        
+
     except Exception as e:
         app.logger.error(f"Error getting debug data: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -788,7 +788,7 @@ def reprocess_rules(session_id):
         # Use the new reprocessing method that handles escalation correctly
         data_processor = DataProcessor()
         result = data_processor.reprocess_existing_session(session_id)
-        
+
         if result['success']:
             return jsonify({
                 'success': True,
@@ -799,7 +799,7 @@ def reprocess_rules(session_id):
             })
         else:
             return jsonify({'error': result['error']}), 500
-            
+
     except Exception as e:
         app.logger.error(f"Error reprocessing session {session_id}: {str(e)}")
         return jsonify({'error': f'Reprocessing failed: {str(e)}'}), 500
