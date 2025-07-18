@@ -727,43 +727,52 @@ class MLEngine:
 
                     # Check for business keywords
                     for keyword in self.business_keywords:
-                        if keyword in attachment:
+                        if keyword.lower() in attachment:
                             business_score += 1
+                            self.logger.info(f"Business keyword '{keyword}' found in attachment '{attachment}'")
                             break
 
                     # Check for personal keywords
                     for keyword in self.personal_keywords:
-                        if keyword in attachment:
+                        if keyword.lower() in attachment:
                             personal_score += 1
+                            self.logger.info(f"Personal keyword '{keyword}' found in attachment '{attachment}'")
                             break
 
                     # Check for suspicious keywords
                     for keyword in self.suspicious_keywords:
-                        if keyword in attachment:
+                        if keyword.lower() in attachment:
                             suspicious_score += 1
+                            self.logger.info(f"Suspicious keyword '{keyword}' found in attachment '{attachment}'")
                             break
 
                     # Check file extensions for business patterns
                     if any(ext in attachment for ext in ['.xlsx', '.pptx', '.docx', '.pdf']):
                         if any(word in attachment for word in ['report', 'proposal', 'contract', 'invoice']):
                             business_score += 0.5
+                            self.logger.info(f"Business file pattern detected in attachment '{attachment}'")
 
                     # Check file extensions for personal patterns
                     if any(ext in attachment for ext in ['.jpg', '.jpeg', '.png', '.mp4', '.mp3']):
                         if any(word in attachment for word in ['photo', 'pic', 'image', 'video']):
                             personal_score += 0.5
+                            self.logger.info(f"Personal file pattern detected in attachment '{attachment}'")
 
                 # Determine classification
+                classification_result = 'Unknown'
                 if suspicious_score > 0:
-                    classifications.append('Suspicious')
+                    classification_result = 'Suspicious'
                 elif business_score > personal_score:
-                    classifications.append('Business')
+                    classification_result = 'Business'
                 elif personal_score > business_score:
-                    classifications.append('Personal')
+                    classification_result = 'Personal'
                 elif business_score == personal_score and business_score > 0:
-                    classifications.append('Mixed')
+                    classification_result = 'Mixed'
                 else:
-                    classifications.append('Unknown')
+                    classification_result = 'Unknown'
+                
+                self.logger.info(f"Attachment classification for '{str(attachments)}': {classification_result} (business: {business_score}, personal: {personal_score}, suspicious: {suspicious_score})")
+                classifications.append(classification_result)
 
             self.logger.info(f"Classified {len(classifications)} attachment records")
             return classifications
