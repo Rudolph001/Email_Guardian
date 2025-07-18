@@ -158,6 +158,22 @@ h6 { font-size: 1.1rem; font-weight: 500; }
     margin-bottom: 0;
 }
 
+/* Clickable Cards */
+.clickable-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.clickable-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+a.text-decoration-none:hover .clickable-card h5,
+a.text-decoration-none:hover .clickable-card p {
+    color: inherit;
+}
+
 /* Buttons */
 .btn {
     border-radius: 6px;

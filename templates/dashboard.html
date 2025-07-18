@@ -57,21 +57,23 @@
     </div>
 
     <div class="col-md-3">
-        <div class="card stats-card">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="stats-icon bg-danger">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="ms-3">
-                        <h5 class="card-title mb-0">
-                            {{ (case_management_data|selectattr('ml_risk_level', 'equalto', 'Critical')|list|length) + (escalated_data|selectattr('ml_risk_level', 'equalto', 'Critical')|list|length) }}
-                        </h5>
-                        <p class="card-text text-muted">Critical Risk</p>
+        <a href="{{ url_for('case_management', session_id=session.session_id, risk_filter='Critical') }}" class="text-decoration-none">
+            <div class="card stats-card clickable-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h5 class="card-title mb-0">
+                                {{ (case_management_data|selectattr('ml_risk_level', 'equalto', 'Critical')|list|length) + (escalated_data|selectattr('ml_risk_level', 'equalto', 'Critical')|list|length) }}
+                            </h5>
+                            <p class="card-text text-muted">Critical Risk</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 
     <div class="col-md-3">
@@ -93,78 +95,86 @@
     </div>
 
     <div class="col-md-3">
-        <div class="card stats-card">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="stats-icon bg-success">
-                        <i class="fas fa-shield-alt"></i>
-                    </div>
-                    <div class="ms-3">
-                        <h5 class="card-title mb-0">
-                            {{ escalated_count }}
-                        </h5>
-                        <p class="card-text text-muted">Escalations</p>
+        <a href="{{ url_for('escalation_dashboard', session_id=session.session_id) }}" class="text-decoration-none">
+            <div class="card stats-card clickable-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-success">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h5 class="card-title mb-0">
+                                {{ escalated_count }}
+                            </h5>
+                            <p class="card-text text-muted">Escalations</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 
 <!-- Risk Level Breakdown -->
 <div class="row mb-4">
     <div class="col-md-4">
-        <div class="card stats-card">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="stats-icon bg-warning">
-                        <i class="fas fa-exclamation-triangle"></i>
-                    </div>
-                    <div class="ms-3">
-                        <h5 class="card-title mb-0">
-                            {{ (case_management_data|selectattr('ml_risk_level', 'equalto', 'High')|list|length) + (escalated_data|selectattr('ml_risk_level', 'equalto', 'High')|list|length) }}
-                        </h5>
-                        <p class="card-text text-muted">High Risk</p>
+        <a href="{{ url_for('case_management', session_id=session.session_id, risk_filter='High') }}" class="text-decoration-none">
+            <div class="card stats-card clickable-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h5 class="card-title mb-0">
+                                {{ (case_management_data|selectattr('ml_risk_level', 'equalto', 'High')|list|length) + (escalated_data|selectattr('ml_risk_level', 'equalto', 'High')|list|length) }}
+                            </h5>
+                            <p class="card-text text-muted">High Risk</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 
     <div class="col-md-4">
-        <div class="card stats-card">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="stats-icon bg-info">
-                        <i class="fas fa-info-circle"></i>
-                    </div>
-                    <div class="ms-3">
-                        <h5 class="card-title mb-0">
-                            {{ (case_management_data|selectattr('ml_risk_level', 'equalto', 'Medium')|list|length) + (escalated_data|selectattr('ml_risk_level', 'equalto', 'Medium')|list|length) }}
-                        </h5>
-                        <p class="card-text text-muted">Medium Risk</p>
+        <a href="{{ url_for('case_management', session_id=session.session_id, risk_filter='Medium') }}" class="text-decoration-none">
+            <div class="card stats-card clickable-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-info">
+                            <i class="fas fa-info-circle"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h5 class="card-title mb-0">
+                                {{ (case_management_data|selectattr('ml_risk_level', 'equalto', 'Medium')|list|length) + (escalated_data|selectattr('ml_risk_level', 'equalto', 'Medium')|list|length) }}
+                            </h5>
+                            <p class="card-text text-muted">Medium Risk</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 
     <div class="col-md-4">
-        <div class="card stats-card">
-            <div class="card-body">
-                <div class="d-flex align-items-center">
-                    <div class="stats-icon bg-secondary">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                    <div class="ms-3">
-                        <h5 class="card-title mb-0">
-                            {{ (case_management_data|selectattr('ml_risk_level', 'equalto', 'Low')|list|length) + (escalated_data|selectattr('ml_risk_level', 'equalto', 'Low')|list|length) }}
-                        </h5>
-                        <p class="card-text text-muted">Low Risk</p>
+        <a href="{{ url_for('case_management', session_id=session.session_id, risk_filter='Low') }}" class="text-decoration-none">
+            <div class="card stats-card clickable-card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-secondary">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h5 class="card-title mb-0">
+                                {{ (case_management_data|selectattr('ml_risk_level', 'equalto', 'Low')|list|length) + (escalated_data|selectattr('ml_risk_level', 'equalto', 'Low')|list|length) }}
+                            </h5>
+                            <p class="card-text text-muted">Low Risk</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 
