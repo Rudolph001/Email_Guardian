@@ -417,13 +417,24 @@ function addCondition() {
             <div class="col-md-4">
                 <select class="form-select" name="condition_field_${conditionCounter}" onchange="updateConditionValue(this, ${conditionCounter})">
                     <option value="">Select Field</option>
-                    <option value="leaver">Leaver Status</option>
-                    <option value="wordlist_subject">Subject Wordlist</option>
-                    <option value="wordlist_attachment">Attachment Wordlist</option>
-                    <option value="status">Email Status</option>
+                    <option value="_time">Time/Date</option>
                     <option value="sender">Sender Email</option>
                     <option value="subject">Subject Text</option>
+                    <option value="attachments">Attachments</option>
+                    <option value="recipients">Recipients</option>
                     <option value="recipients_email_domain">Recipient Domain</option>
+                    <option value="leaver">Leaver Status</option>
+                    <option value="Termination">Termination Date</option>
+                    <option value="time_month">Time Month</option>
+                    <option value="account_type">Account Type</option>
+                    <option value="wordlist_attachment">Attachment Wordlist</option>
+                    <option value="wordlist_subject">Subject Wordlist</option>
+                    <option value="bunit">Business Unit</option>
+                    <option value="department">Department</option>
+                    <option value="status">Email Status</option>
+                    <option value="user_response">User Response</option>
+                    <option value="final_outcome">Final Outcome</option>
+                    <option value="policy_name">Policy Name</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -450,44 +461,44 @@ function addCondition() {
 function updateConditionValue(selectElement, conditionId) {
     const fieldType = selectElement.value;
     const valueInput = document.getElementById(`condition_value_${conditionId}`);
-    const valuesDiv = document.getElementById(`condition_values_${conditionId}`);
-    const valuesList = document.getElementById(`condition_values_list_${conditionId}`);
 
-    // Clear previous values
-    valueInput.value = '';
-    valuesDiv.style.display = 'none';
-
-    if (fieldType === 'leaver') {
-        valueInput.placeholder = 'Yes or No';
-        valuesList.innerHTML = '<code>Yes</code>, <code>No</code> or multiple: <code>Yes, No</code>';
-        valuesDiv.style.display = 'block';
-    } else if (fieldType === 'wordlist_subject' || fieldType === 'wordlist_attachment') {
-        valueInput.placeholder = 'Yes or No';
-        valuesList.innerHTML = '<code>Yes</code>, <code>No</code> or multiple: <code>Yes, No</code>';
-        valuesDiv.style.display = 'block';
-    } else if (fieldType === 'status') {
-        valueInput.placeholder = 'Email status';
-        valuesList.innerHTML = '<code>Active</code>, <code>Blocked</code>, <code>Sent</code>, <code>Delivered</code> or multiple: <code>Active, Blocked</code>';
-        valuesDiv.style.display = 'block';
+    if (fieldType === '_time') {
+        valueInput.placeholder = 'Date/time (e.g., 2025-07-18 or 2025-07-18T12:00:00)';
     } else if (fieldType === 'sender') {
-        valueInput.placeholder = 'Email address or multiple addresses';
-        valuesList.innerHTML = 'Single: <code>user@domain.com</code> or multiple: <code>user1@domain.com, user2@domain.com</code>';
-        valuesDiv.style.display = 'block';
+        valueInput.placeholder = 'Email address (e.g., user@domain.com)';
     } else if (fieldType === 'subject') {
         valueInput.placeholder = 'Text to match in subject';
-        valuesList.innerHTML = 'Single: <code>confidential</code> or multiple: <code>confidential, secret, private</code>';
-        valuesDiv.style.display = 'block';
+    } else if (fieldType === 'attachments') {
+        valueInput.placeholder = 'Attachment name or type (e.g., .pdf, document.docx)';
+    } else if (fieldType === 'recipients') {
+        valueInput.placeholder = 'Recipient email address';
     } else if (fieldType === 'recipients_email_domain') {
-        valueInput.placeholder = 'Domain name or multiple domains';
-        valuesList.innerHTML = 'Single: <code>gmail.com</code> or multiple: <code>gmail.com, outlook.com, yahoo.com</code>';
-        valuesDiv.style.display = 'block';
+        valueInput.placeholder = 'Domain name (e.g., gmail.com)';
+    } else if (fieldType === 'leaver') {
+        valueInput.placeholder = 'YES or NO';
+    } else if (fieldType === 'Termination') {
+        valueInput.placeholder = 'Termination date (e.g., 2025-07)';
+    } else if (fieldType === 'time_month') {
+        valueInput.placeholder = 'Month in YYYY-MM format (e.g., 2025-07)';
+    } else if (fieldType === 'account_type') {
+        valueInput.placeholder = 'Account type (e.g., employee, contractor)';
+    } else if (fieldType === 'wordlist_attachment' || fieldType === 'wordlist_subject') {
+        valueInput.placeholder = 'Wordlist match value';
+    } else if (fieldType === 'bunit') {
+        valueInput.placeholder = 'Business unit (e.g., HR, IT, Finance)';
+    } else if (fieldType === 'department') {
+        valueInput.placeholder = 'Department name (e.g., Recruitment, Sales)';
+    } else if (fieldType === 'status') {
+        valueInput.placeholder = 'Email status (e.g., Active, Critical, Blocked)';
+    } else if (fieldType === 'user_response') {
+        valueInput.placeholder = 'User response value';
+    } else if (fieldType === 'final_outcome') {
+        valueInput.placeholder = 'Final outcome value';
+    } else if (fieldType === 'policy_name') {
+        valueInput.placeholder = 'Policy name (e.g., policy_A, policy_B)';
     } else {
         valueInput.placeholder = 'Value';
-        valuesDiv.style.display = 'none';
     }
-
-    // Update operator-specific help
-    updateConditionOperatorHelp(conditionId);
 }
 
 function updateConditionOperator(selectElement, conditionId) {
@@ -792,13 +803,24 @@ function addEditCondition() {
             <div class="col-md-4">
                 <select class="form-select" name="edit_condition_field_${editConditionCounter}" onchange="updateEditConditionValue(this, ${editConditionCounter})">
                     <option value="">Select Field</option>
-                    <option value="leaver">Leaver Status</option>
-                    <option value="wordlist_subject">Subject Wordlist</option>
-                    <option value="wordlist_attachment">Attachment Wordlist</option>
-                    <option value="status">Email Status</option>
+                    <option value="_time">Time/Date</option>
                     <option value="sender">Sender Email</option>
                     <option value="subject">Subject Text</option>
+                    <option value="attachments">Attachments</option>
+                    <option value="recipients">Recipients</option>
                     <option value="recipients_email_domain">Recipient Domain</option>
+                    <option value="leaver">Leaver Status</option>
+                    <option value="Termination">Termination Date</option>
+                    <option value="time_month">Time Month</option>
+                    <option value="account_type">Account Type</option>
+                    <option value="wordlist_attachment">Attachment Wordlist</option>
+                    <option value="wordlist_subject">Subject Wordlist</option>
+                    <option value="bunit">Business Unit</option>
+                    <option value="department">Department</option>
+                    <option value="status">Email Status</option>
+                    <option value="user_response">User Response</option>
+                    <option value="final_outcome">Final Outcome</option>
+                    <option value="policy_name">Policy Name</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -876,18 +898,40 @@ function updateEditConditionValue(selectElement, conditionId) {
     const fieldType = selectElement.value;
     const valueInput = document.getElementById(`edit_condition_value_${conditionId}`);
 
-    if (fieldType === 'leaver') {
-        valueInput.placeholder = 'YES or NO';
-    } else if (fieldType === 'wordlist_subject' || fieldType === 'wordlist_attachment') {
-        valueInput.placeholder = 'YES or NO';
-    } else if (fieldType === 'status') {
-        valueInput.placeholder = 'Active, Blocked, Sent, Delivered';
+    if (fieldType === '_time') {
+        valueInput.placeholder = 'Date/time (e.g., 2025-07-18 or 2025-07-18T12:00:00)';
     } else if (fieldType === 'sender') {
-        valueInput.placeholder = 'Email address';
+        valueInput.placeholder = 'Email address (e.g., user@domain.com)';
     } else if (fieldType === 'subject') {
         valueInput.placeholder = 'Text to match in subject';
+    } else if (fieldType === 'attachments') {
+        valueInput.placeholder = 'Attachment name or type (e.g., .pdf, document.docx)';
+    } else if (fieldType === 'recipients') {
+        valueInput.placeholder = 'Recipient email address';
     } else if (fieldType === 'recipients_email_domain') {
         valueInput.placeholder = 'Domain name (e.g., gmail.com)';
+    } else if (fieldType === 'leaver') {
+        valueInput.placeholder = 'YES or NO';
+    } else if (fieldType === 'Termination') {
+        valueInput.placeholder = 'Termination date (e.g., 2025-07)';
+    } else if (fieldType === 'time_month') {
+        valueInput.placeholder = 'Month in YYYY-MM format (e.g., 2025-07)';
+    } else if (fieldType === 'account_type') {
+        valueInput.placeholder = 'Account type (e.g., employee, contractor)';
+    } else if (fieldType === 'wordlist_attachment' || fieldType === 'wordlist_subject') {
+        valueInput.placeholder = 'Wordlist match value';
+    } else if (fieldType === 'bunit') {
+        valueInput.placeholder = 'Business unit (e.g., HR, IT, Finance)';
+    } else if (fieldType === 'department') {
+        valueInput.placeholder = 'Department name (e.g., Recruitment, Sales)';
+    } else if (fieldType === 'status') {
+        valueInput.placeholder = 'Email status (e.g., Active, Critical, Blocked)';
+    } else if (fieldType === 'user_response') {
+        valueInput.placeholder = 'User response value';
+    } else if (fieldType === 'final_outcome') {
+        valueInput.placeholder = 'Final outcome value';
+    } else if (fieldType === 'policy_name') {
+        valueInput.placeholder = 'Policy name (e.g., policy_A, policy_B)';
     } else {
         valueInput.placeholder = 'Value';
     }
