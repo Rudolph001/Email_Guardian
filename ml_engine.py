@@ -68,37 +68,37 @@ class MLEngine:
             # For large datasets, process in batches
             batch_size = 1000
             total_rows = len(df)
-            
+
             if total_rows > batch_size:
                 self.logger.info(f"Processing large dataset ({total_rows} records) in batches of {batch_size}")
-                
+
                 all_anomaly_scores = []
                 all_risk_levels = []
                 all_clusters = []
                 all_attachment_classifications = []
-                
+
                 for i in range(0, total_rows, batch_size):
                     batch_df = df.iloc[i:i+batch_size].copy()
                     self.logger.info(f"Processing batch {i//batch_size + 1}/{(total_rows + batch_size - 1)//batch_size}")
-                    
+
                     # Process batch
                     batch_results = self._process_batch(batch_df)
-                    
+
                     all_anomaly_scores.extend(batch_results['anomaly_scores'])
                     all_risk_levels.extend(batch_results['risk_levels'])
                     all_clusters.extend(batch_results['clusters'])
                     all_attachment_classifications.extend(batch_results['attachment_classifications'])
-                
+
                 results['anomaly_scores'] = all_anomaly_scores
                 results['risk_levels'] = all_risk_levels
                 results['clusters'] = all_clusters
                 results['attachment_classifications'] = all_attachment_classifications
-                
+
                 # Process patterns and insights on full dataset but with sampling
                 sampled_df = df.sample(n=min(2000, len(df)), random_state=42)
                 results['interesting_patterns'] = self._discover_patterns(sampled_df)
                 results['insights'] = self._generate_insights(sampled_df, all_anomaly_scores[:len(sampled_df)], all_risk_levels[:len(sampled_df)], results['interesting_patterns'])
-                
+
                 return results
 
             # Prepare features for ML analysis (small dataset)
@@ -531,14 +531,14 @@ class MLEngine:
             for index, row in df.iterrows():
                 sender = row.get('sender', '')
                 recipient_domain = row.get('recipients_email_domain', '')
-                
+
                 # Extract sender domain
                 sender_domain = sender.split('@')[-1] if '@' in sender else sender
-                
+
                 # Count volumes
                 sender_volumes[sender] = sender_volumes.get(sender, 0) + 1
                 recipient_volumes[recipient_domain] = recipient_volumes.get(recipient_domain, 0) + 1
-                
+
                 # Track domain pairs
                 pair_key = f"{sender_domain} -> {recipient_domain}"
                 if pair_key not in domain_pairs:
@@ -549,14 +549,14 @@ class MLEngine:
                         'has_attachments': 0,
                         'business_keywords': 0
                     }
-                
+
                 domain_pairs[pair_key]['count'] += 1
                 domain_pairs[pair_key]['senders'].add(sender)
                 domain_pairs[pair_key]['subjects'].add(row.get('subject', ''))
-                
+
                 if row.get('has_attachments'):
                     domain_pairs[pair_key]['has_attachments'] += 1
-                
+
                 # Check for business keywords in subject
                 subject = str(row.get('subject', '')).lower()
                 if any(keyword in subject for keyword in ['report', 'invoice', 'contract', 'meeting', 'proposal']):
@@ -567,7 +567,7 @@ class MLEngine:
             for pair_key, data in domain_pairs.items():
                 if data['count'] >= bau_threshold:
                     bau_score = self._calculate_bau_score(data)
-                    
+
                     bau_analysis['high_volume_pairs'].append({
                         'pair': pair_key,
                         'volume': data['count'],
@@ -595,7 +595,7 @@ class MLEngine:
             # Calculate BAU statistics
             total_emails = len(df)
             high_volume_emails = sum(pair['volume'] for pair in bau_analysis['high_volume_pairs'])
-            
+
             bau_analysis['bau_stats'] = {
                 'total_emails': total_emails,
                 'high_volume_emails': high_volume_emails,
@@ -625,27 +625,27 @@ class MLEngine:
     def _calculate_bau_score(self, data):
         """Calculate BAU likelihood score (0-100)"""
         score = 0
-        
+
         # Volume factor (0-30 points)
         volume_score = min(30, data['count'] * 2)
         score += volume_score
-        
+
         # Sender diversity (0-20 points) - multiple senders indicate business process
         sender_diversity = min(20, len(data['senders']) * 4)
         score += sender_diversity
-        
+
         # Subject diversity (0-20 points) - varied subjects indicate legitimate business
         subject_diversity = min(20, len(data['subjects']) * 2)
         score += subject_diversity
-        
+
         # Attachment ratio (0-15 points) - business emails often have attachments
         attachment_score = data['has_attachments'] / data['count'] * 15
         score += attachment_score
-        
+
         # Business keyword ratio (0-15 points)
         business_score = data['business_keywords'] / data['count'] * 15
         score += business_score
-        
+
         return min(100, score)
 
     def _get_bau_likelihood(self, score):
@@ -935,7 +935,7 @@ class MLEngine:
                 # Parse multiple attachments (comma-separated)
                 attachment_str = str(attachments).strip()
                 attachment_list = [att.strip() for att in attachment_str.split(',') if att.strip()]
-                
+
                 self.logger.info(f"Processing attachment list: {attachment_list}")
 
                 business_score = 0
@@ -1013,26 +1013,26 @@ class MLEngine:
         try:
             # Prepare features for this batch
             features = self._prepare_features(batch_df)
-            
+
             # Anomaly detection
             anomaly_scores = self._detect_anomalies(features)
-            
+
             # Risk level classification
             risk_levels = self._classify_risk_levels(batch_df, anomaly_scores)
-            
+
             # Clustering
             clusters = self._perform_clustering(features)
-            
+
             # Attachment classification
             attachment_classifications = self._classify_attachments(batch_df)
-            
+
             return {
                 'anomaly_scores': anomaly_scores.tolist() if hasattr(anomaly_scores, 'tolist') else list(anomaly_scores),
                 'risk_levels': risk_levels,
                 'clusters': clusters.tolist() if hasattr(clusters, 'tolist') else list(clusters),
                 'attachment_classifications': attachment_classifications
             }
-            
+
         except Exception as e:
             self.logger.error(f"Error processing batch: {str(e)}")
             batch_size = len(batch_df)

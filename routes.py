@@ -18,55 +18,55 @@ def reprocess_all_sessions():
     try:
         session_manager = SessionManager()
         all_sessions = session_manager.get_all_sessions()
-        
+
         if not all_sessions:
             return {'success': True, 'sessions_count': 0}
-        
+
         reprocessed_count = 0
         failed_sessions = []
-        
+
         for session in all_sessions:
             session_id = session.get('session_id')
             if not session_id:
                 continue
-                
+
             try:
                 # Get original file path
                 original_filename = session.get('filename', '')
                 if not original_filename:
                     continue
-                
+
                 # Find the original uploaded file
                 upload_folder = app.config.get('UPLOAD_FOLDER', 'uploads')
                 if not os.path.exists(upload_folder):
                     os.makedirs(upload_folder)
                 original_file_path = None
-                
+
                 # Try to find the original file
                 for filename in os.listdir(upload_folder):
                     if filename.startswith(session_id) and filename.endswith('.csv'):
                         original_file_path = os.path.join(upload_folder, filename)
                         break
-                
+
                 if not original_file_path or not os.path.exists(original_file_path):
                     app.logger.warning(f"Original file not found for session {session_id}")
                     continue
-                
+
                 # Reprocess the session
                 processor = DataProcessor()
                 result = processor.process_csv(original_file_path, session_id, original_filename)
-                
+
                 if result['success']:
                     reprocessed_count += 1
                     app.logger.info(f"Successfully reprocessed session {session_id}")
                 else:
                     failed_sessions.append(session_id)
                     app.logger.error(f"Failed to reprocess session {session_id}: {result.get('error', 'Unknown error')}")
-                    
+
             except Exception as e:
                 failed_sessions.append(session_id)
                 app.logger.error(f"Error reprocessing session {session_id}: {str(e)}")
-        
+
         if failed_sessions:
             return {
                 'success': False,
@@ -75,7 +75,7 @@ def reprocess_all_sessions():
             }
         else:
             return {'success': True, 'sessions_count': reprocessed_count}
-            
+
     except Exception as e:
         app.logger.error(f"Error in reprocess_all_sessions: {str(e)}")
         return {'success': False, 'sessions_count': 0, 'error': str(e)}
@@ -139,21 +139,23 @@ def dashboard(session_id):
         flash('Session not found', 'error')
         return redirect(url_for('index'))
 
-    # Get processed data and separate by dashboard type
+    # Get processed data with None safety
     all_processed_data = session_manager.get_processed_data(session_id)
-    app.logger.info(f"Retrieved {len(all_processed_data) if all_processed_data else 0} processed records for session {session_id}")
+    if all_processed_data is None:
+        all_processed_data = []
+    app.logger.info(f"Retrieved {len(all_processed_data)} processed records for session {session_id}")
 
     # Separate data based on manual escalation status
     escalated_data = []
     case_management_data = []
-    session_cases = session_data.get('cases', {})
+    session_cases = session_data.get('cases', {}) if session_data else {}
 
     if all_processed_data:
         for i, record in enumerate(all_processed_data):
             # Skip None records
             if record is None:
                 continue
-                
+
             # Check if this specific record was manually escalated
             record_id = record.get('record_id', i)
             case_info = session_cases.get(str(record_id), {})
@@ -241,7 +243,7 @@ def case_management(session_id):
             # Skip None records
             if d is None:
                 continue
-                
+
             # Check if this specific record was manually escalated
             record_id = d.get('record_id', i)
             case_info = session_cases.get(str(record_id), {})
@@ -255,13 +257,13 @@ def case_management(session_id):
                 # Ensure record has an ID for actions
                 if 'record_id' not in d:
                     d['record_id'] = str(i)
-                
+
                 # Set status for display if it exists in session cases
                 if case_status:
                     d['status'] = case_status.title()
                 elif 'status' not in d:
                     d['status'] = 'Active'
-                
+
                 non_escalated_data.append(d)
 
     processed_data = non_escalated_data
@@ -271,7 +273,7 @@ def case_management(session_id):
     rule_filter = request.args.get('rule_filter', 'all')
     status_filter = request.args.get('status_filter', 'all')
     search_query = request.args.get('search', '')
-    
+
     # Advanced filters
     sender_filter = request.args.get('sender_filter', '')
     recipient_filter = request.args.get('recipient_filter', '')
@@ -305,17 +307,17 @@ def case_management(session_id):
     # Apply advanced filters
     if sender_filter:
         filtered_data = [d for d in filtered_data if sender_filter.lower() in d.get('sender', '').lower()]
-    
+
     if recipient_filter:
         filtered_data = [d for d in filtered_data if recipient_filter.lower() in d.get('recipient', '').lower()]
-    
+
     if domain_filter:
         filtered_data = [d for d in filtered_data if domain_filter.lower() in d.get('sender', '').lower() or 
                         domain_filter.lower() in d.get('recipient', '').lower()]
-    
+
     if subject_filter:
         filtered_data = [d for d in filtered_data if subject_filter.lower() in d.get('subject', '').lower()]
-    
+
     if attachment_filter != 'all':
         if attachment_filter == 'has_attachments':
             filtered_data = [d for d in filtered_data if d.get('has_attachments', False)]
@@ -323,21 +325,21 @@ def case_management(session_id):
             filtered_data = [d for d in filtered_data if not d.get('has_attachments', False)]
         else:
             filtered_data = [d for d in filtered_data if d.get('attachment_classification', '').lower() == attachment_filter.lower()]
-    
+
     if ml_score_min:
         try:
             min_score = float(ml_score_min)
             filtered_data = [d for d in filtered_data if d.get('ml_anomaly_score', 0) >= min_score]
         except ValueError:
             pass
-    
+
     if ml_score_max:
         try:
             max_score = float(ml_score_max)
             filtered_data = [d for d in filtered_data if d.get('ml_anomaly_score', 0) <= max_score]
         except ValueError:
             pass
-    
+
     if date_from or date_to:
         from datetime import datetime
         filtered_data_by_date = []
@@ -350,26 +352,26 @@ def case_management(session_id):
                         email_dt = datetime.fromisoformat(email_date.replace('Z', '+00:00'))
                     else:
                         email_dt = datetime.strptime(email_date[:19], '%Y-%m-%d %H:%M:%S')
-                    
+
                     email_date_only = email_dt.date()
-                    
+
                     include = True
                     if date_from:
                         from_date = datetime.strptime(date_from, '%Y-%m-%d').date()
                         if email_date_only < from_date:
                             include = False
-                    
+
                     if date_to and include:
                         to_date = datetime.strptime(date_to, '%Y-%m-%d').date()
                         if email_date_only > to_date:
                             include = False
-                    
+
                     if include:
                         filtered_data_by_date.append(d)
                 except (ValueError, TypeError):
                     continue
         filtered_data = filtered_data_by_date
-    
+
     if time_from or time_to:
         from datetime import datetime
         filtered_data_by_time = []
@@ -382,26 +384,26 @@ def case_management(session_id):
                         time_part = email_time.split('T')[1][:8]  # HH:MM:SS
                     else:
                         time_part = email_time.split(' ')[1][:8] if ' ' in email_time else '00:00:00'
-                    
+
                     email_time_obj = datetime.strptime(time_part, '%H:%M:%S').time()
-                    
+
                     include = True
                     if time_from:
                         from_time = datetime.strptime(time_from, '%H:%M').time()
                         if email_time_obj < from_time:
                             include = False
-                    
+
                     if time_to and include:
                         to_time = datetime.strptime(time_to, '%H:%M').time()
                         if email_time_obj > to_time:
                             include = False
-                    
+
                     if include:
                         filtered_data_by_time.append(d)
                 except (ValueError, TypeError):
                     continue
         filtered_data = filtered_data_by_time
-    
+
     if size_filter != 'all':
         # Note: Email size filtering would require size information in the data
         # For now, we'll filter based on attachment presence as a proxy
@@ -409,7 +411,7 @@ def case_management(session_id):
             filtered_data = [d for d in filtered_data if d.get('has_attachments', False)]
         elif size_filter == 'small':
             filtered_data = [d for d in filtered_data if not d.get('has_attachments', False)]
-    
+
     if has_links != 'all':
         # Check if email contains links (look for http/https in subject or content)
         if has_links == 'yes':
@@ -434,12 +436,12 @@ def case_management(session_id):
     start_idx = (page - 1) * per_page
     end_idx = start_idx + per_page
     paginated_data = filtered_data[start_idx:end_idx]
-    
+
     # Calculate pagination info
     total_pages = (total_filtered + per_page - 1) // per_page
     has_prev = page > 1
     has_next = page < total_pages
-    
+
     # Get unique values for filter dropdowns (exclude 'Escalated' since those cases are in escalation dashboard)
     risk_levels = list(set(d.get('ml_risk_level', 'Unknown') for d in processed_data if processed_data))
     statuses = list(set(d.get('status', 'Active') for d in processed_data if processed_data and d.get('status', 'Active').lower() != 'escalated'))
@@ -501,7 +503,7 @@ def escalation_dashboard(session_id):
             # Skip None records
             if d is None:
                 continue
-                
+
             # Check if this specific record was manually escalated
             record_id = d.get('record_id', i)
             case_info = session_cases.get(str(record_id), {})
@@ -630,11 +632,11 @@ def generate_ml_explanations(case_data):
     # Risk Level Analysis
     risk_level = case_data.get('ml_risk_level', 'Unknown')
     anomaly_score = case_data.get('ml_anomaly_score', 0)
-    
+
     # Handle null anomaly scores
     if anomaly_score is None:
         anomaly_score = 0
-    
+
     try:
         anomaly_score = float(anomaly_score)
     except (ValueError, TypeError):
@@ -737,17 +739,18 @@ def update_case_status(session_id, record_id):
         # Check various possible record ID formats
         if (record.get('record_id') == record_id or 
             str(record.get('record_id')) == record_id or
+```python
             str(i) == record_id):
             record['status'] = new_status
             record['notes'] = notes
             record['updated_at'] = datetime.now().isoformat()
             updated = True
-            
+
             # Also update in session cases data for proper tracking
             if new_status.lower() == 'escalate':
                 session_manager.update_case_status(session_id, i, 'escalate')
                 app.logger.info(f"Case {record_id} escalated in session {session_id}")
-            
+
             break
 
     if updated:
@@ -774,16 +777,16 @@ def escalate_case(session_id, record_id):
         if (record.get('record_id') == record_id or 
             str(record.get('record_id')) == record_id or
             str(i) == record_id):
-            
+
             # Update the session case status
             result = session_manager.update_case_status(session_id, i, 'escalate')
-            
+
             if result['success']:
                 # Also update the record itself
                 record['status'] = 'Escalated'
                 record['updated_at'] = datetime.now().isoformat()
                 session_manager.update_processed_data(session_id, processed_data)
-                
+
                 app.logger.info(f"Successfully escalated case {record_id} (index {i}) in session {session_id}")
                 return jsonify({
                     'success': True, 
@@ -902,7 +905,7 @@ def create_rule():
         if result['success']:
             # Automatically reprocess all existing sessions with the new rule
             reprocess_result = reprocess_all_sessions()
-            
+
             if reprocess_result['success']:
                 flash(f'Rule created successfully! Reprocessed {reprocess_result["sessions_count"]} sessions with new rule.', 'success')
             else:
@@ -934,7 +937,7 @@ def update_rule(rule_id):
         if result['success']:
             # Automatically reprocess all existing sessions with the updated rule
             reprocess_result = reprocess_all_sessions()
-            
+
             if reprocess_result['success']:
                 flash(f'Rule updated successfully! Reprocessed {reprocess_result["sessions_count"]} sessions with updated rule.', 'success')
             else:
@@ -977,7 +980,7 @@ def case_action(session_id, record_id):
                 draft_email = session_manager.generate_draft_email(session_id, record_id)
                 # In a real implementation, this would integrate with Outlook
                 flash(f'Draft email prepared for escalation', 'info')
-                
+
                 # Log escalation for debugging
                 app.logger.info(f"Escalated case {record_id} in session {session_id}")
         else:
@@ -997,7 +1000,7 @@ def update_whitelist():
     if result['success']:
         # Automatically reprocess all existing sessions with the new whitelist
         reprocess_result = reprocess_all_sessions()
-        
+
         if reprocess_result['success']:
             flash(f'Whitelist updated successfully! Reprocessed {reprocess_result["sessions_count"]} sessions with new whitelist.', 'success')
         else:
@@ -1012,15 +1015,15 @@ def manual_reprocess_sessions():
     """Manual endpoint to reprocess all sessions"""
     try:
         reprocess_result = reprocess_all_sessions()
-        
+
         if reprocess_result['success']:
             flash(f'Successfully reprocessed {reprocess_result["sessions_count"]} sessions with current whitelist and rules.', 'success')
         else:
             flash(f'Some sessions failed to reprocess: {reprocess_result["error"]}', 'error')
-            
+
     except Exception as e:
         flash(f'Error reprocessing sessions: {str(e)}', 'error')
-    
+
     return redirect(url_for('admin'))
 
 @app.route('/analytics/whitelist/<session_id>')
@@ -1031,11 +1034,11 @@ def whitelist_analysis(session_id):
     if not session_data:
         flash('Session not found', 'error')
         return redirect(url_for('index'))
-    
+
     # Get whitelist data
     whitelists = session_manager.get_whitelists()
     all_processed_data = session_manager.get_processed_data(session_id)
-    
+
     # Calculate whitelist impact
     whitelist_stats = {
         'total_whitelisted_domains': len(whitelists.get('domains', [])),
@@ -1043,7 +1046,7 @@ def whitelist_analysis(session_id):
         'analyzed_emails': len(all_processed_data) if all_processed_data else 0,
         'domains': whitelists.get('domains', [])
     }
-    
+
     return render_template('whitelist_analysis.html', 
                          session=session_data, 
                          whitelist_stats=whitelist_stats)
@@ -1056,9 +1059,9 @@ def time_analysis(session_id):
     if not session_data:
         flash('Session not found', 'error')
         return redirect(url_for('index'))
-    
+
     all_processed_data = session_manager.get_processed_data(session_id)
-    
+
     return render_template('time_analysis.html', 
                          session=session_data, 
                          processed_data=all_processed_data)
@@ -1071,9 +1074,9 @@ def sender_analysis(session_id):
     if not session_data:
         flash('Session not found', 'error')
         return redirect(url_for('index'))
-    
+
     all_processed_data = session_manager.get_processed_data(session_id)
-    
+
     return render_template('sender_analysis.html', 
                          session=session_data, 
                          processed_data=all_processed_data)
@@ -1219,7 +1222,7 @@ def whitelist_bau_domains(session_id):
     """API endpoint to whitelist BAU domain pairs"""
     try:
         domain_pairs = request.json.get('domain_pairs', [])
-        
+
         if not domain_pairs:
             return jsonify({'error': 'No domain pairs provided'}), 400
 
@@ -1235,13 +1238,13 @@ def whitelist_bau_domains(session_id):
         session_manager = SessionManager()
         current_whitelist = session_manager.get_whitelists()
         existing_domains = set(current_whitelist.get('domains', []))
-        
+
         # Add new domains
         new_domains = set(recipient_domains)
         updated_domains = list(existing_domains.union(new_domains))
-        
+
         result = session_manager.update_whitelist(updated_domains)
-        
+
         if result['success']:
             return jsonify({
                 'success': True,

@@ -422,17 +422,23 @@ class DataProcessor:
     def _merge_ml_results(self, processed_data: List[Dict], ml_results: Dict) -> List[Dict]:
         """Merge ML analysis results with processed data"""
         try:
+            # Ensure processed_data is not None and filter None entries
+            if processed_data is None:
+                processed_data = []
+            processed_data = [record for record in processed_data if record is not None]
+            
             # Safely get ML results with proper type checking and handle all possible types
-            anomaly_scores = ml_results.get('anomaly_scores', [])
-            risk_levels = ml_results.get('risk_levels', [])
-            clusters = ml_results.get('clusters', [])
-            attachment_classifications = ml_results.get('attachment_classifications', [])
+            anomaly_scores = ml_results.get('anomaly_scores', []) if ml_results else []
+            risk_levels = ml_results.get('risk_levels', []) if ml_results else []
+            clusters = ml_results.get('clusters', []) if ml_results else []
+            attachment_classifications = ml_results.get('attachment_classifications', []) if ml_results else []
 
             # Debug logging for attachment data
             self.logger.info(f"Debug: Processing {len(processed_data)} records for ML merge")
-            for i, record in enumerate(processed_data[:3]):  # Show first 3 records
-                attachments = record.get('attachments', '')
-                self.logger.info(f"Debug: Record {i} - attachments field: '{attachments}' (type: {type(attachments)})")
+            for i, record in enumerate(processed_data[:3] if len(processed_data) >= 3 else processed_data):  # Show first 3 records safely
+                if record is not None:
+                    attachments = record.get('attachments', '')
+                    self.logger.info(f"Debug: Record {i} - attachments field: '{attachments}' (type: {type(attachments)})")
 
             # Ensure we have lists, not other types (including bool, dict, str, etc.)
             if not isinstance(anomaly_scores, (list, tuple)):

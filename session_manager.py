@@ -162,7 +162,17 @@ class SessionManager:
 
             if session_data and 'processed_data' in session_data:
                 processed_data = session_data['processed_data']
-                self.logger.info(f"Found {len(processed_data)} processed records in session {session_id}")
+                # Filter out None values and ensure we have a valid list
+                if processed_data is None:
+                    processed_data = []
+                elif not isinstance(processed_data, list):
+                    self.logger.warning(f"processed_data is not a list, got {type(processed_data)}")
+                    processed_data = []
+                else:
+                    # Filter out None entries
+                    processed_data = [record for record in processed_data if record is not None]
+                
+                self.logger.info(f"Found {len(processed_data)} valid processed records in session {session_id}")
                 return processed_data
             else:
                 self.logger.warning(f"No processed_data found in session {session_id}")
