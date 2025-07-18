@@ -11,6 +11,11 @@ Upload limit preference: High capacity (500MB) for large email data files.
 
 ## Recent Changes
 
+- **UI Enhancements** (July 18, 2025): 
+  - Removed Email Records section from Session Dashboard for cleaner interface
+  - Added ML Score column to Case Management table
+  - Added whitelisted email count display in Session Dashboard
+  - Implemented high anomaly detection indicators across all dashboards
 - **Migration to Replit Environment** (July 18, 2025): Successfully migrated project from Replit Agent to standard Replit environment
 - **Upload Limit Increase** (July 18, 2025): Increased file upload limit from 16MB to 500MB to handle large email datasets
 - **Security Configuration** (July 18, 2025): Implemented proper client/server separation with robust security practices

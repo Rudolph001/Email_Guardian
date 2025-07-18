@@ -46,6 +46,10 @@
                     <div class="ms-3">
                         <h5 class="card-title mb-0">{{ processed_data|length }}</h5>
                         <p class="card-text text-muted">Total Emails</p>
+                        <small class="text-muted">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            {{ session.filtered_records or 0 }} whitelisted
+                        </small>
                     </div>
                 </div>
             </div>

@@ -158,6 +158,11 @@
                             <span class="badge bg-secondary">
                                 {{ "%.2f"|format(case.get('ml_anomaly_score', 0)) }}
                             </span>
+                            {% if case.get('ml_anomaly_score', 0) > 0.7 %}
+                                <br><small class="text-danger">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>High Anomaly
+                                </small>
+                            {% endif %}
                         </td>
                         <td>
                             {% if case.get('rule_results', {}).get('matched_rules') %}
@@ -360,7 +365,12 @@ function renderCaseDetails(caseData) {
                             </tr>
                             <tr>
                                 <td><strong>Anomaly Score:</strong></td>
-                                <td>${caseData.ml_anomaly_score || 'N/A'}</td>
+                                <td>
+                                    ${caseData.ml_anomaly_score || 'N/A'}
+                                    ${caseData.ml_anomaly_score > 0.7 ? 
+                                        '<br><small class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>High Anomaly Detected</small>' : 
+                                        ''}
+                                </td>
                             </tr>
                             <tr>
                                 <td><strong>ML Cluster:</strong></td>

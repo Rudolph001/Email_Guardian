@@ -245,6 +245,11 @@
                             {% else %}
                             <span class="badge bg-secondary">{{ risk_level }}</span>
                             {% endif %}
+                            {% if escalation.get('ml_anomaly_score', 0) > 0.7 %}
+                                <br><small class="text-danger">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>High Anomaly
+                                </small>
+                            {% endif %}
                         </td>
                         <td>
                             {% if escalation.get('rule_results', {}).get('matched_rules') %}
