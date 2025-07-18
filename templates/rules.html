@@ -135,12 +135,12 @@
                                     <td>
                             <div class="d-flex gap-1">
                                 <button class="btn btn-outline-primary btn-sm" 
-                                        onclick="viewRule('{{ rule.id }}', '{{ rule.name }}', '{{ rule.description }}', {{ rule.conditions|tojson }}, {{ rule.actions|tojson }}, {{ rule.priority }})" 
+                                        onclick="viewRule({{ rule.id }}, {{ rule.name|tojson }}, {{ rule.description|tojson }}, {{ rule.conditions|tojson }}, {{ rule.actions|tojson }}, {{ rule.priority }})" 
                                         title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </button>
                                 <button class="btn btn-outline-warning btn-sm" 
-                                        onclick="editRule('{{ rule.id }}', '{{ rule.name }}', '{{ rule.description }}', {{ rule.conditions|tojson }}, {{ rule.actions|tojson }}, {{ rule.priority }}, {{ rule.active|tojson }})" 
+                                        onclick="editRule({{ rule.id }}, {{ rule.name|tojson }}, {{ rule.description|tojson }}, {{ rule.conditions|tojson }}, {{ rule.actions|tojson }}, {{ rule.priority }}, {{ rule.active|tojson }})" 
                                         title="Edit Rule">
                                     <i class="fas fa-edit"></i>
                                 </button>
