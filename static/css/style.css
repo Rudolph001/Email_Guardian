@@ -1,25 +1,26 @@
+
 /* Email Guardian - Professional Business Intelligence Interface */
-/* Colors: Primary #1f77b4, Secondary #ff7f0e, Background #fafafa, Text #262730, Cards #ffffff, Borders #e1e5e9 */
+/* Colors: Earthy Satin Palette - Sage Green Primary, Terracotta Secondary, Warm Cream Background */
 
 /* Import Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&family=Roboto:wght@300;400;500;700&display=swap');
 
-/* Root Variables */
+/* Root Variables - Earthy Satin Color Palette */
 :root {
-    --primary-color: #1f77b4;
-    --secondary-color: #ff7f0e;
-    --background-color: #fafafa;
-    --text-color: #262730;
-    --card-background: #ffffff;
-    --border-color: #e1e5e9;
-    --success-color: #28a745;
-    --warning-color: #ffc107;
-    --danger-color: #dc3545;
-    --info-color: #17a2b8;
-    --light-color: #f8f9fa;
-    --dark-color: #343a40;
-    --shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --primary-color: #7d8471;        /* Sage green - earthy and calming */
+    --secondary-color: #c07854;      /* Terracotta - warm earth tone */
+    --background-color: #f7f5f0;     /* Warm cream - soft background */
+    --text-color: #4a4539;           /* Dark earth brown - readable text */
+    --card-background: #fefcf7;      /* Off-white with warm undertone */
+    --border-color: #e3ddd0;         /* Soft taupe border */
+    --success-color: #6b8e5a;        /* Forest green - natural success */
+    --warning-color: #d4a574;        /* Golden amber - warm warning */
+    --danger-color: #b8705a;         /* Clay red - muted danger */
+    --info-color: #7a9bb8;           /* Dusty blue - calm info */
+    --light-color: #f2efe6;          /* Light beige */
+    --dark-color: #3d3a32;           /* Dark charcoal brown */
+    --shadow: 0 2px 4px rgba(77, 69, 57, 0.1);
+    --shadow-lg: 0 4px 6px rgba(77, 69, 57, 0.12);
 }
 
 /* Base Styles */
@@ -112,7 +113,7 @@ h6 { font-size: 1.1rem; font-weight: 500; }
 }
 
 .card-text {
-    color: #6c757d;
+    color: #8a7f6e;
     font-size: 0.9rem;
 }
 
@@ -154,7 +155,7 @@ h6 { font-size: 1.1rem; font-weight: 500; }
 
 .stats-card p {
     font-size: 0.9rem;
-    color: #6c757d;
+    color: #8a7f6e;
     margin-bottom: 0;
 }
 
@@ -166,7 +167,7 @@ h6 { font-size: 1.1rem; font-weight: 500; }
 
 .clickable-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 8px 20px rgba(77, 69, 57, 0.15);
 }
 
 a.text-decoration-none:hover .clickable-card h5,
@@ -190,14 +191,14 @@ a.text-decoration-none:hover .clickable-card p {
 }
 
 .btn-primary:hover {
-    background-color: #1864a0;
-    border-color: #1864a0;
+    background-color: #6b7360;
+    border-color: #6b7360;
     transform: translateY(-1px);
 }
 
 .btn-secondary {
-    background-color: #6c757d;
-    border-color: #6c757d;
+    background-color: #8a7f6e;
+    border-color: #8a7f6e;
 }
 
 .btn-success {
@@ -208,7 +209,7 @@ a.text-decoration-none:hover .clickable-card p {
 .btn-warning {
     background-color: var(--warning-color);
     border-color: var(--warning-color);
-    color: #212529;
+    color: #4a4539;
 }
 
 .btn-danger {
@@ -264,7 +265,7 @@ a.text-decoration-none:hover .clickable-card p {
 }
 
 .table-hover tbody tr:hover {
-    background-color: rgba(31, 119, 180, 0.05);
+    background-color: rgba(125, 132, 113, 0.05);
 }
 
 .table-responsive {
@@ -274,15 +275,15 @@ a.text-decoration-none:hover .clickable-card p {
 
 /* Table Row Colors */
 .table-danger {
-    background-color: rgba(220, 53, 69, 0.1);
+    background-color: rgba(184, 112, 90, 0.1);
 }
 
 .table-warning {
-    background-color: rgba(255, 193, 7, 0.1);
+    background-color: rgba(212, 165, 116, 0.1);
 }
 
 .table-secondary {
-    background-color: rgba(108, 117, 125, 0.1);
+    background-color: rgba(138, 127, 110, 0.1);
 }
 
 /* Badges */
@@ -298,7 +299,7 @@ a.text-decoration-none:hover .clickable-card p {
 }
 
 .badge.bg-secondary {
-    background-color: #6c757d !important;
+    background-color: #8a7f6e !important;
 }
 
 .badge.bg-success {
@@ -307,7 +308,7 @@ a.text-decoration-none:hover .clickable-card p {
 
 .badge.bg-warning {
     background-color: var(--warning-color) !important;
-    color: #212529 !important;
+    color: #4a4539 !important;
 }
 
 .badge.bg-danger {
@@ -325,11 +326,13 @@ a.text-decoration-none:hover .clickable-card p {
     padding: 0.5rem 0.75rem;
     font-size: 0.9rem;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    background-color: var(--card-background);
 }
 
 .form-control:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(31, 119, 180, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(125, 132, 113, 0.25);
+    background-color: var(--card-background);
 }
 
 .form-select {
@@ -337,11 +340,13 @@ a.text-decoration-none:hover .clickable-card p {
     border-radius: 6px;
     padding: 0.5rem 0.75rem;
     font-size: 0.9rem;
+    background-color: var(--card-background);
 }
 
 .form-select:focus {
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 0.2rem rgba(31, 119, 180, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(125, 132, 113, 0.25);
+    background-color: var(--card-background);
 }
 
 .form-label {
@@ -351,7 +356,7 @@ a.text-decoration-none:hover .clickable-card p {
 }
 
 .form-text {
-    color: #6c757d;
+    color: #8a7f6e;
     font-size: 0.8rem;
 }
 
@@ -369,30 +374,31 @@ a.text-decoration-none:hover .clickable-card p {
 }
 
 .alert-success {
-    background-color: rgba(40, 167, 69, 0.1);
-    color: #155724;
+    background-color: rgba(107, 142, 90, 0.1);
+    color: #3d5a2f;
 }
 
 .alert-warning {
-    background-color: rgba(255, 193, 7, 0.1);
-    color: #856404;
+    background-color: rgba(212, 165, 116, 0.1);
+    color: #8b6c39;
 }
 
 .alert-danger {
-    background-color: rgba(220, 53, 69, 0.1);
-    color: #721c24;
+    background-color: rgba(184, 112, 90, 0.1);
+    color: #7a453a;
 }
 
 .alert-info {
-    background-color: rgba(23, 162, 184, 0.1);
-    color: #0c5460;
+    background-color: rgba(122, 155, 184, 0.1);
+    color: #4a6278;
 }
 
 /* Modals */
 .modal-content {
     border-radius: 12px;
     border: none;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 10px 30px rgba(77, 69, 57, 0.2);
+    background-color: var(--card-background);
 }
 
 .modal-header {
@@ -442,13 +448,13 @@ a.text-decoration-none:hover .clickable-card p {
 }
 
 .footer .text-muted {
-    color: #6c757d !important;
+    color: #8a7f6e !important;
     font-size: 0.9rem;
 }
 
 /* Custom Utilities */
 .text-muted {
-    color: #6c757d !important;
+    color: #8a7f6e !important;
 }
 
 .bg-light {
@@ -541,22 +547,22 @@ a.text-decoration-none:hover .clickable-card p {
 .empty-state {
     text-align: center;
     padding: 3rem;
-    color: #6c757d;
+    color: #8a7f6e;
 }
 
 .empty-state i {
     font-size: 3rem;
     margin-bottom: 1rem;
-    color: #dee2e6;
+    color: #d0c8b8;
 }
 
 .empty-state h5 {
-    color: #6c757d;
+    color: #8a7f6e;
     margin-bottom: 1rem;
 }
 
 .empty-state p {
-    color: #6c757d;
+    color: #8a7f6e;
     margin-bottom: 2rem;
 }
 
@@ -573,7 +579,7 @@ code {
 /* Hover Effects */
 .card-hover:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(77, 69, 57, 0.15);
 }
 
 .btn-hover:hover {
@@ -585,7 +591,7 @@ code {
 .form-control:focus,
 .form-select:focus {
     outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(31, 119, 180, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(125, 132, 113, 0.25);
 }
 
 /* Accessibility */
@@ -644,13 +650,14 @@ code {
     position: absolute !important;
     z-index: 1060 !important;
     min-width: 180px;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 0.5rem 1rem rgba(77, 69, 57, 0.15) !important;
+    border: 1px solid rgba(77, 69, 57, 0.1) !important;
     right: 0 !important;
     left: auto !important;
     top: 100% !important;
     transform: none !important;
     margin-top: 0 !important;
+    background-color: var(--card-background) !important;
 }
 
 .table td {
