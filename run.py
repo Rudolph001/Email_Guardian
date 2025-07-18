@@ -1,176 +1,134 @@
-
 #!/usr/bin/env python3
 """
-Email Guardian - Run Script
-Starts the Email Guardian application locally.
+Email Guardian - Local Application Runner
+Run this script to start the Email Guardian application locally.
 """
 
-import os
 import sys
-import argparse
+import os
 import subprocess
-import webbrowser
 import time
-import threading
 
-def check_dependencies():
-    """Check if required dependencies are installed"""
-    required_modules = [
-        'flask', 'pandas', 'numpy', 'sklearn', 'sqlalchemy', 'werkzeug'
-    ]
-    
-    missing = []
-    for module in required_modules:
+def check_python_version():
+    """Check if Python version is compatible"""
+    version = sys.version_info
+    if version.major < 3 or (version.major == 3 and version.minor < 8):
+        print("❌ Python 3.8 or higher is required!")
+        print(f"Current version: {version.major}.{version.minor}.{version.micro}")
+        return False
+
+    print(f"✓ Python {version.major}.{version.minor}.{version.micro} detected")
+    return True
+
+def install_missing_module(module_name, package_name=None):
+    """Install a specific missing module"""
+    if package_name is None:
+        package_name = module_name
+
+    print(f"Installing {package_name}...")
+    try:
+        result = subprocess.run([
+            sys.executable, '-m', 'pip', 'install', package_name
+        ], check=True, capture_output=True, text=True)
+        print(f"✓ Successfully installed {package_name}")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to install {package_name}: {e}")
+        print(f"Error output: {e.stderr}")
+        return False
+
+def verify_and_install_modules():
+    """Verify that all required modules are available and install if missing"""
+    # Module mapping: import_name -> package_name
+    module_map = {
+        'flask': 'flask>=2.3.0',
+        'flask_sqlalchemy': 'flask-sqlalchemy>=3.0.0',
+        'flask_login': 'flask-login>=0.6.0',
+        'pandas': 'pandas>=2.0.0',
+        'numpy': 'numpy>=1.24.0',
+        'sklearn': 'scikit-learn>=1.3.0',
+        'sqlalchemy': 'sqlalchemy>=2.0.0',
+        'werkzeug': 'werkzeug>=2.3.0',
+        'email_validator': 'email-validator>=2.0.0'
+    }
+
+    all_available = True
+
+    for module_name, package_name in module_map.items():
         try:
-            __import__(module)
+            __import__(module_name)
+            print(f"✓ {module_name} available")
         except ImportError:
-            missing.append(module)
-    
-    if missing:
-        print("✗ Missing dependencies:")
-        for module in missing:
-            print(f"  - {module}")
-        print("\nRun 'python setup.py' to install dependencies")
-        return False
-    
-    print("✓ All dependencies are installed")
-    return True
+            print(f"❌ {module_name} missing - installing...")
+            if install_missing_module(module_name, package_name):
+                # Try importing again after installation
+                try:
+                    __import__(module_name)
+                    print(f"✓ {module_name} now available")
+                except ImportError:
+                    print(f"❌ {module_name} still not available after installation")
+                    all_available = False
+            else:
+                all_available = False
 
-def check_data_files():
-    """Check if data files exist"""
-    required_files = [
-        'data/sessions.json',
-        'data/whitelists.json', 
-        'data/attachment_keywords.json'
-    ]
-    
-    missing = []
-    for file_path in required_files:
-        if not os.path.exists(file_path):
-            missing.append(file_path)
-    
-    if missing:
-        print("✗ Missing data files:")
-        for file_path in missing:
-            print(f"  - {file_path}")
-        print("\nRun 'python setup.py' to initialize data files")
-        return False
-    
-    print("✓ All data files are present")
-    return True
+    return all_available
 
-def open_browser_delayed(url, delay=2):
-    """Open browser after a delay"""
-    time.sleep(delay)
+def start_application():
+    """Start the Email Guardian application"""
+    print("\n" + "="*50)
+    print("Starting Email Guardian Application...")
+    print("="*50)
+
     try:
-        webbrowser.open(url)
-        print(f"✓ Opened browser at {url}")
-    except Exception as e:
-        print(f"Could not open browser automatically: {e}")
-        print(f"Please open {url} manually")
+        # Add current directory to Python path to ensure local imports work
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        if current_dir not in sys.path:
+            sys.path.insert(0, current_dir)
 
-def run_development_server(host='127.0.0.1', port=5000, debug=True, open_browser=True):
-    """Run the Flask development server"""
-    print("\n" + "=" * 50)
-    print("    STARTING EMAIL GUARDIAN")
-    print("=" * 50)
-    print(f"Mode: {'Development' if debug else 'Production'}")
-    print(f"Host: {host}")
-    print(f"Port: {port}")
-    print(f"URL: http://{host}:{port}")
-    print("=" * 50)
-    
-    if open_browser:
-        # Start browser opening in background
-        browser_thread = threading.Thread(
-            target=open_browser_delayed, 
-            args=(f"http://{host}:{port}",)
-        )
-        browser_thread.daemon = True
-        browser_thread.start()
-    
-    # Set environment variables
-    os.environ['FLASK_APP'] = 'main.py'
-    os.environ['FLASK_ENV'] = 'development' if debug else 'production'
-    
-    try:
-        # Import and run the app
+        # Import and start the application
+        print("Loading application modules...")
         from app import app
-        app.run(host=host, port=port, debug=debug, use_reloader=debug)
-    except KeyboardInterrupt:
-        print("\n\n✓ Application stopped by user")
-    except Exception as e:
-        print(f"\n✗ Error starting application: {e}")
-        sys.exit(1)
+        print("✓ Application modules loaded successfully")
+        print("\n🚀 Starting server on http://localhost:5000")
+        print("Press Ctrl+C to stop the server")
+        print("-" * 50)
 
-def run_production_server(host='0.0.0.0', port=5000, workers=4):
-    """Run with Gunicorn for production"""
-    print("\n" + "=" * 50)
-    print("    STARTING EMAIL GUARDIAN (PRODUCTION)")
-    print("=" * 50)
-    print(f"Host: {host}")
-    print(f"Port: {port}")
-    print(f"Workers: {workers}")
-    print("=" * 50)
-    
-    try:
-        cmd = [
-            'gunicorn',
-            '--bind', f'{host}:{port}',
-            '--workers', str(workers),
-            '--worker-class', 'sync',
-            '--timeout', '120',
-            '--keep-alive', '2',
-            '--max-requests', '1000',
-            '--max-requests-jitter', '100',
-            'main:app'
-        ]
-        
-        subprocess.run(cmd, check=True)
-    except KeyboardInterrupt:
-        print("\n\n✓ Application stopped by user")
-    except FileNotFoundError:
-        print("\n✗ Gunicorn not found. Running with Flask development server instead...")
-        run_development_server(host=host, port=port, debug=False, open_browser=False)
+        app.run(host='0.0.0.0', port=5000, debug=True)
+
+    except ImportError as e:
+        print(f"❌ Import error: {e}")
+        print("\nThis might be due to missing dependencies.")
+        print("Please run setup.py first to install all dependencies.")
+        return False
     except Exception as e:
-        print(f"\n✗ Error starting application: {e}")
-        sys.exit(1)
+        print(f"❌ Error starting application: {e}")
+        print(f"Error type: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
+        return False
 
 def main():
     """Main function"""
-    parser = argparse.ArgumentParser(description='Email Guardian - Email Security Analysis Tool')
-    parser.add_argument('--dev', action='store_true', help='Run in development mode')
-    parser.add_argument('--prod', action='store_true', help='Run in production mode with Gunicorn')
-    parser.add_argument('--host', default='127.0.0.1', help='Host to bind to (default: 127.0.0.1)')
-    parser.add_argument('--port', type=int, default=5000, help='Port to bind to (default: 5000)')
-    parser.add_argument('--workers', type=int, default=4, help='Number of Gunicorn workers (default: 4)')
-    parser.add_argument('--no-browser', action='store_true', help='Don\'t open browser automatically')
-    
-    args = parser.parse_args()
-    
-    print("Email Guardian - Email Security Analysis Tool")
+    print("Email Guardian - Local Application Runner")
     print("=" * 50)
-    
-    # Check dependencies
-    if not check_dependencies():
-        sys.exit(1)
-    
-    # Check data files
-    if not check_data_files():
-        sys.exit(1)
-    
-    # Determine run mode
-    if args.prod:
-        run_production_server(host=args.host, port=args.port, workers=args.workers)
-    else:
-        # Default to development mode, or if --dev is specified
-        debug_mode = args.dev or not args.prod
-        run_development_server(
-            host=args.host, 
-            port=args.port, 
-            debug=debug_mode,
-            open_browser=not args.no_browser
-        )
+
+    # Check Python version
+    if not check_python_version():
+        input("Press Enter to exit...")
+        return
+
+    # Verify and install modules
+    print("\nChecking dependencies...")
+    if not verify_and_install_modules():
+        print("\n❌ Some dependencies could not be installed.")
+        print("Please run setup.py manually to resolve dependency issues.")
+        input("Press Enter to exit...")
+        return
+
+    print("\n✓ All dependencies verified")
+
+    # Start the application
+    start_application()
 
 if __name__ == "__main__":
     main()

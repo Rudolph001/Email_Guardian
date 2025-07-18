@@ -1,49 +1,124 @@
-
 #!/usr/bin/env python3
 """
-Email Guardian - Quick Installer
-One-click installation and setup for Email Guardian.
+Email Guardian - Quick Installation Script
+This script will install all dependencies and prepare the application.
 """
 
 import subprocess
 import sys
 import os
 
-def main():
-    """Quick installer that runs setup and provides instructions"""
-    print("=" * 60)
-    print("    EMAIL GUARDIAN - QUICK INSTALLER")
-    print("=" * 60)
-    
-    # Check if setup.py exists
-    if not os.path.exists('setup.py'):
-        print("✗ setup.py not found in current directory")
-        print("Please make sure you're in the Email Guardian directory")
-        sys.exit(1)
-    
-    # Run setup
+def install_dependencies():
+    """Install dependencies with proper error handling"""
+    dependencies = [
+        'flask>=2.3.0',
+        'flask-sqlalchemy>=3.0.0', 
+        'flask-login>=0.6.0',
+        'werkzeug>=2.3.0',
+        'pandas>=2.0.0',
+        'numpy>=1.24.0',
+        'scikit-learn>=1.3.0',
+        'sqlalchemy>=2.0.0',
+        'email-validator>=2.0.0',
+        'gunicorn>=21.0.0'
+    ]
+
+    print("Installing Python dependencies...")
+
+    # Upgrade pip first
     try:
-        print("Running setup...")
-        subprocess.run([sys.executable, 'setup.py'], check=True)
-        
-        print("\n" + "=" * 60)
-        print("    INSTALLATION COMPLETE!")
-        print("=" * 60)
-        print("\nTo start Email Guardian:")
-        print("  python run.py")
-        print("\nFor development mode:")
-        print("  python run.py --dev")
-        print("\nFor production mode:")
-        print("  python run.py --prod")
-        print("\nThe application will be available at http://localhost:5000")
-        print("=" * 60)
-        
-    except subprocess.CalledProcessError as e:
-        print(f"\n✗ Installation failed: {e}")
-        sys.exit(1)
-    except KeyboardInterrupt:
-        print("\n✗ Installation cancelled by user")
-        sys.exit(1)
+        subprocess.run([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'], 
+                      check=True, capture_output=True, text=True)
+        print("✓ pip upgraded")
+    except subprocess.CalledProcessError:
+        print("⚠ Could not upgrade pip, continuing...")
+
+    # Install each dependency
+    failed_installs = []
+    for dep in dependencies:
+        package_name = dep.split('>=')[0]
+        print(f"Installing {package_name}...")
+
+        try:
+            subprocess.run([sys.executable, '-m', 'pip', 'install', dep], 
+                          check=True, capture_output=True, text=True)
+            print(f"✓ {package_name} installed")
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Failed to install {package_name}")
+            failed_installs.append(package_name)
+
+    return failed_installs
+
+def test_imports():
+    """Test if all required modules can be imported"""
+    required_modules = [
+        ('flask', 'Flask'),
+        ('flask_sqlalchemy', 'Flask-SQLAlchemy'),
+        ('flask_login', 'Flask-Login'),
+        ('pandas', 'Pandas'),
+        ('numpy', 'NumPy'),
+        ('sklearn', 'Scikit-learn'),
+        ('sqlalchemy', 'SQLAlchemy'),
+        ('werkzeug', 'Werkzeug'),
+        ('email_validator', 'Email-Validator')
+    ]
+
+    print("\nTesting module imports...")
+    failed_imports = []
+
+    for module, display_name in required_modules:
+        try:
+            __import__(module)
+            print(f"✓ {display_name} import successful")
+        except ImportError as e:
+            print(f"❌ {display_name} import failed: {e}")
+            failed_imports.append(display_name)
+
+    return failed_imports
+
+def main():
+    print("Email Guardian - Quick Installation")
+    print("=" * 40)
+
+    # Check Python version
+    version = sys.version_info
+    print(f"Python version: {version.major}.{version.minor}.{version.micro}")
+
+    if version.major < 3 or (version.major == 3 and version.minor < 8):
+        print("❌ Python 3.8 or higher is required!")
+        return 1
+
+    # Install dependencies
+    failed_installs = install_dependencies()
+
+    if failed_installs:
+        print(f"\n⚠ Some packages failed to install: {', '.join(failed_installs)}")
+        print("The application might still work, but some features may be unavailable.")
+
+    # Test imports
+    failed_imports = test_imports()
+
+    if failed_imports:
+        print(f"\n❌ Some modules failed to import: {', '.join(failed_imports)}")
+        print("Please try running this script again or install the missing packages manually.")
+        return 1
+
+    # Create necessary directories
+    print("\nCreating application directories...")
+    os.makedirs('data', exist_ok=True)
+    os.makedirs('uploads', exist_ok=True)
+    os.makedirs('instance', exist_ok=True)
+    print("✓ Directories created")
+
+    print("\n" + "=" * 40)
+    print("✓ Installation completed successfully!")
+    print("\nTo start the application, run:")
+    print("  python run.py")
+    print("\nThe application will be available at:")
+    print("  http://localhost:5000")
+    print("=" * 40)
+
+    return 0
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
