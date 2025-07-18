@@ -138,8 +138,8 @@
                                         data-rule-id="{{ rule.id }}"
                                         data-rule-name="{{ rule.name }}"
                                         data-rule-description="{{ rule.description or '' }}"
-                                        data-rule-conditions="{{ rule.conditions|tojson|e }}"
-                                        data-rule-actions="{{ rule.actions|tojson|e }}"
+                                        data-rule-conditions='{{ rule.conditions|tojson }}'
+                                        data-rule-actions='{{ rule.actions|tojson }}'
                                         data-rule-priority="{{ rule.priority }}"
                                         onclick="viewRuleFromData(this)" 
                                         title="View Details">
@@ -149,8 +149,8 @@
                                         data-rule-id="{{ rule.id }}"
                                         data-rule-name="{{ rule.name }}"
                                         data-rule-description="{{ rule.description or '' }}"
-                                        data-rule-conditions="{{ rule.conditions|tojson|e }}"
-                                        data-rule-actions="{{ rule.actions|tojson|e }}"
+                                        data-rule-conditions='{{ rule.conditions|tojson }}'
+                                        data-rule-actions='{{ rule.actions|tojson }}'
                                         data-rule-priority="{{ rule.priority }}"
                                         data-rule-active="{{ rule.active|lower }}"
                                         onclick="editRuleFromData(this)" 
@@ -626,12 +626,9 @@ function viewRuleFromData(button) {
         const name = button.dataset.ruleName;
         const description = button.dataset.ruleDescription;
         
-        // Decode HTML entities and parse JSON
-        const conditionsStr = decodeHTMLEntities(button.dataset.ruleConditions);
-        const actionsStr = decodeHTMLEntities(button.dataset.ruleActions);
-        
-        const conditions = JSON.parse(conditionsStr || '[]');
-        const actions = JSON.parse(actionsStr || '[]');
+        // Parse JSON directly since we're using single quotes now
+        const conditions = JSON.parse(button.dataset.ruleConditions || '[]');
+        const actions = JSON.parse(button.dataset.ruleActions || '[]');
         const priority = button.dataset.rulePriority;
         
         viewRule(id, name, description, conditions, actions, priority);
@@ -649,12 +646,9 @@ function editRuleFromData(button) {
         const name = button.dataset.ruleName;
         const description = button.dataset.ruleDescription;
         
-        // Decode HTML entities and parse JSON
-        const conditionsStr = decodeHTMLEntities(button.dataset.ruleConditions);
-        const actionsStr = decodeHTMLEntities(button.dataset.ruleActions);
-        
-        const conditions = JSON.parse(conditionsStr || '[]');
-        const actions = JSON.parse(actionsStr || '[]');
+        // Parse JSON directly since we're using single quotes now
+        const conditions = JSON.parse(button.dataset.ruleConditions || '[]');
+        const actions = JSON.parse(button.dataset.ruleActions || '[]');
         const priority = button.dataset.rulePriority;
         const active = button.dataset.ruleActive === 'true';
         
