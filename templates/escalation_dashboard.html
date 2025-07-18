@@ -624,7 +624,7 @@ function renderEscalationDetails(escalationData) {
                                 <i class="fas fa-exclamation-triangle me-2"></i>
                                 <strong>${escalationData.rule_results.matched_rules.length} Rule(s) Matched</strong>
                                 <ul class="mt-2 mb-0">
-                                    ${escalationData.rule_results.matched_rules.map(rule => `<li>${rule}</li>`).join('')}
+                                    ${escalationData.rule_results.matched_rules.map(rule => `<li>${typeof rule === 'object' ? rule.name : rule}</li>`).join('')}
                                 </ul>
                             </div>` :
                             `<div class="alert alert-success">
