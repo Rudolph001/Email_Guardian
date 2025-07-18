@@ -4,19 +4,19 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize the application
     initializeApp();
-    
+
     // Initialize tooltips
     initializeTooltips();
-    
+
     // Initialize file upload handling
     initializeFileUpload();
-    
+
     // Initialize chart animations
     initializeCharts();
-    
+
     // Initialize form validations
     initializeValidations();
-    
+
     // Initialize auto-refresh for dashboard
     initializeAutoRefresh();
 });
@@ -26,19 +26,82 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function initializeApp() {
     console.log('Email Guardian - Initializing application...');
-    
+
+    // Reprocess rules for existing session data
+    async function reprocessRules(sessionId) {
+        if (!confirm('This will reprocess all existing data against the current rules. Continue?')) {
+            return;
+        }
+
+        const button = event.target.closest('button');
+        const originalText = button.innerHTML;
+
+        try {
+            // Show loading state
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Reprocessing...';
+            button.disabled = true;
+
+            const response = await fetch(`/api/reprocess_rules/${sessionId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Show success message
+                showAlert('success', `Successfully reprocessed ${result.total_records} records. ${result.updated_records} records had rule changes.`);
+
+                // Reload the page to show updated data
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            } else {
+                showAlert('error', `Error: ${result.error}`);
+            }
+
+        } catch (error) {
+            console.error('Reprocessing error:', error);
+            showAlert('error', 'Failed to reprocess rules. Please try again.');
+        } finally {
+            // Restore button state
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    }
+
+    // Helper function to show alerts
+    function showAlert(type, message) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+
+        const container = document.querySelector('.container-fluid') || document.body;
+        container.insertBefore(alertDiv, container.firstChild);
+
+        // Auto-remove alert after 5 seconds
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 5000);
+    }
+
     // Set up global error handling
     window.addEventListener('error', function(e) {
         console.error('Application error:', e.error);
         showNotification('An unexpected error occurred. Please try again.', 'error');
     });
-    
+
     // Set up CSRF token for AJAX requests
     const csrfToken = document.querySelector('meta[name="csrf-token"]');
     if (csrfToken) {
         window.csrfToken = csrfToken.getAttribute('content');
     }
-    
+
     // Initialize page-specific functionality
     const currentPage = getCurrentPage();
     initializePageSpecific(currentPage);
@@ -58,7 +121,7 @@ function initializeTooltips() {
 function initializeFileUpload() {
     const fileInput = document.getElementById('file');
     const uploadForm = document.querySelector('form[enctype="multipart/form-data"]');
-    
+
     if (fileInput) {
         fileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -67,7 +130,7 @@ function initializeFileUpload() {
             }
         });
     }
-    
+
     if (uploadForm) {
         uploadForm.addEventListener('submit', function(e) {
             const file = fileInput ? fileInput.files[0] : null;
@@ -76,12 +139,12 @@ function initializeFileUpload() {
                 showNotification('Please select a file to upload.', 'error');
                 return;
             }
-            
+
             if (!validateFile(file)) {
                 e.preventDefault();
                 return;
             }
-            
+
             showUploadProgress();
         });
     }
@@ -93,17 +156,17 @@ function initializeFileUpload() {
 function validateFile(file) {
     const maxSize = 16 * 1024 * 1024; // 16MB
     const allowedTypes = ['text/csv', 'application/vnd.ms-excel'];
-    
+
     if (file.size > maxSize) {
         showNotification('File size exceeds 16MB limit.', 'error');
         return false;
     }
-    
+
     if (!allowedTypes.includes(file.type) && !file.name.toLowerCase().endsWith('.csv')) {
         showNotification('Please upload a CSV file.', 'error');
         return false;
     }
-    
+
     return true;
 }
 
@@ -116,7 +179,7 @@ function showUploadProgress() {
         const originalText = uploadButton.innerHTML;
         uploadButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
         uploadButton.disabled = true;
-        
+
         // Re-enable after 30 seconds as fallback
         setTimeout(() => {
             uploadButton.innerHTML = originalText;
@@ -136,11 +199,11 @@ function initializeCharts() {
         Chart.defaults.color = '#262730';
         Chart.defaults.backgroundColor = '#ffffff';
         Chart.defaults.borderColor = '#e1e5e9';
-        
+
         // Add animation defaults
         Chart.defaults.animation.duration = 1000;
         Chart.defaults.animation.easing = 'easeOutCubic';
-        
+
         // Add responsive defaults
         Chart.defaults.responsive = true;
         Chart.defaults.maintainAspectRatio = false;
@@ -152,7 +215,7 @@ function initializeCharts() {
  */
 function initializeValidations() {
     const forms = document.querySelectorAll('form[data-validate]');
-    
+
     forms.forEach(form => {
         form.addEventListener('submit', function(e) {
             if (!validateForm(form)) {
@@ -170,7 +233,7 @@ function initializeValidations() {
 function validateForm(form) {
     const inputs = form.querySelectorAll('input[required], select[required], textarea[required]');
     let isValid = true;
-    
+
     inputs.forEach(input => {
         if (!input.value.trim()) {
             isValid = false;
@@ -179,7 +242,7 @@ function validateForm(form) {
             input.classList.remove('is-invalid');
         }
     });
-    
+
     return isValid;
 }
 
@@ -263,19 +326,19 @@ function initializePageSpecific(page) {
  */
 function initializeDashboard() {
     console.log('Initializing dashboard page...');
-    
+
     // Initialize session cards hover effects
     const sessionCards = document.querySelectorAll('.card');
     sessionCards.forEach(card => {
         card.addEventListener('mouseenter', function() {
             this.style.transform = 'translateY(-2px)';
         });
-        
+
         card.addEventListener('mouseleave', function() {
             this.style.transform = 'translateY(0)';
         });
     });
-    
+
     // Initialize upload modal
     const uploadModal = document.getElementById('uploadModal');
     if (uploadModal) {
@@ -293,30 +356,30 @@ function initializeDashboard() {
  */
 function initializeSession() {
     console.log('Initializing session page...');
-    
+
     // Initialize case action buttons
     const actionButtons = document.querySelectorAll('button[data-action]');
     actionButtons.forEach(button => {
         button.addEventListener('click', function(e) {
             const action = this.dataset.action;
             const recordId = this.dataset.recordId;
-            
+
             if (action === 'escalate') {
                 if (!confirm('Are you sure you want to escalate this case?')) {
                     e.preventDefault();
                     return;
                 }
             }
-            
+
             // Show loading state
             this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             this.disabled = true;
         });
     });
-    
+
     // Initialize table sorting
     initializeTableSorting();
-    
+
     // Initialize export functionality
     initializeExport();
 }
@@ -326,21 +389,21 @@ function initializeSession() {
  */
 function initializeAdmin() {
     console.log('Initializing admin page...');
-    
+
     // Initialize whitelist textarea
     const domainsTextarea = document.getElementById('domains');
     if (domainsTextarea) {
         domainsTextarea.addEventListener('input', function() {
             const domains = this.value.split('\n').filter(d => d.trim());
             const count = domains.length;
-            
+
             const countDisplay = document.getElementById('domain-count');
             if (countDisplay) {
                 countDisplay.textContent = count;
             }
         });
     }
-    
+
     // Initialize session management
     initializeSessionManagement();
 }
@@ -350,10 +413,10 @@ function initializeAdmin() {
  */
 function initializeRules() {
     console.log('Initializing rules page...');
-    
+
     // Initialize rule builder
     initializeRuleBuilder();
-    
+
     // Initialize rule actions
     initializeRuleActions();
 }
@@ -377,15 +440,15 @@ function resetRuleForm() {
     const form = document.querySelector('#createRuleModal form');
     if (form) {
         form.reset();
-        
+
         // Reset dynamic fields
         const conditionsContainer = document.getElementById('conditions-container');
         const actionsContainer = document.getElementById('actions-container');
-        
+
         if (conditionsContainer) {
             conditionsContainer.innerHTML = conditionsContainer.children[0].outerHTML;
         }
-        
+
         if (actionsContainer) {
             actionsContainer.innerHTML = actionsContainer.children[0].outerHTML;
         }
@@ -414,7 +477,7 @@ function initializeRuleActions() {
  */
 function initializeTableSorting() {
     const sortableHeaders = document.querySelectorAll('th[data-sort]');
-    
+
     sortableHeaders.forEach(header => {
         header.style.cursor = 'pointer';
         header.addEventListener('click', function() {
@@ -431,14 +494,14 @@ function initializeTableSorting() {
 function sortTable(table, sortBy) {
     const tbody = table.querySelector('tbody');
     const rows = Array.from(tbody.querySelectorAll('tr'));
-    
+
     const sortedRows = rows.sort((a, b) => {
         const aValue = a.querySelector(`[data-value="${sortBy}"]`)?.textContent || '';
         const bValue = b.querySelector(`[data-value="${sortBy}"]`)?.textContent || '';
-        
+
         return aValue.localeCompare(bValue);
     });
-    
+
     tbody.innerHTML = '';
     sortedRows.forEach(row => tbody.appendChild(row));
 }
@@ -483,11 +546,11 @@ function showNotification(message, type = 'info') {
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    
+
     const container = document.querySelector('.container-fluid');
     if (container) {
         container.insertBefore(alert, container.firstChild);
-        
+
         // Auto-dismiss after 5 seconds
         setTimeout(() => {
             alert.remove();
@@ -509,11 +572,11 @@ function getSessionIdFromURL() {
  */
 function formatFileSize(bytes) {
     if (bytes === 0) return '0 Bytes';
-    
+
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
@@ -570,13 +633,13 @@ const API = {
                 'X-Requested-With': 'XMLHttpRequest'
             }
         };
-        
+
         if (window.csrfToken) {
             defaultOptions.headers['X-CSRFToken'] = window.csrfToken;
         }
-        
+
         const mergedOptions = { ...defaultOptions, ...options };
-        
+
         return fetch(url, mergedOptions)
             .then(response => {
                 if (!response.ok) {
@@ -589,14 +652,14 @@ const API = {
                 throw error;
             });
     },
-    
+
     /**
      * Get session statistics
      */
     getSessionStats: function(sessionId) {
         return this.request(`/api/session_stats/${sessionId}`);
     },
-    
+
     /**
      * Get ML insights
      */
