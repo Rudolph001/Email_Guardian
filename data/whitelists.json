@@ -1,7 +1,9 @@
 {
   "domains": [
+    "external.com",
+    "rdcomputers.co.za",
     "partner.org",
-    "rdcomputers.co.za"
+    "vendor.org"
   ],
-  "updated_at": "2025-07-18T19:28:40.353381"
+  "updated_at": "2025-07-18T19:44:43.037216"
 }

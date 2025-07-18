@@ -36,50 +36,187 @@
     </div>
 </div>
 
-<!-- Filters Section -->
+<!-- Advanced Filters Section -->
 <div class="card mb-4">
     <div class="card-header">
         <h5 class="card-title mb-0">
-            <i class="fas fa-filter me-2"></i>Filters & Search
+            <i class="fas fa-filter me-2"></i>Advanced Filters & Search
         </h5>
+        <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilters" aria-expanded="false">
+            <i class="fas fa-cog me-2"></i>Show All Filters
+        </button>
     </div>
     <div class="card-body">
-        <form method="GET" class="row g-3">
-            <div class="col-md-3">
-                <label for="risk_filter" class="form-label">Risk Level</label>
-                <select name="risk_filter" id="risk_filter" class="form-select">
-                    <option value="all" {{ 'selected' if current_filters.risk_filter == 'all' }}>All Risk Levels</option>
-                    {% for level in risk_levels %}
-                    <option value="{{ level }}" {{ 'selected' if current_filters.risk_filter == level }}>{{ level }}</option>
-                    {% endfor %}
-                </select>
+        <form method="GET" id="filterForm">
+            <!-- Primary Filters Row -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <label for="risk_filter" class="form-label">Risk Level</label>
+                    <select name="risk_filter" id="risk_filter" class="form-select">
+                        <option value="all" {{ 'selected' if current_filters.risk_filter == 'all' }}>All Risk Levels</option>
+                        {% for level in risk_levels %}
+                        <option value="{{ level }}" {{ 'selected' if current_filters.risk_filter == level }}>{{ level }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="rule_filter" class="form-label">Rule Matches</label>
+                    <select name="rule_filter" id="rule_filter" class="form-select">
+                        <option value="all" {{ 'selected' if current_filters.rule_filter == 'all' }}>All Cases</option>
+                        <option value="matched" {{ 'selected' if current_filters.rule_filter == 'matched' }}>Rule Matched</option>
+                        <option value="unmatched" {{ 'selected' if current_filters.rule_filter == 'unmatched' }}>No Rules Matched</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="status_filter" class="form-label">Status</label>
+                    <select name="status_filter" id="status_filter" class="form-select">
+                        <option value="all" {{ 'selected' if current_filters.status_filter == 'all' }}>All Statuses</option>
+                        {% for status in statuses %}
+                        <option value="{{ status }}" {{ 'selected' if current_filters.status_filter == status }}>{{ status }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="search" class="form-label">Quick Search</label>
+                    <div class="input-group">
+                        <input type="text" name="search" id="search" class="form-control" 
+                               placeholder="Search anything..." 
+                               value="{{ current_filters.search }}">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-3">
-                <label for="rule_filter" class="form-label">Rule Matches</label>
-                <select name="rule_filter" id="rule_filter" class="form-select">
-                    <option value="all" {{ 'selected' if current_filters.rule_filter == 'all' }}>All Cases</option>
-                    <option value="matched" {{ 'selected' if current_filters.rule_filter == 'matched' }}>Rule Matched</option>
-                    <option value="unmatched" {{ 'selected' if current_filters.rule_filter == 'unmatched' }}>No Rules Matched</option>
-                </select>
+
+            <!-- Advanced Filters (Collapsible) -->
+            <div class="collapse" id="advancedFilters">
+                <div class="border-top pt-3">
+                    <h6 class="text-muted mb-3">
+                        <i class="fas fa-sliders-h me-2"></i>Advanced Filters
+                    </h6>
+                    
+                    <!-- Sender & Recipients Row -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label for="sender_filter" class="form-label">Sender</label>
+                            <input type="text" name="sender_filter" id="sender_filter" class="form-control" 
+                                   placeholder="Filter by sender email..." 
+                                   value="{{ current_filters.sender_filter }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="recipient_filter" class="form-label">Recipient</label>
+                            <input type="text" name="recipient_filter" id="recipient_filter" class="form-control" 
+                                   placeholder="Filter by recipient email..." 
+                                   value="{{ current_filters.recipient_filter }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="domain_filter" class="form-label">Domain</label>
+                            <input type="text" name="domain_filter" id="domain_filter" class="form-control" 
+                                   placeholder="Filter by domain..." 
+                                   value="{{ current_filters.domain_filter }}">
+                        </div>
+                    </div>
+
+                    <!-- Subject & Content Row -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="subject_filter" class="form-label">Subject</label>
+                            <input type="text" name="subject_filter" id="subject_filter" class="form-control" 
+                                   placeholder="Filter by subject keywords..." 
+                                   value="{{ current_filters.subject_filter }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="attachment_filter" class="form-label">Attachment Type</label>
+                            <select name="attachment_filter" id="attachment_filter" class="form-select">
+                                <option value="all" {{ 'selected' if current_filters.attachment_filter == 'all' }}>All Types</option>
+                                <option value="has_attachments" {{ 'selected' if current_filters.attachment_filter == 'has_attachments' }}>Has Attachments</option>
+                                <option value="no_attachments" {{ 'selected' if current_filters.attachment_filter == 'no_attachments' }}>No Attachments</option>
+                                <option value="business" {{ 'selected' if current_filters.attachment_filter == 'business' }}>Business</option>
+                                <option value="personal" {{ 'selected' if current_filters.attachment_filter == 'personal' }}>Personal</option>
+                                <option value="suspicious" {{ 'selected' if current_filters.attachment_filter == 'suspicious' }}>Suspicious</option>
+                                <option value="unknown" {{ 'selected' if current_filters.attachment_filter == 'unknown' }}>Unknown</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- ML Score & Time Range Row -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label for="ml_score_min" class="form-label">Min ML Score</label>
+                            <input type="number" name="ml_score_min" id="ml_score_min" class="form-control" 
+                                   placeholder="0.0" step="0.1" min="0" max="1"
+                                   value="{{ current_filters.ml_score_min }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="ml_score_max" class="form-label">Max ML Score</label>
+                            <input type="number" name="ml_score_max" id="ml_score_max" class="form-control" 
+                                   placeholder="1.0" step="0.1" min="0" max="1"
+                                   value="{{ current_filters.ml_score_max }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="date_from" class="form-label">Date From</label>
+                            <input type="date" name="date_from" id="date_from" class="form-control" 
+                                   value="{{ current_filters.date_from }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="date_to" class="form-label">Date To</label>
+                            <input type="date" name="date_to" id="date_to" class="form-control" 
+                                   value="{{ current_filters.date_to }}">
+                        </div>
+                    </div>
+
+                    <!-- Time & Size Filters Row -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label for="time_from" class="form-label">Time From</label>
+                            <input type="time" name="time_from" id="time_from" class="form-control" 
+                                   value="{{ current_filters.time_from }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="time_to" class="form-label">Time To</label>
+                            <input type="time" name="time_to" id="time_to" class="form-control" 
+                                   value="{{ current_filters.time_to }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="size_filter" class="form-label">Email Size</label>
+                            <select name="size_filter" id="size_filter" class="form-select">
+                                <option value="all" {{ 'selected' if current_filters.size_filter == 'all' }}>All Sizes</option>
+                                <option value="small" {{ 'selected' if current_filters.size_filter == 'small' }}>Small (&lt;10KB)</option>
+                                <option value="medium" {{ 'selected' if current_filters.size_filter == 'medium' }}>Medium (10KB-1MB)</option>
+                                <option value="large" {{ 'selected' if current_filters.size_filter == 'large' }}>Large (&gt;1MB)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="has_links" class="form-label">Contains Links</label>
+                            <select name="has_links" id="has_links" class="form-select">
+                                <option value="all" {{ 'selected' if current_filters.has_links == 'all' }}>All</option>
+                                <option value="yes" {{ 'selected' if current_filters.has_links == 'yes' }}>Has Links</option>
+                                <option value="no" {{ 'selected' if current_filters.has_links == 'no' }}>No Links</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-3">
-                <label for="status_filter" class="form-label">Status</label>
-                <select name="status_filter" id="status_filter" class="form-select">
-                    <option value="all" {{ 'selected' if current_filters.status_filter == 'all' }}>All Statuses</option>
-                    {% for status in statuses %}
-                    <option value="{{ status }}" {{ 'selected' if current_filters.status_filter == status }}>{{ status }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label for="search" class="form-label">Search</label>
-                <div class="input-group">
-                    <input type="text" name="search" id="search" class="form-control" 
-                           placeholder="Search sender, subject, recipients..." 
-                           value="{{ current_filters.search }}">
-                    <button class="btn btn-outline-secondary" type="submit">
-                        <i class="fas fa-search"></i>
+
+            <!-- Filter Actions -->
+            <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                <div>
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-filter me-2"></i>Apply Filters
                     </button>
+                    <button type="button" class="btn btn-outline-secondary me-2" onclick="clearFilters()">
+                        <i class="fas fa-times me-2"></i>Clear All
+                    </button>
+                    <button type="button" class="btn btn-outline-info" onclick="saveFilters()">
+                        <i class="fas fa-save me-2"></i>Save Filters
+                    </button>
+                </div>
+                <div>
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Showing {{ cases|length }} of {{ total_cases }} cases
+                    </small>
                 </div>
             </div>
         </form>
@@ -791,12 +928,60 @@ function exportCaseReport() {
     alert('Export functionality would be implemented here');
 }
 
-// Initialize tooltips for action buttons
+// Filter management functions
+function clearFilters() {
+    document.getElementById('filterForm').reset();
+    // Clear URL parameters and reload
+    window.location.href = window.location.pathname;
+}
+
+function saveFilters() {
+    const filters = {};
+    const form = document.getElementById('filterForm');
+    const formData = new FormData(form);
+    
+    for (let [key, value] of formData.entries()) {
+        if (value && value !== 'all') {
+            filters[key] = value;
+        }
+    }
+    
+    localStorage.setItem('emailGuardianFilters', JSON.stringify(filters));
+    alert('Filters saved successfully!');
+}
+
+function loadSavedFilters() {
+    const saved = localStorage.getItem('emailGuardianFilters');
+    if (saved) {
+        const filters = JSON.parse(saved);
+        for (const [key, value] of Object.entries(filters)) {
+            const element = document.getElementById(key);
+            if (element) {
+                element.value = value;
+            }
+        }
+    }
+}
+
+// Auto-apply filters on change
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize Bootstrap tooltips
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
         return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Load saved filters if available
+    loadSavedFilters();
+    
+    // Auto-submit form on dropdown changes
+    const filterSelects = document.querySelectorAll('#filterForm select');
+    filterSelects.forEach(select => {
+        select.addEventListener('change', function() {
+            if (this.value !== 'all') {
+                document.getElementById('filterForm').submit();
+            }
+        });
     });
 });
 </script>

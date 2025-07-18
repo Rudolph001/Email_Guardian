@@ -11,6 +11,22 @@ Upload limit preference: High capacity (500MB) for large email data files.
 
 ## Recent Changes
 
+- **Comprehensive Case Management Filtering System** (July 18, 2025):
+  - Added advanced filtering on all available email fields
+  - Primary filters: Risk Level, Rule Matches, Status, Quick Search
+  - Advanced filters: Sender, Recipient, Domain, Subject, Attachment Type
+  - ML Score range filtering (min/max values)
+  - Date range filtering with calendar picker
+  - Time range filtering for specific hours
+  - Email size filtering (small/medium/large)
+  - Link detection filtering (has links/no links)
+  - Collapsible advanced filters section to keep UI clean
+  - Filter persistence using localStorage
+  - Auto-apply filters on dropdown changes
+  - Clear all filters functionality
+  - Save/load filter presets
+  - Real-time filter count display
+  - Enhanced search across all fields including attachment classifications
 - **Enhanced Session Dashboard with Multiple Analytics Views** (July 18, 2025):
   - Added comprehensive analytics dashboard with 6 new chart types
   - Whitelisted Domains Analysis chart showing filtered vs analyzed email breakdown

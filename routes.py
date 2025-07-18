@@ -254,11 +254,26 @@ def case_management(session_id):
 
     processed_data = non_escalated_data
 
-    # Get filter parameters
+    # Get all filter parameters
     risk_filter = request.args.get('risk_filter', 'all')
     rule_filter = request.args.get('rule_filter', 'all')
     status_filter = request.args.get('status_filter', 'all')
     search_query = request.args.get('search', '')
+    
+    # Advanced filters
+    sender_filter = request.args.get('sender_filter', '')
+    recipient_filter = request.args.get('recipient_filter', '')
+    domain_filter = request.args.get('domain_filter', '')
+    subject_filter = request.args.get('subject_filter', '')
+    attachment_filter = request.args.get('attachment_filter', 'all')
+    ml_score_min = request.args.get('ml_score_min', '')
+    ml_score_max = request.args.get('ml_score_max', '')
+    date_from = request.args.get('date_from', '')
+    date_to = request.args.get('date_to', '')
+    time_from = request.args.get('time_from', '')
+    time_to = request.args.get('time_to', '')
+    size_filter = request.args.get('size_filter', 'all')
+    has_links = request.args.get('has_links', 'all')
 
     # Apply filters
     filtered_data = processed_data if processed_data else []
@@ -275,12 +290,132 @@ def case_management(session_id):
     if status_filter != 'all':
         filtered_data = [d for d in filtered_data if d.get('status', '').lower() == status_filter.lower()]
 
+    # Apply advanced filters
+    if sender_filter:
+        filtered_data = [d for d in filtered_data if sender_filter.lower() in d.get('sender', '').lower()]
+    
+    if recipient_filter:
+        filtered_data = [d for d in filtered_data if recipient_filter.lower() in d.get('recipient', '').lower()]
+    
+    if domain_filter:
+        filtered_data = [d for d in filtered_data if domain_filter.lower() in d.get('sender', '').lower() or 
+                        domain_filter.lower() in d.get('recipient', '').lower()]
+    
+    if subject_filter:
+        filtered_data = [d for d in filtered_data if subject_filter.lower() in d.get('subject', '').lower()]
+    
+    if attachment_filter != 'all':
+        if attachment_filter == 'has_attachments':
+            filtered_data = [d for d in filtered_data if d.get('has_attachments', False)]
+        elif attachment_filter == 'no_attachments':
+            filtered_data = [d for d in filtered_data if not d.get('has_attachments', False)]
+        else:
+            filtered_data = [d for d in filtered_data if d.get('attachment_classification', '').lower() == attachment_filter.lower()]
+    
+    if ml_score_min:
+        try:
+            min_score = float(ml_score_min)
+            filtered_data = [d for d in filtered_data if d.get('ml_anomaly_score', 0) >= min_score]
+        except ValueError:
+            pass
+    
+    if ml_score_max:
+        try:
+            max_score = float(ml_score_max)
+            filtered_data = [d for d in filtered_data if d.get('ml_anomaly_score', 0) <= max_score]
+        except ValueError:
+            pass
+    
+    if date_from or date_to:
+        from datetime import datetime
+        filtered_data_by_date = []
+        for d in filtered_data:
+            email_date = d.get('_time', d.get('sent_timestamp', ''))
+            if email_date:
+                try:
+                    # Parse various date formats
+                    if 'T' in email_date:
+                        email_dt = datetime.fromisoformat(email_date.replace('Z', '+00:00'))
+                    else:
+                        email_dt = datetime.strptime(email_date[:19], '%Y-%m-%d %H:%M:%S')
+                    
+                    email_date_only = email_dt.date()
+                    
+                    include = True
+                    if date_from:
+                        from_date = datetime.strptime(date_from, '%Y-%m-%d').date()
+                        if email_date_only < from_date:
+                            include = False
+                    
+                    if date_to and include:
+                        to_date = datetime.strptime(date_to, '%Y-%m-%d').date()
+                        if email_date_only > to_date:
+                            include = False
+                    
+                    if include:
+                        filtered_data_by_date.append(d)
+                except (ValueError, TypeError):
+                    continue
+        filtered_data = filtered_data_by_date
+    
+    if time_from or time_to:
+        from datetime import datetime
+        filtered_data_by_time = []
+        for d in filtered_data:
+            email_time = d.get('_time', d.get('sent_timestamp', ''))
+            if email_time:
+                try:
+                    # Extract time portion
+                    if 'T' in email_time:
+                        time_part = email_time.split('T')[1][:8]  # HH:MM:SS
+                    else:
+                        time_part = email_time.split(' ')[1][:8] if ' ' in email_time else '00:00:00'
+                    
+                    email_time_obj = datetime.strptime(time_part, '%H:%M:%S').time()
+                    
+                    include = True
+                    if time_from:
+                        from_time = datetime.strptime(time_from, '%H:%M').time()
+                        if email_time_obj < from_time:
+                            include = False
+                    
+                    if time_to and include:
+                        to_time = datetime.strptime(time_to, '%H:%M').time()
+                        if email_time_obj > to_time:
+                            include = False
+                    
+                    if include:
+                        filtered_data_by_time.append(d)
+                except (ValueError, TypeError):
+                    continue
+        filtered_data = filtered_data_by_time
+    
+    if size_filter != 'all':
+        # Note: Email size filtering would require size information in the data
+        # For now, we'll filter based on attachment presence as a proxy
+        if size_filter == 'large':
+            filtered_data = [d for d in filtered_data if d.get('has_attachments', False)]
+        elif size_filter == 'small':
+            filtered_data = [d for d in filtered_data if not d.get('has_attachments', False)]
+    
+    if has_links != 'all':
+        # Check if email contains links (look for http/https in subject or content)
+        if has_links == 'yes':
+            filtered_data = [d for d in filtered_data if 'http' in d.get('subject', '').lower() or 
+                            'www.' in d.get('subject', '').lower()]
+        elif has_links == 'no':
+            filtered_data = [d for d in filtered_data if 'http' not in d.get('subject', '').lower() and 
+                            'www.' not in d.get('subject', '').lower()]
+
+    # Apply general search query
     if search_query:
         search_lower = search_query.lower()
         filtered_data = [d for d in filtered_data if 
                         search_lower in d.get('sender', '').lower() or 
                         search_lower in d.get('subject', '').lower() or 
-                        search_lower in d.get('recipients', '').lower()]
+                        search_lower in d.get('recipient', '').lower() or
+                        search_lower in d.get('recipients', '').lower() or
+                        search_lower in d.get('attachment_classification', '').lower()]
 
     # Get unique values for filter dropdowns (exclude 'Escalated' since those cases are in escalation dashboard)
     risk_levels = list(set(d.get('ml_risk_level', 'Unknown') for d in processed_data if processed_data))
@@ -292,11 +427,25 @@ def case_management(session_id):
                          escalated_count=escalated_count,
                          risk_levels=risk_levels,
                          statuses=statuses,
+                         total_cases=len(processed_data),
                          current_filters={
                              'risk_filter': risk_filter,
                              'rule_filter': rule_filter,
                              'status_filter': status_filter,
-                             'search': search_query
+                             'search': search_query,
+                             'sender_filter': sender_filter,
+                             'recipient_filter': recipient_filter,
+                             'domain_filter': domain_filter,
+                             'subject_filter': subject_filter,
+                             'attachment_filter': attachment_filter,
+                             'ml_score_min': ml_score_min,
+                             'ml_score_max': ml_score_max,
+                             'date_from': date_from,
+                             'date_to': date_to,
+                             'time_from': time_from,
+                             'time_to': time_to,
+                             'size_filter': size_filter,
+                             'has_links': has_links
                          })
 
 @app.route('/escalations/<session_id>')
