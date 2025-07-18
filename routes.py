@@ -443,6 +443,32 @@ def create_rule():
     
     return redirect(url_for('rules'))
 
+@app.route('/rules/<int:rule_id>/update', methods=['POST'])
+def update_rule(rule_id):
+    """Update an existing rule"""
+    try:
+        rule_data = {
+            'name': request.form.get('name'),
+            'description': request.form.get('description'),
+            'conditions': json.loads(request.form.get('conditions', '[]')),
+            'actions': json.loads(request.form.get('actions', '[]')),
+            'priority': int(request.form.get('priority', 1)),
+            'active': request.form.get('active') == 'on'
+        }
+        
+        rule_engine = RuleEngine()
+        result = rule_engine.update_rule(rule_id, rule_data)
+        
+        if result['success']:
+            flash('Rule updated successfully', 'success')
+        else:
+            flash(f'Error updating rule: {result["error"]}', 'error')
+            
+    except Exception as e:
+        flash(f'Error updating rule: {str(e)}', 'error')
+    
+    return redirect(url_for('rules'))
+
 @app.route('/rules/<int:rule_id>/delete', methods=['POST'])
 def delete_rule(rule_id):
     """Delete a rule"""
