@@ -51,7 +51,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-3">
         <div class="card stats-card">
             <div class="card-body">
@@ -69,7 +69,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-3">
         <div class="card stats-card">
             <div class="card-body">
@@ -87,7 +87,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-3">
         <div class="card stats-card">
             <div class="card-body">
@@ -114,19 +114,19 @@
             <div class="card-header">
                 <h5 class="card-title mb-0">Risk Level Distribution</h5>
             </div>
-            <div class="card-body">
-                <canvas id="riskChart"></canvas>
+            <div class="card-body" style="height: 250px;">
+                <canvas id="riskChart" width="300" height="200"></canvas>
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
                 <h5 class="card-title mb-0">Domain Classification</h5>
             </div>
-            <div class="card-body">
-                <canvas id="domainChart"></canvas>
+            <div class="card-body" style="height: 250px;">
+                <canvas id="domainChart" width="300" height="200"></canvas>
             </div>
         </div>
     </div>
@@ -325,7 +325,13 @@ new Chart(domainCtx, {
         responsive: true,
         plugins: {
             legend: {
-                position: 'bottom'
+                position: 'bottom',
+                labels: {
+                    boxWidth: 12,
+                    font: {
+                        size: 11
+                    }
+                }
             }
         }
     }
