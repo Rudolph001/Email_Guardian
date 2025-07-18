@@ -173,8 +173,8 @@ def dashboard(session_id):
 
     if all_processed_data:
         for i, record in enumerate(all_processed_data):
-            # Skip None records
-            if record is None:
+            # Skip None records and ensure record is a valid dict
+            if record is None or not isinstance(record, dict):
                 continue
 
             # Check if this specific record was manually escalated
@@ -261,8 +261,8 @@ def case_management(session_id):
 
     if all_processed_data:
         for i, d in enumerate(all_processed_data):
-            # Skip None records
-            if d is None:
+            # Skip None records and ensure record is a valid dict
+            if d is None or not isinstance(d, dict):
                 continue
 
             # Check if this specific record was manually escalated
@@ -310,20 +310,20 @@ def case_management(session_id):
     size_filter = request.args.get('size_filter', 'all')
     has_links = request.args.get('has_links', 'all')
 
-    # Apply filters
-    filtered_data = processed_data if processed_data else []
+    # Apply filters with null checks
+    filtered_data = [d for d in processed_data if d is not None and isinstance(d, dict)] if processed_data else []
 
     if risk_filter != 'all':
-        filtered_data = [d for d in filtered_data if d.get('ml_risk_level', '').lower() == risk_filter.lower()]
+        filtered_data = [d for d in filtered_data if d is not None and isinstance(d, dict) and d.get('ml_risk_level', '').lower() == risk_filter.lower()]
 
     if rule_filter != 'all':
         if rule_filter == 'matched':
-            filtered_data = [d for d in filtered_data if d.get('rule_results', {}).get('matched_rules')]
+            filtered_data = [d for d in filtered_data if d is not None and isinstance(d, dict) and d.get('rule_results', {}).get('matched_rules')]
         elif rule_filter == 'unmatched':
-            filtered_data = [d for d in filtered_data if not d.get('rule_results', {}).get('matched_rules')]
+            filtered_data = [d for d in filtered_data if d is not None and isinstance(d, dict) and not d.get('rule_results', {}).get('matched_rules')]
 
     if status_filter != 'all':
-        filtered_data = [d for d in filtered_data if d.get('status', '').lower() == status_filter.lower()]
+        filtered_data = [d for d in filtered_data if d is not None and isinstance(d, dict) and d.get('status', '').lower() == status_filter.lower()]
 
     # Apply advanced filters
     if sender_filter:
