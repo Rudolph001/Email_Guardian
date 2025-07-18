@@ -47,6 +47,11 @@
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="domains-tab" data-bs-toggle="tab" data-bs-target="#domains" type="button" role="tab">
+                        <i class="fas fa-globe me-2"></i>Domain Classifier
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
                     <button class="nav-link" id="system-tab" data-bs-toggle="tab" data-bs-target="#system" type="button" role="tab">
                         <i class="fas fa-info-circle me-2"></i>System Status
                     </button>
@@ -336,6 +341,294 @@
             </div>
         </div>
 
+        <!-- Domain Classifier Tab -->
+        <div class="tab-pane fade" id="domains" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-globe me-2"></i>Domain Classification Management
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info mb-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Domain Classification:</strong> Organize domains into categories for better email analysis. Changes will automatically reprocess existing sessions.
+                            </div>
+
+                            <!-- Domain Categories -->
+                            <div class="accordion" id="domainAccordion">
+                                <!-- Trusted Domains -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="trustedHeader">
+                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#trustedDomains">
+                                            <i class="fas fa-shield-alt me-2 text-success"></i>
+                                            <strong>Trusted Domains</strong>
+                                            <span class="badge bg-success ms-2" id="trustedCount">{{ domain_classifications.trusted|length if domain_classifications else 0 }}</span>
+                                        </button>
+                                    </h2>
+                                    <div id="trustedDomains" class="accordion-collapse collapse show" data-bs-parent="#domainAccordion">
+                                        <div class="accordion-body">
+                                            <div class="mb-3">
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" id="newTrustedDomain" placeholder="Enter trusted domain (e.g., company.com)">
+                                                    <button class="btn btn-success" onclick="addDomain('trusted')">
+                                                        <i class="fas fa-plus me-1"></i>Add
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div id="trustedDomainsList" class="domain-list">
+                                                {% if domain_classifications and domain_classifications.trusted %}
+                                                {% for domain in domain_classifications.trusted %}
+                                                <div class="domain-item d-flex justify-content-between align-items-center p-2 mb-1 bg-light rounded">
+                                                    <span><i class="fas fa-shield-alt me-2 text-success"></i>{{ domain }}</span>
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="removeDomain('trusted', '{{ domain }}')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                                {% endfor %}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Corporate Domains -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="corporateHeader">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#corporateDomains">
+                                            <i class="fas fa-building me-2 text-primary"></i>
+                                            <strong>Corporate Domains</strong>
+                                            <span class="badge bg-primary ms-2" id="corporateCount">{{ domain_classifications.corporate|length if domain_classifications else 0 }}</span>
+                                        </button>
+                                    </h2>
+                                    <div id="corporateDomains" class="accordion-collapse collapse" data-bs-parent="#domainAccordion">
+                                        <div class="accordion-body">
+                                            <div class="mb-3">
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" id="newCorporateDomain" placeholder="Enter corporate domain (e.g., microsoft.com)">
+                                                    <button class="btn btn-primary" onclick="addDomain('corporate')">
+                                                        <i class="fas fa-plus me-1"></i>Add
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div id="corporateDomainsList" class="domain-list">
+                                                {% if domain_classifications and domain_classifications.corporate %}
+                                                {% for domain in domain_classifications.corporate %}
+                                                <div class="domain-item d-flex justify-content-between align-items-center p-2 mb-1 bg-light rounded">
+                                                    <span><i class="fas fa-building me-2 text-primary"></i>{{ domain }}</span>
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="removeDomain('corporate', '{{ domain }}')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                                {% endfor %}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Personal Domains -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="personalHeader">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#personalDomains">
+                                            <i class="fas fa-user me-2 text-info"></i>
+                                            <strong>Personal Domains</strong>
+                                            <span class="badge bg-info ms-2" id="personalCount">{{ domain_classifications.personal|length if domain_classifications else 0 }}</span>
+                                        </button>
+                                    </h2>
+                                    <div id="personalDomains" class="accordion-collapse collapse" data-bs-parent="#domainAccordion">
+                                        <div class="accordion-body">
+                                            <div class="mb-3">
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" id="newPersonalDomain" placeholder="Enter personal domain (e.g., gmail.com)">
+                                                    <button class="btn btn-info" onclick="addDomain('personal')">
+                                                        <i class="fas fa-plus me-1"></i>Add
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div id="personalDomainsList" class="domain-list">
+                                                {% if domain_classifications and domain_classifications.personal %}
+                                                {% for domain in domain_classifications.personal %}
+                                                <div class="domain-item d-flex justify-content-between align-items-center p-2 mb-1 bg-light rounded">
+                                                    <span><i class="fas fa-user me-2 text-info"></i>{{ domain }}</span>
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="removeDomain('personal', '{{ domain }}')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                                {% endfor %}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Public Domains -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="publicHeader">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#publicDomains">
+                                            <i class="fas fa-university me-2 text-warning"></i>
+                                            <strong>Public/Government Domains</strong>
+                                            <span class="badge bg-warning ms-2" id="publicCount">{{ domain_classifications.public|length if domain_classifications else 0 }}</span>
+                                        </button>
+                                    </h2>
+                                    <div id="publicDomains" class="accordion-collapse collapse" data-bs-parent="#domainAccordion">
+                                        <div class="accordion-body">
+                                            <div class="mb-3">
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" id="newPublicDomain" placeholder="Enter public domain (e.g., gov.uk)">
+                                                    <button class="btn btn-warning" onclick="addDomain('public')">
+                                                        <i class="fas fa-plus me-1"></i>Add
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div id="publicDomainsList" class="domain-list">
+                                                {% if domain_classifications and domain_classifications.public %}
+                                                {% for domain in domain_classifications.public %}
+                                                <div class="domain-item d-flex justify-content-between align-items-center p-2 mb-1 bg-light rounded">
+                                                    <span><i class="fas fa-university me-2 text-warning"></i>{{ domain }}</span>
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="removeDomain('public', '{{ domain }}')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                                {% endfor %}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Suspicious Domains -->
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="suspiciousHeader">
+                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#suspiciousDomains">
+                                            <i class="fas fa-exclamation-triangle me-2 text-danger"></i>
+                                            <strong>Suspicious Domains</strong>
+                                            <span class="badge bg-danger ms-2" id="suspiciousCount">{{ domain_classifications.suspicious|length if domain_classifications else 0 }}</span>
+                                        </button>
+                                    </h2>
+                                    <div id="suspiciousDomains" class="accordion-collapse collapse" data-bs-parent="#domainAccordion">
+                                        <div class="accordion-body">
+                                            <div class="mb-3">
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" id="newSuspiciousDomain" placeholder="Enter suspicious domain (e.g., tempmail.com)">
+                                                    <button class="btn btn-danger" onclick="addDomain('suspicious')">
+                                                        <i class="fas fa-plus me-1"></i>Add
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            <div id="suspiciousDomainsList" class="domain-list">
+                                                {% if domain_classifications and domain_classifications.suspicious %}
+                                                {% for domain in domain_classifications.suspicious %}
+                                                <div class="domain-item d-flex justify-content-between align-items-center p-2 mb-1 bg-light rounded">
+                                                    <span><i class="fas fa-exclamation-triangle me-2 text-danger"></i>{{ domain }}</span>
+                                                    <button class="btn btn-sm btn-outline-danger" onclick="removeDomain('suspicious', '{{ domain }}')">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                                {% endfor %}
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Domain Statistics -->
+                <div class="col-lg-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>Domain Statistics
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="text-center mb-3">
+                                <h4 class="text-primary">{{ (domain_classifications.trusted|length + domain_classifications.corporate|length + domain_classifications.personal|length + domain_classifications.public|length + domain_classifications.suspicious|length) if domain_classifications else 0 }}</h4>
+                                <small class="text-muted">Total Classified Domains</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small><i class="fas fa-shield-alt me-1 text-success"></i>Trusted</small>
+                                    <span class="badge bg-success">{{ domain_classifications.trusted|length if domain_classifications else 0 }}</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 6px;">
+                                    <div class="progress-bar bg-success" style="width: {{ ((domain_classifications.trusted|length / ((domain_classifications.trusted|length + domain_classifications.corporate|length + domain_classifications.personal|length + domain_classifications.public|length + domain_classifications.suspicious|length) or 1)) * 100) if domain_classifications else 0 }}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small><i class="fas fa-building me-1 text-primary"></i>Corporate</small>
+                                    <span class="badge bg-primary">{{ domain_classifications.corporate|length if domain_classifications else 0 }}</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 6px;">
+                                    <div class="progress-bar bg-primary" style="width: {{ ((domain_classifications.corporate|length / ((domain_classifications.trusted|length + domain_classifications.corporate|length + domain_classifications.personal|length + domain_classifications.public|length + domain_classifications.suspicious|length) or 1)) * 100) if domain_classifications else 0 }}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small><i class="fas fa-user me-1 text-info"></i>Personal</small>
+                                    <span class="badge bg-info">{{ domain_classifications.personal|length if domain_classifications else 0 }}</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 6px;">
+                                    <div class="progress-bar bg-info" style="width: {{ ((domain_classifications.personal|length / ((domain_classifications.trusted|length + domain_classifications.corporate|length + domain_classifications.personal|length + domain_classifications.public|length + domain_classifications.suspicious|length) or 1)) * 100) if domain_classifications else 0 }}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small><i class="fas fa-university me-1 text-warning"></i>Public</small>
+                                    <span class="badge bg-warning">{{ domain_classifications.public|length if domain_classifications else 0 }}</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 6px;">
+                                    <div class="progress-bar bg-warning" style="width: {{ ((domain_classifications.public|length / ((domain_classifications.trusted|length + domain_classifications.corporate|length + domain_classifications.personal|length + domain_classifications.public|length + domain_classifications.suspicious|length) or 1)) * 100) if domain_classifications else 0 }}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <small><i class="fas fa-exclamation-triangle me-1 text-danger"></i>Suspicious</small>
+                                    <span class="badge bg-danger">{{ domain_classifications.suspicious|length if domain_classifications else 0 }}</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 6px;">
+                                    <div class="progress-bar bg-danger" style="width: {{ ((domain_classifications.suspicious|length / ((domain_classifications.trusted|length + domain_classifications.corporate|length + domain_classifications.personal|length + domain_classifications.public|length + domain_classifications.suspicious|length) or 1)) * 100) if domain_classifications else 0 }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card shadow-sm mt-3">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-bolt me-2"></i>Quick Actions
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary btn-sm" onclick="exportDomainConfig()">
+                                    <i class="fas fa-download me-2"></i>Export Configuration
+                                </button>
+                                <button class="btn btn-outline-success btn-sm" onclick="reprocessAllSessions()">
+                                    <i class="fas fa-sync-alt me-2"></i>Reprocess All Sessions
+                                </button>
+                                <button class="btn btn-outline-warning btn-sm" onclick="resetToDefaults()">
+                                    <i class="fas fa-undo me-2"></i>Reset to Defaults
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- System Status Tab -->
         <div class="tab-pane fade" id="system" role="tabpanel">
             <div class="row g-4">
@@ -522,5 +815,131 @@ function reprocessAllSessions() {
         form.submit();
     }
 }
+
+// Domain Management Functions
+function addDomain(category) {
+    const inputId = `new${category.charAt(0).toUpperCase() + category.slice(1)}Domain`;
+    const domain = document.getElementById(inputId).value.trim();
+    
+    if (!domain) {
+        alert('Please enter a domain name');
+        return;
+    }
+    
+    // Basic domain validation
+    if (!domain.includes('.') || domain.includes(' ')) {
+        alert('Please enter a valid domain (e.g., example.com)');
+        return;
+    }
+    
+    fetch('/admin/domains/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            category: category,
+            domain: domain.toLowerCase()
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById(inputId).value = '';
+            location.reload(); // Refresh to show updated data
+        } else {
+            alert('Error adding domain: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to add domain');
+    });
+}
+
+function removeDomain(category, domain) {
+    if (!confirm(`Are you sure you want to remove ${domain} from ${category} domains?`)) {
+        return;
+    }
+    
+    fetch('/admin/domains/remove', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            category: category,
+            domain: domain
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload(); // Refresh to show updated data
+        } else {
+            alert('Error removing domain: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to remove domain');
+    });
+}
+
+function exportDomainConfig() {
+    fetch('/admin/domains/export')
+    .then(response => response.blob())
+    .then(blob => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = 'domain_classifications.json';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to export domain configuration');
+    });
+}
+
+function resetToDefaults() {
+    if (!confirm('This will reset all domain classifications to default values. All custom domains will be lost. Continue?')) {
+        return;
+    }
+    
+    fetch('/admin/domains/reset', {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error resetting domains: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to reset to defaults');
+    });
+}
+
+// Allow Enter key to add domains
+document.addEventListener('DOMContentLoaded', function() {
+    ['trusted', 'corporate', 'personal', 'public', 'suspicious'].forEach(category => {
+        const inputId = `new${category.charAt(0).toUpperCase() + category.slice(1)}Domain`;
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addDomain(category);
+                }
+            });
+        }
+    });
+});
 </script>
 {% endblock %}

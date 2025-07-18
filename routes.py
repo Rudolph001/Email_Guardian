@@ -6,6 +6,7 @@ from session_manager import SessionManager
 from data_processor import DataProcessor
 from rule_engine import RuleEngine
 from ml_engine import MLEngine
+from domain_manager import DomainManager
 import os
 import pandas as pd
 import numpy as np
@@ -899,10 +900,16 @@ def generate_escalation_email(session_id, record_id):
 def admin():
     """Admin panel for managing whitelists and settings"""
     session_manager = SessionManager()
+    domain_manager = DomainManager()
     whitelists = session_manager.get_whitelists()
     attachment_keywords = session_manager.get_attachment_keywords()
     sessions = session_manager.get_all_sessions()
-    return render_template('admin.html', whitelists=whitelists, attachment_keywords=attachment_keywords, sessions=sessions)
+    domain_classifications = domain_manager.get_domains()
+    return render_template('admin.html', 
+                         whitelists=whitelists, 
+                         attachment_keywords=attachment_keywords, 
+                         sessions=sessions,
+                         domain_classifications=domain_classifications)
 
 @app.route('/rules')
 def rules():
@@ -1353,6 +1360,131 @@ def reprocess_rules(session_id):
     except Exception as e:
         app.logger.error(f"Error reprocessing session {session_id}: {str(e)}")
         return jsonify({'error': f'Reprocessing failed: {str(e)}'}), 500
+
+# Domain Management API Routes
+@app.route('/admin/domains/add', methods=['POST'])
+def add_domain():
+    """API endpoint to add a domain to a classification category"""
+    try:
+        data = request.json
+        category = data.get('category')
+        domain = data.get('domain')
+        
+        if not category or not domain:
+            return jsonify({'success': False, 'error': 'Category and domain are required'}), 400
+        
+        domain_manager = DomainManager()
+        result = domain_manager.add_domain(category, domain)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        app.logger.error(f"Error adding domain: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/domains/remove', methods=['POST'])
+def remove_domain():
+    """API endpoint to remove a domain from a classification category"""
+    try:
+        data = request.json
+        category = data.get('category')
+        domain = data.get('domain')
+        
+        if not category or not domain:
+            return jsonify({'success': False, 'error': 'Category and domain are required'}), 400
+        
+        domain_manager = DomainManager()
+        result = domain_manager.remove_domain(category, domain)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        app.logger.error(f"Error removing domain: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/domains/export')
+def export_domains():
+    """Export domain classifications as JSON file"""
+    try:
+        domain_manager = DomainManager()
+        config = domain_manager.export_config()
+        
+        from flask import make_response
+        response = make_response(json.dumps(config, indent=2))
+        response.headers['Content-Type'] = 'application/json'
+        response.headers['Content-Disposition'] = 'attachment; filename=domain_classifications.json'
+        
+        return response
+        
+    except Exception as e:
+        app.logger.error(f"Error exporting domain config: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/domains/reprocess', methods=['POST'])
+def reprocess_sessions_with_domains():
+    """Reprocess all sessions with current domain classifications"""
+    try:
+        session_manager = SessionManager()
+        data_processor = DataProcessor()
+        
+        sessions = session_manager.get_all_sessions()
+        sessions_updated = 0
+        failed_sessions = []
+        
+        for session in sessions:
+            session_id = session.get('session_id')
+            if not session_id:
+                continue
+                
+            try:
+                # Reprocess the session with new domain classifications
+                result = data_processor.reprocess_existing_session(session_id)
+                if result['success']:
+                    sessions_updated += 1
+                else:
+                    failed_sessions.append(session_id)
+                    
+            except Exception as e:
+                app.logger.error(f"Error reprocessing session {session_id}: {str(e)}")
+                failed_sessions.append(session_id)
+        
+        if failed_sessions:
+            return jsonify({
+                'success': False,
+                'error': f'Failed to reprocess sessions: {", ".join(failed_sessions)}',
+                'sessions_updated': sessions_updated
+            }), 500
+        else:
+            return jsonify({
+                'success': True,
+                'sessions_updated': sessions_updated
+            })
+            
+    except Exception as e:
+        app.logger.error(f"Error reprocessing sessions: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/admin/domains/reset', methods=['POST'])
+def reset_domains():
+    """Reset domain classifications to default values"""
+    try:
+        domain_manager = DomainManager()
+        result = domain_manager.reset_to_defaults()
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 500
+            
+    except Exception as e:
+        app.logger.error(f"Error resetting domains: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # Error handlers
 @app.errorhandler(404)

@@ -11,6 +11,17 @@ Upload limit preference: High capacity (500MB) for large email data files.
 
 ## Recent Changes
 
+- **Domain Classifier System with Admin Management** (July 18, 2025):
+  - Created comprehensive domain classification system with 5 categories: Trusted, Corporate, Personal, Public, Suspicious
+  - Added dedicated admin panel tab for domain management with visual statistics and progress bars
+  - Implemented add/remove functionality for each domain category with validation
+  - Created backend DomainManager class for robust domain classification and management
+  - Added API endpoints for domain CRUD operations (/admin/domains/add, /admin/domains/remove, etc.)
+  - Integrated domain export functionality for configuration backup
+  - Added reprocess sessions capability to apply new domain classifications to existing data
+  - Updated data processor to use centralized domain classification system
+  - Created default domain classifications with common examples for each category
+  - Enhanced UI with collapsible accordion interface showing domain counts and category icons
 - **Comprehensive Case Management Filtering System** (July 18, 2025):
   - Added advanced filtering on all available email fields
   - Primary filters: Risk Level, Rule Matches, Status, Quick Search

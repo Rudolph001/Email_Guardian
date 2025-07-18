@@ -622,40 +622,21 @@ class DataProcessor:
             return safe_record
 
     def _classify_domain(self, recipient_domain: str, sender_email: str) -> str:
-        """Classify domain as Trusted, Corporate, Personal, Public, or Suspicious"""
+        """Classify domain using the new domain manager system"""
         try:
-            # Common domain classifications
-            corporate_domains = ['company.com', 'corporate.com', 'business.com']
-            personal_domains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com']
-            public_domains = ['gov.com', 'edu.com', 'org.com']
-            suspicious_indicators = ['temp', 'throwaway', '10minute', 'guerrilla']
-
-            domain = recipient_domain.lower()
-
-            # Check for suspicious patterns
-            if any(indicator in domain for indicator in suspicious_indicators):
-                return 'Suspicious'
-
-            # Check against known categories
-            if domain in corporate_domains:
-                return 'Corporate'
-            elif domain in personal_domains:
-                return 'Personal'
-            elif domain in public_domains:
-                return 'Public'
-
-            # Check whitelist (trusted domains)
-            whitelists = self.session_manager.get_whitelists()
-            if domain in whitelists.get('domains', []):
-                return 'Trusted'
-
-            # Default classification based on domain characteristics
-            if domain.endswith('.gov') or domain.endswith('.edu'):
-                return 'Public'
-            elif domain.endswith('.com') or domain.endswith('.org'):
-                return 'Corporate'
-            else:
-                return 'Personal'
+            from domain_manager import DomainManager
+            domain_manager = DomainManager()
+            
+            # Use the domain manager for classification
+            classification = domain_manager.classify_domain(recipient_domain)
+            
+            # Fall back to whitelist check if unknown
+            if classification == 'Unknown':
+                whitelists = self.session_manager.get_whitelists()
+                if recipient_domain.lower() in whitelists.get('domains', []):
+                    return 'Trusted'
+            
+            return classification
 
         except Exception as e:
             self.logger.error(f"Error classifying domain: {str(e)}")

@@ -1,0 +1,45 @@
+{
+  "trusted": [
+    "company.com",
+    "corporate.com",
+    "business.com",
+    "rdcomputers.co.za"
+  ],
+  "corporate": [
+    "microsoft.com",
+    "apple.com",
+    "google.com",
+    "amazon.com",
+    "salesforce.com",
+    "linkedin.com",
+    "office365.com"
+  ],
+  "personal": [
+    "gmail.com",
+    "yahoo.com",
+    "hotmail.com",
+    "outlook.com",
+    "icloud.com",
+    "aol.com",
+    "protonmail.com"
+  ],
+  "public": [
+    "gov.uk",
+    "gov.us",
+    "edu.com",
+    "edu.uk",
+    "ac.uk",
+    "org.uk",
+    "mil.us",
+    "state.gov"
+  ],
+  "suspicious": [
+    "tempmail.com",
+    "10minutemail.com",
+    "guerrillamail.com",
+    "throwaway.email",
+    "mailinator.com",
+    "yopmail.com"
+  ],
+  "updated_at": "2025-07-18T23:30:00.000000"
+}
