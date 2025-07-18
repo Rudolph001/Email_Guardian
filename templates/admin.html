@@ -1,379 +1,462 @@
+
 {% extends "base.html" %}
 
-{% block title %}Email Guardian - Admin{% endblock %}
+{% block title %}Email Guardian - Admin Panel{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-12">
-        <h1 class="h3 mb-4">Administration Panel</h1>
-    </div>
-</div>
-
-<!-- Whitelist Management -->
-<div class="row mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-list me-2"></i>Whitelist Domains
-                </h5>
-            </div>
-            <div class="card-body">
-                <form method="post" action="{{ url_for('update_whitelist') }}">
-                    <div class="mb-3">
-                        <label for="domains" class="form-label">Trusted Domains</label>
-                        <textarea class="form-control" id="domains" name="domains" rows="8" 
-                                  placeholder="Enter one domain per line">{% for domain in whitelists.domains %}{{ domain }}
-{% endfor %}</textarea>
-                        <div class="form-text">
-                            Emails from these domains will be filtered out from analysis. Enter one domain per line.
-                        </div>
-                    </div>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>Update Whitelist
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-cog me-2 text-primary"></i>Administration Panel
+                    </h1>
+                    <p class="text-muted mb-0">Manage system settings, keywords, and sessions</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                    <button class="btn btn-primary" onclick="location.reload()">
+                        <i class="fas fa-sync-alt me-2"></i>Refresh
                     </button>
-                </form>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-info-circle me-2"></i>Whitelist Statistics
-                </h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <h6>Current Domains</h6>
-                    <span class="badge bg-primary">{{ whitelists.domains|length }}</span>
-                </div>
-                
-                <div class="mb-3">
-                    <h6>Last Updated</h6>
-                    <small class="text-muted">{{ whitelists.updated_at[:19] }}</small>
-                </div>
-                
-                <div class="mb-3">
-                    <h6>Domain Examples</h6>
-                    <ul class="list-unstyled">
-                        {% for domain in whitelists.domains[:5] %}
-                        <li><code>{{ domain }}</code></li>
-                        {% endfor %}
-                        {% if whitelists.domains|length > 5 %}
-                        <li><small class="text-muted">... and {{ whitelists.domains|length - 5 }} more</small></li>
-                        {% endif %}
-                    </ul>
                 </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Attachment Keywords Management -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-paperclip me-2"></i>Attachment Analysis Keywords
-                </h5>
-            </div>
-            <div class="card-body">
-                <form method="post" action="{{ url_for('update_attachment_keywords') }}">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="business_keywords" class="form-label">
-                                    <i class="fas fa-briefcase me-1"></i>Business Keywords
-                                </label>
-                                <textarea class="form-control" id="business_keywords" name="business_keywords" rows="8" 
-                                          placeholder="Enter one keyword per line">{% for keyword in attachment_keywords.business_keywords %}{{ keyword }}
-{% endfor %}</textarea>
-                                <div class="form-text">
-                                    Keywords that indicate business-related attachments
-                                </div>
-                            </div>
+    <!-- Navigation Tabs -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="whitelist-tab" data-bs-toggle="tab" data-bs-target="#whitelist" type="button" role="tab">
+                        <i class="fas fa-list me-2"></i>Whitelist Management
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="keywords-tab" data-bs-toggle="tab" data-bs-target="#keywords" type="button" role="tab">
+                        <i class="fas fa-tags me-2"></i>Attachment Keywords
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="sessions-tab" data-bs-toggle="tab" data-bs-target="#sessions" type="button" role="tab">
+                        <i class="fas fa-database me-2"></i>Session Management
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="system-tab" data-bs-toggle="tab" data-bs-target="#system" type="button" role="tab">
+                        <i class="fas fa-info-circle me-2"></i>System Status
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="adminTabContent">
+        
+        <!-- Whitelist Management Tab -->
+        <div class="tab-pane fade show active" id="whitelist" role="tabpanel">
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-shield-alt me-2"></i>Trusted Domains Configuration
+                            </h5>
                         </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="personal_keywords" class="form-label">
-                                    <i class="fas fa-user me-1"></i>Personal Keywords
-                                </label>
-                                <textarea class="form-control" id="personal_keywords" name="personal_keywords" rows="8" 
-                                          placeholder="Enter one keyword per line">{% for keyword in attachment_keywords.personal_keywords %}{{ keyword }}
+                        <div class="card-body">
+                            <form method="post" action="{{ url_for('update_whitelist') }}">
+                                <div class="mb-3">
+                                    <label for="domains" class="form-label fw-bold">Whitelisted Domains</label>
+                                    <textarea class="form-control font-monospace" id="domains" name="domains" rows="12" 
+                                              placeholder="Enter one domain per line (e.g., company.com)">{% for domain in whitelists.domains|sort %}{{ domain }}
 {% endfor %}</textarea>
-                                <div class="form-text">
-                                    Keywords that indicate personal attachments
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Emails from these domains will be automatically filtered out from analysis. Enter one domain per line.
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="suspicious_keywords" class="form-label">
-                                    <i class="fas fa-exclamation-triangle me-1"></i>Suspicious Keywords
-                                </label>
-                                <textarea class="form-control" id="suspicious_keywords" name="suspicious_keywords" rows="8" 
-                                          placeholder="Enter one keyword per line">{% for keyword in attachment_keywords.suspicious_keywords %}{{ keyword }}
-{% endfor %}</textarea>
-                                <div class="form-text">
-                                    Keywords that indicate potentially suspicious attachments
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Update Whitelist
+                                    </button>
+                                    <small class="text-muted">
+                                        Last updated: {{ whitelists.updated_at[:19] if whitelists.updated_at else 'Never' }}
+                                    </small>
                                 </div>
-                            </div>
+                            </form>
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-12">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i>Update Attachment Keywords
+                </div>
+                
+                <div class="col-lg-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-chart-bar me-2"></i>Whitelist Statistics
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-bold">Total Domains:</span>
+                                        <span class="badge bg-primary fs-6">{{ whitelists.domains|length }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="fw-bold">Status:</span>
+                                        <span class="badge bg-success">Active</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if whitelists.domains %}
+                            <hr>
+                            <h6 class="fw-bold mb-2">Recent Domains:</h6>
+                            <div class="list-group list-group-flush">
+                                {% for domain in whitelists.domains|sort[:5] %}
+                                <div class="list-group-item border-0 px-0 py-1">
+                                    <code class="small">{{ domain }}</code>
+                                </div>
+                                {% endfor %}
+                                {% if whitelists.domains|length > 5 %}
+                                <div class="list-group-item border-0 px-0 py-1">
+                                    <small class="text-muted">... and {{ whitelists.domains|length - 5 }} more domains</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attachment Keywords Tab -->
+        <div class="tab-pane fade" id="keywords" role="tabpanel">
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-paperclip me-2"></i>Attachment Analysis Keywords
+                    </h5>
+                    <p class="card-text mb-0">Configure keywords used to classify email attachments</p>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('update_attachment_keywords') }}">
+                        <div class="row g-4">
+                            <!-- Business Keywords -->
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 h-100">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-primary text-white rounded-circle p-2 me-2">
+                                            <i class="fas fa-briefcase"></i>
+                                        </div>
+                                        <div>
+                                            <label for="business_keywords" class="form-label fw-bold mb-0">Business Keywords</label>
+                                            <small class="text-muted d-block">Indicates business-related files</small>
+                                        </div>
+                                    </div>
+                                    <textarea class="form-control font-monospace" id="business_keywords" name="business_keywords" rows="10" 
+                                              placeholder="report&#10;invoice&#10;contract">{% for keyword in attachment_keywords.business_keywords|sort %}{{ keyword }}
+{% endfor %}</textarea>
+                                    <div class="mt-2">
+                                        <span class="badge bg-primary">{{ attachment_keywords.business_keywords|length }} keywords</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Personal Keywords -->
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 h-100">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-warning text-dark rounded-circle p-2 me-2">
+                                            <i class="fas fa-user"></i>
+                                        </div>
+                                        <div>
+                                            <label for="personal_keywords" class="form-label fw-bold mb-0">Personal Keywords</label>
+                                            <small class="text-muted d-block">Indicates personal files</small>
+                                        </div>
+                                    </div>
+                                    <textarea class="form-control font-monospace" id="personal_keywords" name="personal_keywords" rows="10" 
+                                              placeholder="family&#10;photo&#10;personal">{% for keyword in attachment_keywords.personal_keywords|sort %}{{ keyword }}
+{% endfor %}</textarea>
+                                    <div class="mt-2">
+                                        <span class="badge bg-warning text-dark">{{ attachment_keywords.personal_keywords|length }} keywords</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Suspicious Keywords -->
+                            <div class="col-md-4">
+                                <div class="border rounded p-3 h-100">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="bg-danger text-white rounded-circle p-2 me-2">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                        </div>
+                                        <div>
+                                            <label for="suspicious_keywords" class="form-label fw-bold mb-0">Suspicious Keywords</label>
+                                            <small class="text-muted d-block">Indicates potentially risky files</small>
+                                        </div>
+                                    </div>
+                                    <textarea class="form-control font-monospace" id="suspicious_keywords" name="suspicious_keywords" rows="10" 
+                                              placeholder="confidential&#10;secret&#10;private">{% for keyword in attachment_keywords.suspicious_keywords|sort %}{{ keyword }}
+{% endfor %}</textarea>
+                                    <div class="mt-2">
+                                        <span class="badge bg-danger">{{ attachment_keywords.suspicious_keywords|length }} keywords</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button type="submit" class="btn btn-warning text-dark">
+                                <i class="fas fa-save me-2"></i>Update Keywords Configuration
                             </button>
-                            <small class="text-muted ms-3">
+                            <small class="text-muted">
                                 Last updated: {{ attachment_keywords.updated_at[:19] if attachment_keywords.updated_at else 'Never' }}
                             </small>
                         </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Attachment Analysis Statistics -->
-<div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="card-title mb-0">
-                    <i class="fas fa-briefcase me-2"></i>Business Keywords
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="mb-2">
-                    <strong>Total Keywords:</strong>
-                    <span class="badge bg-primary">{{ attachment_keywords.business_keywords|length }}</span>
+        <!-- Session Management Tab -->
+        <div class="tab-pane fade" id="sessions" role="tabpanel">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-database me-2"></i>Processing Sessions
+                    </h5>
                 </div>
-                <div class="mb-2">
-                    <strong>Examples:</strong>
-                    <ul class="list-unstyled">
-                        {% for keyword in attachment_keywords.business_keywords[:3] %}
-                        <li><code>{{ keyword }}</code></li>
-                        {% endfor %}
-                        {% if attachment_keywords.business_keywords|length > 3 %}
-                        <li><small class="text-muted">... and {{ attachment_keywords.business_keywords|length - 3 }} more</small></li>
-                        {% endif %}
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="card-title mb-0">
-                    <i class="fas fa-user me-2"></i>Personal Keywords
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="mb-2">
-                    <strong>Total Keywords:</strong>
-                    <span class="badge bg-warning">{{ attachment_keywords.personal_keywords|length }}</span>
-                </div>
-                <div class="mb-2">
-                    <strong>Examples:</strong>
-                    <ul class="list-unstyled">
-                        {% for keyword in attachment_keywords.personal_keywords[:3] %}
-                        <li><code>{{ keyword }}</code></li>
-                        {% endfor %}
-                        {% if attachment_keywords.personal_keywords|length > 3 %}
-                        <li><small class="text-muted">... and {{ attachment_keywords.personal_keywords|length - 3 }} more</small></li>
-                        {% endif %}
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="card-title mb-0">
-                    <i class="fas fa-exclamation-triangle me-2"></i>Suspicious Keywords
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="mb-2">
-                    <strong>Total Keywords:</strong>
-                    <span class="badge bg-danger">{{ attachment_keywords.suspicious_keywords|length }}</span>
-                </div>
-                <div class="mb-2">
-                    <strong>Examples:</strong>
-                    <ul class="list-unstyled">
-                        {% for keyword in attachment_keywords.suspicious_keywords[:3] %}
-                        <li><code>{{ keyword }}</code></li>
-                        {% endfor %}
-                        {% if attachment_keywords.suspicious_keywords|length > 3 %}
-                        <li><small class="text-muted">... and {{ attachment_keywords.suspicious_keywords|length - 3 }} more</small></li>
-                        {% endif %}
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Session Management -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">
-                    <i class="fas fa-database me-2"></i>Session Management
-                </h5>
-            </div>
-            <div class="card-body">
-                {% if sessions %}
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Session ID</th>
-                                    <th>Filename</th>
-                                    <th>Status</th>
-                                    <th>Records</th>
-                                    <th>Created</th>
-                                    <th>Size</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for session in sessions %}
-                                <tr>
-                                    <td>
-                                        <code>{{ session.session_id }}</code>
-                                    </td>
-                                    <td>{{ session.filename }}</td>
-                                    <td>
-                                        <span class="badge bg-{{ 'success' if session.status == 'active' else 'secondary' }}">
-                                            {{ session.status.title() }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="progress" style="height: 20px; width: 100px;">
-                                            <div class="progress-bar" role="progressbar" 
-                                                 style="width: {{ (session.processed_records / session.total_records * 100) if session.total_records > 0 else 0 }}%">
-                                                {{ session.processed_records or 0 }}
+                <div class="card-body">
+                    {% if sessions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th><i class="fas fa-id-card me-1"></i>Session ID</th>
+                                        <th><i class="fas fa-file me-1"></i>Filename</th>
+                                        <th><i class="fas fa-chart-line me-1"></i>Status</th>
+                                        <th><i class="fas fa-list-ol me-1"></i>Records</th>
+                                        <th><i class="fas fa-calendar me-1"></i>Created</th>
+                                        <th><i class="fas fa-hdd me-1"></i>Size</th>
+                                        <th><i class="fas fa-tools me-1"></i>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for session in sessions %}
+                                    <tr>
+                                        <td>
+                                            <code class="bg-light p-1 rounded">{{ session.session_id }}</code>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-file-csv text-success me-2"></i>
+                                                {{ session.filename }}
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <small>{{ session.created_at[:19] }}</small>
-                                    </td>
-                                    <td>
-                                        <small class="text-muted">
-                                            {{ "%.1f"|format((session.processed_data|length * 1024) / 1024) }} KB
-                                        </small>
-                                    </td>
-                                    <td>
-                                        <div class="btn-group btn-group-sm">
-                                            <a href="{{ url_for('dashboard', session_id=session.session_id) }}" 
-                                               class="btn btn-outline-primary">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                            <a href="{{ url_for('export_session', session_id=session.session_id) }}" 
-                                               class="btn btn-outline-success">
-                                                <i class="fas fa-download"></i>
-                                            </a>
-                                            <form method="POST" action="{{ url_for('delete_session', session_id=session.session_id) }}" 
-                                                  style="display: inline;" 
-                                                  onsubmit="return confirm('Are you sure you want to delete session {{ session.session_id }}? This action cannot be undone.')">
-                                                <button type="submit" class="btn btn-outline-danger">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-database fa-3x text-muted mb-3"></i>
-                        <h5>No Sessions Found</h5>
-                        <p class="text-muted">No processing sessions have been created yet.</p>
-                    </div>
-                {% endif %}
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{{ 'success' if session.status == 'active' else 'secondary' }} fs-6">
+                                                <i class="fas fa-{{ 'check-circle' if session.status == 'active' else 'pause-circle' }} me-1"></i>
+                                                {{ session.status.title() }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="progress" style="height: 25px; min-width: 120px;">
+                                                <div class="progress-bar bg-info" role="progressbar" 
+                                                     style="width: {{ (session.processed_records / session.total_records * 100) if session.total_records > 0 else 0 }}%">
+                                                    <small class="fw-bold">{{ session.processed_records or 0 }} / {{ session.total_records or 0 }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock me-1"></i>
+                                                {{ session.created_at[:19] }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">
+                                                {{ "%.1f"|format((session.processed_data|length * 1024) / 1024) }} KB
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('dashboard', session_id=session.session_id) }}" 
+                                                   class="btn btn-outline-primary" title="View Session">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{{ url_for('export_session', session_id=session.session_id) }}" 
+                                                   class="btn btn-outline-success" title="Export Data">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
+                                                <form method="POST" action="{{ url_for('delete_session', session_id=session.session_id) }}" 
+                                                      style="display: inline;" 
+                                                      onsubmit="return confirm('⚠️ Are you sure you want to delete session {{ session.session_id }}?\n\nThis action cannot be undone and will permanently remove:\n• All processed email data\n• Case management records\n• Escalation history\n• ML analysis results')">
+                                                    <button type="submit" class="btn btn-outline-danger" title="Delete Session">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-database fa-4x text-muted mb-3"></i>
+                            <h5 class="text-muted">No Processing Sessions Found</h5>
+                            <p class="text-muted">Upload email data to create your first processing session.</p>
+                            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                                <i class="fas fa-upload me-2"></i>Upload Data
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
-    </div>
-</div>
 
-<!-- System Information -->
-<div class="row">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="card-title mb-0">System Status</h6>
-            </div>
-            <div class="card-body">
-                <div class="mb-2">
-                    <strong>ML Engine:</strong>
-                    <span class="badge bg-success">Active</span>
+        <!-- System Status Tab -->
+        <div class="tab-pane fade" id="system" role="tabpanel">
+            <div class="row g-4">
+                <!-- System Status -->
+                <div class="col-md-6">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-dark text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-server me-2"></i>System Components
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                                    <span><i class="fas fa-robot me-2 text-primary"></i>ML Engine</span>
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>Active
+                                    </span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                                    <span><i class="fas fa-cogs me-2 text-warning"></i>Rule Engine</span>
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>Active
+                                    </span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                                    <span><i class="fas fa-database me-2 text-info"></i>Data Storage</span>
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>Available
+                                    </span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center border-0 px-0">
+                                    <span><i class="fas fa-shield-alt me-2 text-success"></i>Security Engine</span>
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>Active
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="mb-2">
-                    <strong>Rule Engine:</strong>
-                    <span class="badge bg-success">Active</span>
+                
+                <!-- Processing Statistics -->
+                <div class="col-md-6">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-chart-pie me-2"></i>Processing Statistics
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3 text-center">
+                                <div class="col-6">
+                                    <div class="border rounded p-3">
+                                        <h4 class="text-primary mb-1">{{ sessions|length }}</h4>
+                                        <small class="text-muted">Total Sessions</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded p-3">
+                                        <h4 class="text-success mb-1">{{ sessions|selectattr('status', 'equalto', 'active')|list|length }}</h4>
+                                        <small class="text-muted">Active Sessions</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded p-3">
+                                        <h4 class="text-info mb-1">{{ sessions|sum(attribute='processed_records') or 0 }}</h4>
+                                        <small class="text-muted">Total Records</small>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded p-3">
+                                        <h4 class="text-warning mb-1">{{ whitelists.domains|length }}</h4>
+                                        <small class="text-muted">Whitelisted Domains</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="mb-2">
-                    <strong>Storage:</strong>
-                    <span class="badge bg-success">Available</span>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="card-title mb-0">Processing Statistics</h6>
-            </div>
-            <div class="card-body">
-                <div class="mb-2">
-                    <strong>Total Sessions:</strong>
-                    <span class="badge bg-info">{{ sessions|length }}</span>
-                </div>
-                <div class="mb-2">
-                    <strong>Active Sessions:</strong>
-                    <span class="badge bg-success">{{ sessions|selectattr('status', 'equalto', 'active')|list|length }}</span>
-                </div>
-                <div class="mb-2">
-                    <strong>Total Records:</strong>
-                    <span class="badge bg-primary">{{ sessions|sum(attribute='processed_records') or 0 }}</span>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h6 class="card-title mb-0">Configuration</h6>
-            </div>
-            <div class="card-body">
-                <div class="mb-2">
-                    <strong>Whitelisted Domains:</strong>
-                    <span class="badge bg-info">{{ whitelists.domains|length }}</span>
-                </div>
-                <div class="mb-2">
-                    <strong>Upload Limit:</strong>
-                    <span class="badge bg-secondary">16 MB</span>
-                </div>
-                <div class="mb-2">
-                    <strong>Data Retention:</strong>
-                    <span class="badge bg-secondary">Persistent</span>
+                
+                <!-- Configuration Overview -->
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-secondary text-white">
+                            <h6 class="card-title mb-0">
+                                <i class="fas fa-cog me-2"></i>Configuration Overview
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-4">
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <div class="bg-primary text-white rounded-circle p-3 d-inline-block mb-2">
+                                            <i class="fas fa-shield-alt fa-2x"></i>
+                                        </div>
+                                        <h6>Security Settings</h6>
+                                        <p class="text-muted small">{{ whitelists.domains|length }} trusted domains configured</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <div class="bg-warning text-dark rounded-circle p-3 d-inline-block mb-2">
+                                            <i class="fas fa-tags fa-2x"></i>
+                                        </div>
+                                        <h6>Keywords</h6>
+                                        <p class="text-muted small">{{ (attachment_keywords.business_keywords|length + attachment_keywords.personal_keywords|length + attachment_keywords.suspicious_keywords|length) }} total keywords</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <div class="bg-success text-white rounded-circle p-3 d-inline-block mb-2">
+                                            <i class="fas fa-upload fa-2x"></i>
+                                        </div>
+                                        <h6>Upload Limit</h6>
+                                        <p class="text-muted small">16 MB maximum file size</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <div class="bg-info text-white rounded-circle p-3 d-inline-block mb-2">
+                                            <i class="fas fa-clock fa-2x"></i>
+                                        </div>
+                                        <h6>Data Retention</h6>
+                                        <p class="text-muted small">Persistent storage enabled</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -383,11 +466,34 @@
 
 {% block scripts %}
 <script>
-function confirmDelete(sessionId) {
-    if (confirm('Are you sure you want to delete this session? This action cannot be undone.')) {
-        // In a real implementation, this would make a DELETE request
-        alert('Session deletion would be implemented here');
-    }
+// Initialize Bootstrap tabs
+var triggerTabList = [].slice.call(document.querySelectorAll('#adminTabs button'));
+triggerTabList.forEach(function (triggerEl) {
+    var tabTrigger = new bootstrap.Tab(triggerEl);
+    triggerEl.addEventListener('click', function (event) {
+        event.preventDefault();
+        tabTrigger.show();
+    });
+});
+
+// Auto-save functionality for textareas
+document.querySelectorAll('textarea').forEach(function(textarea) {
+    textarea.addEventListener('input', function() {
+        // Add visual indication that changes are pending
+        this.style.borderColor = '#ffc107';
+    });
+});
+
+// Confirmation for session deletion
+function confirmSessionDeletion(sessionId) {
+    return confirm(
+        '⚠️ Are you sure you want to delete session ' + sessionId + '?\n\n' +
+        'This action cannot be undone and will permanently remove:\n' +
+        '• All processed email data\n' +
+        '• Case management records\n' +
+        '• Escalation history\n' +
+        '• ML analysis results'
+    );
 }
 </script>
 {% endblock %}
