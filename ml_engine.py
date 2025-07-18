@@ -727,21 +727,21 @@ class MLEngine:
 
                     # Check for business keywords
                     for keyword in self.business_keywords:
-                        if keyword.lower() in attachment.lower():
+                        if keyword in attachment:
                             business_score += 1
                             self.logger.info(f"Business keyword '{keyword}' found in attachment '{attachment}'")
                             break
 
                     # Check for personal keywords
                     for keyword in self.personal_keywords:
-                        if keyword.lower() in attachment.lower():
+                        if keyword in attachment:
                             personal_score += 1
                             self.logger.info(f"Personal keyword '{keyword}' found in attachment '{attachment}'")
                             break
 
                     # Check for suspicious keywords
                     for keyword in self.suspicious_keywords:
-                        if keyword.lower() in attachment.lower():
+                        if keyword in attachment:
                             suspicious_score += 1
                             self.logger.info(f"Suspicious keyword '{keyword}' found in attachment '{attachment}'")
                             break
