@@ -37,47 +37,54 @@ class SessionManager:
                 json.dump(default_whitelists, f, indent=2)
 
     def load_sessions(self) -> Dict:
-        """Load all sessions from file, including separately stored large data"""
+        """Load all sessions from file, prioritizing regular file for new sessions"""
         try:
-            # First check if there's a compressed file with full data
+            sessions = {}
+            
+            # First load from regular sessions file (has latest sessions)
+            if os.path.exists(self.sessions_file):
+                with open(self.sessions_file, 'r') as f:
+                    sessions = json.load(f)
+                self.logger.debug(f"Loaded {len(sessions)} sessions from regular file")
+            
+            # Then load from compressed file if it exists (older large sessions)
             compressed_file = self.sessions_file + '.gz'
             if os.path.exists(compressed_file):
                 import gzip
                 try:
                     with gzip.open(compressed_file, 'rt', encoding='utf-8') as f:
                         compressed_sessions = json.load(f)
-                    self.logger.info(f"Loaded compressed sessions with full data from {compressed_file}")
-                    return compressed_sessions
+                    
+                    # Merge compressed sessions with regular sessions (regular takes priority)
+                    for session_id, session_data in compressed_sessions.items():
+                        if session_id not in sessions:
+                            sessions[session_id] = session_data
+                    
+                    self.logger.debug(f"Merged {len(compressed_sessions)} sessions from compressed file")
                 except Exception as e:
                     self.logger.error(f"Error loading compressed sessions: {e}")
             
-            # Fall back to regular sessions file
-            if os.path.exists(self.sessions_file):
-                with open(self.sessions_file, 'r') as f:
-                    sessions = json.load(f)
-                
-                # Check if we have separately stored data
-                data_dir = 'data/session_data'
-                if os.path.exists(data_dir):
-                    for session_id in sessions:
-                        data_file = os.path.join(data_dir, f"{session_id}_data.json.gz")
-                        if os.path.exists(data_file):
-                            try:
-                                import gzip
-                                with gzip.open(data_file, 'rt', encoding='utf-8') as f:
-                                    processed_data = json.load(f)
-                                sessions[session_id]['processed_data'] = processed_data
-                                self.logger.debug(f"Loaded {len(processed_data)} records from {data_file}")
-                            except Exception as e:
-                                self.logger.error(f"Error loading processed data for session {session_id}: {e}")
-                                sessions[session_id]['processed_data'] = []
-                        else:
-                            # Ensure processed_data exists even if no separate file
-                            if 'processed_data' not in sessions[session_id]:
-                                sessions[session_id]['processed_data'] = []
-                
-                return sessions
-            return {}
+            # Load separately stored data if it exists
+            data_dir = 'data/session_data'
+            if os.path.exists(data_dir):
+                for session_id in sessions:
+                    data_file = os.path.join(data_dir, f"{session_id}_data.json.gz")
+                    if os.path.exists(data_file):
+                        try:
+                            import gzip
+                            with gzip.open(data_file, 'rt', encoding='utf-8') as f:
+                                processed_data = json.load(f)
+                            sessions[session_id]['processed_data'] = processed_data
+                            self.logger.debug(f"Loaded {len(processed_data)} records from {data_file}")
+                        except Exception as e:
+                            self.logger.error(f"Error loading processed data for session {session_id}: {e}")
+                            sessions[session_id]['processed_data'] = []
+                    else:
+                        # Ensure processed_data exists even if no separate file
+                        if 'processed_data' not in sessions[session_id]:
+                            sessions[session_id]['processed_data'] = []
+            
+            return sessions
         except Exception as e:
             self.logger.error(f"Error loading sessions: {str(e)}")
             return {}
