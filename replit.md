@@ -11,6 +11,14 @@ Upload limit preference: High capacity (500MB) for large email data files.
 
 ## Recent Changes
 
+- **Corporate Color Scheme Update** (July 18, 2025):
+  - Updated application color palette to professional corporate theme
+  - Changed from earthy colors to modern corporate blues, grays, and whites
+  - Primary color: Dark gray (#1f2937) for professional and authoritative look
+  - Secondary color: Corporate blue (#3b82f6) for trustworthy and modern feel
+  - Background: Clean light gray (#f8fafc) for minimal professional appearance
+  - Added Inter font family for modern, corporate typography
+  - Updated all UI elements to match new corporate branding standards
 - **Updated Rule Processing Workflow** (July 18, 2025):
   - Changed rule matches to go to case management dashboard with Critical risk level instead of directly to escalation
   - Only manually escalated cases (via escalate button) now appear in escalation dashboard

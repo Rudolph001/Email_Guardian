@@ -1,30 +1,31 @@
-/* Email Guardian - Professional Business Intelligence Interface */
-/* Colors: Earthy Satin Palette - Sage Green Primary, Terracotta Secondary, Warm Cream Background */
+/* Email Guardian - Professional Corporate Intelligence Interface */
+/* Colors: Corporate Blue Palette - Professional and Modern */
 
 /* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&family=Roboto:wght@300;400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Sans+Pro:wght@300;400;600;700&display=swap');
 
-/* Root Variables - Earthy Satin Color Palette */
+/* Root Variables - Corporate Professional Color Palette */
 :root {
-    --primary-color: #7d8471;        /* Sage green - earthy and calming */
-    --secondary-color: #c07854;      /* Terracotta - warm earth tone */
-    --background-color: #f7f5f0;     /* Warm cream - soft background */
-    --text-color: #4a4539;           /* Dark earth brown - readable text */
-    --card-background: #fefcf7;      /* Off-white with warm undertone */
-    --border-color: #e3ddd0;         /* Soft taupe border */
-    --success-color: #6b8e5a;        /* Forest green - natural success */
-    --warning-color: #d4a574;        /* Golden amber - warm warning */
-    --danger-color: #b8705a;         /* Clay red - muted danger */
-    --info-color: #7a9bb8;           /* Dusty blue - calm info */
-    --light-color: #f2efe6;          /* Light beige */
-    --dark-color: #3d3a32;           /* Dark charcoal brown */
-    --shadow: 0 2px 4px rgba(77, 69, 57, 0.1);
-    --shadow-lg: 0 4px 6px rgba(77, 69, 57, 0.12);
+    --primary-color: #1f2937;        /* Corporate dark gray - professional and authoritative */
+    --secondary-color: #3b82f6;      /* Corporate blue - trustworthy and modern */
+    --background-color: #f8fafc;     /* Clean light gray - minimal and professional */
+    --text-color: #1f2937;           /* Dark gray - high contrast and readable */
+    --card-background: #ffffff;      /* Pure white - clean and professional */
+    --border-color: #e5e7eb;         /* Light gray border - subtle separation */
+    --success-color: #10b981;        /* Professional green - clear success */
+    --warning-color: #f59e0b;        /* Corporate amber - attention grabbing */
+    --danger-color: #ef4444;         /* Professional red - clear danger */
+    --info-color: #3b82f6;           /* Corporate blue - information */
+    --light-color: #f3f4f6;          /* Very light gray */
+    --dark-color: #111827;           /* Deep charcoal - strong contrast */
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --accent-color: #6366f1;         /* Modern indigo accent */
 }
 
 /* Base Styles */
 body {
-    font-family: 'Source Sans Pro', 'Roboto', sans-serif;
+    font-family: 'Inter', 'Source Sans Pro', sans-serif;
     background-color: var(--background-color);
     color: var(--text-color);
     line-height: 1.6;
@@ -33,7 +34,7 @@ body {
 
 /* Typography Hierarchy */
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'Source Sans Pro', sans-serif;
+    font-family: 'Inter', 'Source Sans Pro', sans-serif;
     font-weight: 600;
     color: var(--text-color);
     margin-bottom: 1rem;
@@ -112,7 +113,7 @@ h6 { font-size: 1.1rem; font-weight: 500; }
 }
 
 .card-text {
-    color: #8a7f6e;
+    color: #6b7280;
     font-size: 0.9rem;
 }
 
@@ -154,7 +155,7 @@ h6 { font-size: 1.1rem; font-weight: 500; }
 
 .stats-card p {
     font-size: 0.9rem;
-    color: #8a7f6e;
+    color: #6b7280;
     margin-bottom: 0;
 }
 
@@ -166,7 +167,7 @@ h6 { font-size: 1.1rem; font-weight: 500; }
 
 .clickable-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(77, 69, 57, 0.15);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
 a.text-decoration-none:hover .clickable-card h5,
@@ -190,14 +191,14 @@ a.text-decoration-none:hover .clickable-card p {
 }
 
 .btn-primary:hover {
-    background-color: #6b7360;
-    border-color: #6b7360;
+    background-color: #374151;
+    border-color: #374151;
     transform: translateY(-1px);
 }
 
 .btn-secondary {
-    background-color: #8a7f6e;
-    border-color: #8a7f6e;
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
 }
 
 .btn-success {
