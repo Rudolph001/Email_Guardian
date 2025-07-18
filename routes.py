@@ -144,6 +144,18 @@ def case_management(session_id):
     # Get processed data
     processed_data = session_manager.get_processed_data(session_id)
     
+    # Filter out escalated cases - they should only appear in escalation dashboard
+    if processed_data:
+        non_escalated_data = []
+        for i, d in enumerate(processed_data):
+            status = d.get('status', 'Active').lower()
+            if status != 'escalated':
+                # Ensure record has an ID for actions
+                if 'record_id' not in d:
+                    d['record_id'] = str(i)
+                non_escalated_data.append(d)
+        processed_data = non_escalated_data
+    
     # Get filter parameters
     risk_filter = request.args.get('risk_filter', 'all')
     rule_filter = request.args.get('rule_filter', 'all')
@@ -172,9 +184,9 @@ def case_management(session_id):
                         search_lower in d.get('subject', '').lower() or 
                         search_lower in d.get('recipients', '').lower()]
     
-    # Get unique values for filter dropdowns
+    # Get unique values for filter dropdowns (exclude 'Escalated' since those cases are in escalation dashboard)
     risk_levels = list(set(d.get('ml_risk_level', 'Unknown') for d in processed_data if processed_data))
-    statuses = list(set(d.get('status', 'Active') for d in processed_data if processed_data))
+    statuses = list(set(d.get('status', 'Active') for d in processed_data if processed_data and d.get('status', 'Active').lower() != 'escalated'))
     
     return render_template('case_management.html', 
                          session=session_data,
