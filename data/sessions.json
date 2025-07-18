@@ -1,6 +1,6 @@
 {
-  "65f2e0ae": {
-    "session_id": "65f2e0ae",
+  "3514b5e3": {
+    "session_id": "3514b5e3",
     "filename": "dummy_email_data.csv",
     "csv_headers": [
       "_time",
@@ -22,18 +22,13 @@
       "final_outcome",
       "policy_name"
     ],
-    "created_at": "2025-07-18T10:35:05.381066",
-    "updated_at": "2025-07-18T11:25:02.562919",
+    "created_at": "2025-07-18T11:57:09.992168",
+    "updated_at": "2025-07-18T11:57:10.272969",
     "status": "active",
     "total_records": 0,
     "processed_records": 9,
     "filtered_records": 0,
-    "cases": {
-      "0": {
-        "status": "escalate",
-        "updated_at": "2025-07-18T10:36:19.995892"
-      }
-    },
+    "cases": {},
     "processed_data": [
       {
         "_time": "2025-07-14T08:24:12.280583",
@@ -50,7 +45,7 @@
         "wordlist_subject": "salary",
         "bunit": "HR",
         "department": "Recruitment",
-        "status": "Escalated",
+        "status": "Critical",
         "user_response": "a",
         "final_outcome": "f",
         "policy_name": "policy_A",
@@ -79,12 +74,11 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T10:35:05.387211",
+        "processing_timestamp": "2025-07-18T11:57:09.994097",
         "ml_anomaly_score": 0.6642795040426682,
         "ml_risk_level": "Low",
         "ml_cluster": -1,
-        "notes": "",
-        "updated_at": "2025-07-18T11:07:39.361854"
+        "anomaly_details": []
       },
       {
         "_time": "2025-07-06T08:24:12.280656",
@@ -115,10 +109,11 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T10:35:05.387531",
+        "processing_timestamp": "2025-07-18T11:57:09.994337",
         "ml_anomaly_score": 0.2000287407706815,
         "ml_risk_level": "Low",
-        "ml_cluster": -1
+        "ml_cluster": -1,
+        "anomaly_details": []
       },
       {
         "_time": "2025-07-15T08:24:12.280685",
@@ -135,7 +130,7 @@
         "wordlist_subject": "salary",
         "bunit": "Finance",
         "department": "Development",
-        "status": "Escalated",
+        "status": "Low",
         "user_response": "c",
         "final_outcome": "h",
         "policy_name": "policy_A",
@@ -149,12 +144,18 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T10:35:05.387736",
+        "processing_timestamp": "2025-07-18T11:57:09.994657",
         "ml_anomaly_score": 0.8368553244130887,
         "ml_risk_level": "Medium",
         "ml_cluster": -1,
-        "notes": "",
-        "updated_at": "2025-07-18T11:25:02.562764"
+        "anomaly_details": [
+          {
+            "type": "Statistical Anomaly",
+            "description": "Email exhibits patterns that deviate significantly from normal behavior",
+            "field": "ml_analysis",
+            "severity": "High"
+          }
+        ]
       },
       {
         "_time": "2025-07-07T08:24:12.280711",
@@ -200,10 +201,11 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T10:35:05.387907",
+        "processing_timestamp": "2025-07-18T11:57:09.994893",
         "ml_anomaly_score": 0.6129361618863017,
         "ml_risk_level": "Low",
-        "ml_cluster": -1
+        "ml_cluster": -1,
+        "anomaly_details": []
       },
       {
         "_time": "2025-07-10T08:24:12.280737",
@@ -249,10 +251,11 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T10:35:05.388075",
+        "processing_timestamp": "2025-07-18T11:57:09.995104",
         "ml_anomaly_score": 0.5789253321092007,
         "ml_risk_level": "Low",
-        "ml_cluster": -1
+        "ml_cluster": -1,
+        "anomaly_details": []
       },
       {
         "_time": "2025-07-02T08:24:12.280762",
@@ -283,10 +286,11 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T10:35:05.388249",
+        "processing_timestamp": "2025-07-18T11:57:09.995307",
         "ml_anomaly_score": 0.17902954601857105,
         "ml_risk_level": "Low",
-        "ml_cluster": -1
+        "ml_cluster": -1,
+        "anomaly_details": []
       },
       {
         "_time": "2025-06-27T08:24:12.280787",
@@ -317,10 +321,11 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T10:35:05.388456",
+        "processing_timestamp": "2025-07-18T11:57:09.995526",
         "ml_anomaly_score": 0.0,
         "ml_risk_level": "Low",
-        "ml_cluster": -1
+        "ml_cluster": -1,
+        "anomaly_details": []
       },
       {
         "_time": "2025-06-17T08:24:12.280844",
@@ -351,10 +356,18 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T10:35:05.388661",
+        "processing_timestamp": "2025-07-18T11:57:09.995748",
         "ml_anomaly_score": 1.0,
         "ml_risk_level": "Low",
-        "ml_cluster": -1
+        "ml_cluster": -1,
+        "anomaly_details": [
+          {
+            "type": "Statistical Anomaly",
+            "description": "Email exhibits patterns that deviate significantly from normal behavior",
+            "field": "ml_analysis",
+            "severity": "High"
+          }
+        ]
       },
       {
         "_time": "2025-06-16T08:24:12.280868",
@@ -400,10 +413,18 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T10:35:05.388838",
+        "processing_timestamp": "2025-07-18T11:57:09.996006",
         "ml_anomaly_score": 0.7928002800065553,
         "ml_risk_level": "Low",
-        "ml_cluster": -1
+        "ml_cluster": -1,
+        "anomaly_details": [
+          {
+            "type": "Statistical Anomaly",
+            "description": "Email exhibits patterns that deviate significantly from normal behavior",
+            "field": "ml_analysis",
+            "severity": "High"
+          }
+        ]
       }
     ]
   }

@@ -472,17 +472,6 @@ function renderCaseDetails(caseData) {
                     </div>
                 </div>
             </div>` : ''}
-                            <div class="alert alert-${detail.severity === 'Critical' ? 'danger' : detail.severity === 'High' ? 'warning' : detail.severity === 'Medium' ? 'info' : 'secondary'} mb-2">
-                                <div class="d-flex justify-content-between">
-                                    <strong>${detail.type}</strong>
-                                    <span class="badge bg-${detail.severity === 'Critical' ? 'danger' : detail.severity === 'High' ? 'warning' : detail.severity === 'Medium' ? 'info' : 'secondary'}">${detail.severity}</span>
-                                </div>
-                                <small class="mt-1 d-block">${detail.description}</small>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>` : ''}
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
@@ -529,7 +518,7 @@ function renderCaseDetails(caseData) {
                     <div class="card-body">
                         <div class="alert alert-danger mb-3">
                             <i class="fas fa-search me-2"></i>
-                            <strong>High Anomaly Detected (Score: ${caseData.ml_anomaly_score.toFixed(2)})</strong>
+                            <strong>High Anomaly Detected (Score: ${parseFloat(caseData.ml_anomaly_score).toFixed(2)})</strong>
                             <br><small>The following anomalies were identified in this email:</small>
                         </div>
                         <div class="row">
