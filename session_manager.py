@@ -37,39 +37,99 @@ class SessionManager:
                 json.dump(default_whitelists, f, indent=2)
 
     def load_sessions(self) -> Dict:
-        """Load all sessions from file"""
+        """Load all sessions from file, including separately stored large data"""
         try:
+            # First check if there's a compressed file with full data
+            compressed_file = self.sessions_file + '.gz'
+            if os.path.exists(compressed_file):
+                import gzip
+                try:
+                    with gzip.open(compressed_file, 'rt', encoding='utf-8') as f:
+                        compressed_sessions = json.load(f)
+                    self.logger.info(f"Loaded compressed sessions with full data from {compressed_file}")
+                    return compressed_sessions
+                except Exception as e:
+                    self.logger.error(f"Error loading compressed sessions: {e}")
+            
+            # Fall back to regular sessions file
             if os.path.exists(self.sessions_file):
                 with open(self.sessions_file, 'r') as f:
-                    return json.load(f)
+                    sessions = json.load(f)
+                
+                # Check if we have separately stored data
+                data_dir = 'data/session_data'
+                if os.path.exists(data_dir):
+                    for session_id in sessions:
+                        data_file = os.path.join(data_dir, f"{session_id}_data.json.gz")
+                        if os.path.exists(data_file):
+                            try:
+                                import gzip
+                                with gzip.open(data_file, 'rt', encoding='utf-8') as f:
+                                    processed_data = json.load(f)
+                                sessions[session_id]['processed_data'] = processed_data
+                                self.logger.debug(f"Loaded {len(processed_data)} records from {data_file}")
+                            except Exception as e:
+                                self.logger.error(f"Error loading processed data for session {session_id}: {e}")
+                                sessions[session_id]['processed_data'] = []
+                        else:
+                            # Ensure processed_data exists even if no separate file
+                            if 'processed_data' not in sessions[session_id]:
+                                sessions[session_id]['processed_data'] = []
+                
+                return sessions
             return {}
         except Exception as e:
             self.logger.error(f"Error loading sessions: {str(e)}")
             return {}
 
     def save_sessions(self, sessions: Dict) -> bool:
-        """Save sessions to file with compression for large datasets"""
+        """Save sessions to file with separate storage for large datasets"""
         try:
             import gzip
             import json
+            import os
             
-            # Check if we need compression (>10MB when serialized)
-            json_str = json.dumps(sessions, default=str)
+            # Ensure directory exists
+            os.makedirs(os.path.dirname(self.sessions_file), exist_ok=True)
+            
+            # Check if we need separate storage for large sessions
+            json_str = json.dumps(sessions, default=str, separators=(',', ':'))  # Compact JSON
             
             if len(json_str) > 5 * 1024 * 1024:  # 5MB threshold for better memory management
-                # Use gzip compression for large sessions
-                compressed_file = self.sessions_file + '.gz'
-                with gzip.open(compressed_file, 'wt', encoding='utf-8') as f:
-                    f.write(json_str)
-                # Keep a small metadata file
-                metadata = {sid: {k: v for k, v in session.items() if k not in ['processed_data']} 
-                          for sid, session in sessions.items()}
+                self.logger.info(f"Large session data detected ({len(json_str)/1024/1024:.2f}MB), using separate storage")
+                
+                # Save each session's processed_data separately for large datasets
+                metadata_sessions = {}
+                data_dir = 'data/session_data'
+                os.makedirs(data_dir, exist_ok=True)
+                
+                for session_id, session_data in sessions.items():
+                    # Create metadata without processed_data
+                    metadata = {k: v for k, v in session_data.items() if k != 'processed_data'}
+                    metadata_sessions[session_id] = metadata
+                    
+                    # Save processed_data separately if it exists
+                    if 'processed_data' in session_data and session_data['processed_data']:
+                        data_file = os.path.join(data_dir, f"{session_id}_data.json.gz")
+                        try:
+                            with gzip.open(data_file, 'wt', encoding='utf-8') as f:
+                                json.dump(session_data['processed_data'], f, default=str, separators=(',', ':'))
+                            self.logger.info(f"Saved {len(session_data['processed_data'])} records to {data_file}")
+                        except Exception as e:
+                            self.logger.error(f"Failed to save processed data for session {session_id}: {e}")
+                            return False
+                
+                # Save metadata file
                 with open(self.sessions_file, 'w') as f:
-                    json.dump(metadata, f, indent=2, default=str)
+                    json.dump(metadata_sessions, f, indent=2, default=str)
+                    
             else:
+                # Save normally for smaller datasets
                 with open(self.sessions_file, 'w') as f:
                     json.dump(sessions, f, indent=2, default=str)
+                    
             return True
+            
         except Exception as e:
             self.logger.error(f"Error saving sessions: {str(e)}")
             return False

@@ -82,6 +82,7 @@ Upload limit preference: High capacity (500MB) for large email data files.
   - Implemented automatic compression for session data >5MB
   - Added processing status API endpoint for monitoring large file uploads
   - Fixed BAU analysis JavaScript errors when no session data is available
+  - Successfully tested with 20,000 record file: processed 5,005 events after filtering 14,995 whitelist domains
 - **Migration to Replit Environment** (July 18, 2025): Successfully migrated project from Replit Agent to standard Replit environment with all functionality preserved
   - Fixed session data storage issues that were causing "no processed data found" errors
   - Verified end-to-end functionality with successful file upload and 4-step processing workflow
