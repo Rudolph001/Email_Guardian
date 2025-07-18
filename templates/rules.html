@@ -324,17 +324,37 @@
                         <textarea class="form-control" id="editRuleDescription" name="description" rows="2"></textarea>
                     </div>
 
+                    <!-- Conditions Builder for Edit -->
                     <div class="mb-3">
-                        <label class="form-label">Conditions (JSON)</label>
-                        <textarea class="form-control" id="editRuleConditions" name="conditions" rows="5"></textarea>
-                        <small class="text-muted">Define conditions as JSON array</small>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0">Rule Conditions</label>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addEditCondition()">
+                                <i class="fas fa-plus me-1"></i>Add Condition
+                            </button>
+                        </div>
+                        <div id="edit-conditions-container">
+                            <!-- Conditions will be added here dynamically -->
+                        </div>
+                        <small class="text-muted">Add conditions that must be met for this rule to apply</small>
                     </div>
 
+                    <!-- Actions Builder for Edit -->
                     <div class="mb-3">
-                        <label class="form-label">Actions (JSON)</label>
-                        <textarea class="form-control" id="editRuleActions" name="actions" rows="3"></textarea>
-                        <small class="text-muted">Define actions as JSON array</small>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label mb-0">Rule Actions</label>
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="addEditAction()">
+                                <i class="fas fa-plus me-1"></i>Add Action
+                            </button>
+                        </div>
+                        <div id="edit-actions-container">
+                            <!-- Actions will be added here dynamically -->
+                        </div>
+                        <small class="text-muted">Define what happens when this rule is triggered</small>
                     </div>
+
+                    <!-- Hidden fields for JSON data -->
+                    <input type="hidden" id="editConditions" name="conditions" value="[]">
+                    <input type="hidden" id="editActions" name="actions" value="[]">
 
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="editRuleActive" name="active">
@@ -345,7 +365,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-warning">Update Rule</button>
+                    <button type="submit" class="btn btn-warning" onclick="buildEditRuleData()">Update Rule</button>
                 </div>
             </form>
         </div>
@@ -357,6 +377,8 @@
 <script>
 let conditionCounter = 0;
 let actionCounter = 0;
+let editConditionCounter = 0;
+let editActionCounter = 0;
 
 function createRule() {
     // Reset counters and clear containers
@@ -709,13 +731,37 @@ function viewRule(id, name, description, conditions, actions, priority) {
 }
 
 function editRule(id, name, description, conditions, actions, priority, active) {
+    // Reset counters and clear containers
+    editConditionCounter = 0;
+    editActionCounter = 0;
+    document.getElementById('edit-conditions-container').innerHTML = '';
+    document.getElementById('edit-actions-container').innerHTML = '';
+
     // Populate the edit form
     document.getElementById('editRuleName').value = name;
     document.getElementById('editRuleDescription').value = description || '';
     document.getElementById('editRulePriority').value = priority;
-    document.getElementById('editRuleConditions').value = JSON.stringify(conditions, null, 2);
-    document.getElementById('editRuleActions').value = JSON.stringify(actions, null, 2);
     document.getElementById('editRuleActive').checked = active;
+
+    // Build conditions from JSON
+    if (conditions && conditions.length > 0) {
+        conditions.forEach((condition, index) => {
+            addEditCondition();
+            populateEditCondition(editConditionCounter, condition, index === 0);
+        });
+    } else {
+        addEditCondition();
+    }
+
+    // Build actions from JSON
+    if (actions && actions.length > 0) {
+        actions.forEach((action) => {
+            addEditAction();
+            populateEditAction(editActionCounter, action);
+        });
+    } else {
+        addEditAction();
+    }
 
     // Set the form action to update this specific rule
     document.getElementById('editRuleForm').action = `/rules/${id}/update`;
@@ -723,6 +769,238 @@ function editRule(id, name, description, conditions, actions, priority, active) 
     // Show the modal
     const modal = new bootstrap.Modal(document.getElementById('editRuleModal'));
     modal.show();
+}
+
+function addEditCondition() {
+    editConditionCounter++;
+    const container = document.getElementById('edit-conditions-container');
+    const newRow = document.createElement('div');
+    newRow.className = 'edit-condition-row mb-2';
+
+    // Show logic dropdown only for conditions after the first one
+    const showLogic = editConditionCounter > 1;
+
+    newRow.innerHTML = `
+        <div class="row align-items-center">
+            ${showLogic ? `
+            <div class="col-md-1">
+                <select class="form-select" name="edit_condition_logic_${editConditionCounter}">
+                    <option value="AND">AND</option>
+                    <option value="OR">OR</option>
+                </select>
+            </div>` : '<div class="col-md-1"></div>'}
+            <div class="col-md-4">
+                <select class="form-select" name="edit_condition_field_${editConditionCounter}" onchange="updateEditConditionValue(this, ${editConditionCounter})">
+                    <option value="">Select Field</option>
+                    <option value="leaver">Leaver Status</option>
+                    <option value="wordlist_subject">Subject Wordlist</option>
+                    <option value="wordlist_attachment">Attachment Wordlist</option>
+                    <option value="status">Email Status</option>
+                    <option value="sender">Sender Email</option>
+                    <option value="subject">Subject Text</option>
+                    <option value="recipients_email_domain">Recipient Domain</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" name="edit_condition_operator_${editConditionCounter}">
+                    <option value="equals">Equals</option>
+                    <option value="contains">Contains</option>
+                    <option value="not_equals">Not Equals</option>
+                    <option value="in_list">In List (comma-separated)</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control" name="edit_condition_value_${editConditionCounter}" placeholder="Value" id="edit_condition_value_${editConditionCounter}">
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeEditCondition(this)" ${editConditionCounter === 1 ? 'style="visibility: hidden;"' : ''}>
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    container.appendChild(newRow);
+}
+
+function addEditAction() {
+    editActionCounter++;
+    const container = document.getElementById('edit-actions-container');
+    const newRow = document.createElement('div');
+    newRow.className = 'edit-action-row mb-2';
+    newRow.innerHTML = `
+        <div class="row align-items-center">
+            <div class="col-md-5">
+                <select class="form-select" name="edit_action_type_${editActionCounter}" onchange="updateEditActionValue(this, ${editActionCounter})">
+                    <option value="">Select Action</option>
+                    <option value="mark_priority">Mark Priority</option>
+                    <option value="escalate">Escalate</option>
+                    <option value="notify">Notify</option>
+                    <option value="block">Block Email</option>
+                    <option value="flag">Add Flag</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <input type="text" class="form-control" name="edit_action_value_${editActionCounter}" placeholder="Action Value" id="edit_action_value_${editActionCounter}">
+            </div>
+            <div class="col-md-1">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeEditAction(this)" ${editActionCounter === 1 ? 'style="visibility: hidden;"' : ''}>
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    container.appendChild(newRow);
+}
+
+function populateEditCondition(counter, condition, isFirst) {
+    const fieldSelect = document.querySelector(`[name="edit_condition_field_${counter}"]`);
+    const operatorSelect = document.querySelector(`[name="edit_condition_operator_${counter}"]`);
+    const valueInput = document.querySelector(`[name="edit_condition_value_${counter}"]`);
+    const logicSelect = document.querySelector(`[name="edit_condition_logic_${counter}"]`);
+
+    if (fieldSelect) fieldSelect.value = condition.field || '';
+    if (operatorSelect) operatorSelect.value = condition.operator || 'equals';
+    if (valueInput) valueInput.value = condition.value || '';
+    if (logicSelect && !isFirst) logicSelect.value = condition.logic || 'AND';
+}
+
+function populateEditAction(counter, action) {
+    const typeSelect = document.querySelector(`[name="edit_action_type_${counter}"]`);
+    const valueInput = document.querySelector(`[name="edit_action_value_${counter}"]`);
+
+    if (typeSelect) typeSelect.value = action.type || '';
+    if (valueInput) valueInput.value = action.value || '';
+}
+
+function updateEditConditionValue(selectElement, conditionId) {
+    const fieldType = selectElement.value;
+    const valueInput = document.getElementById(`edit_condition_value_${conditionId}`);
+
+    if (fieldType === 'leaver') {
+        valueInput.placeholder = 'YES or NO';
+    } else if (fieldType === 'wordlist_subject' || fieldType === 'wordlist_attachment') {
+        valueInput.placeholder = 'YES or NO';
+    } else if (fieldType === 'status') {
+        valueInput.placeholder = 'Active, Blocked, Sent, Delivered';
+    } else if (fieldType === 'sender') {
+        valueInput.placeholder = 'Email address';
+    } else if (fieldType === 'subject') {
+        valueInput.placeholder = 'Text to match in subject';
+    } else if (fieldType === 'recipients_email_domain') {
+        valueInput.placeholder = 'Domain name (e.g., gmail.com)';
+    } else {
+        valueInput.placeholder = 'Value';
+    }
+}
+
+function updateEditActionValue(selectEl, counter) {
+    const valueInput = document.getElementById(`edit_action_value_${counter}`);
+    const actionType = selectEl.value;
+
+    if (actionType === 'mark_priority') {
+        valueInput.placeholder = 'Low, Medium, High, Critical';
+    } else if (actionType === 'escalate') {
+        valueInput.placeholder = 'true or false';
+    } else if (actionType === 'notify') {
+        valueInput.placeholder = 'Notification message';
+    } else if (actionType === 'block') {
+        valueInput.placeholder = 'true or false';
+    } else if (actionType === 'flag') {
+        valueInput.placeholder = 'Flag name';
+    } else {
+        valueInput.placeholder = 'Action Value';
+    }
+}
+
+function removeEditCondition(button) {
+    const row = button.closest('.edit-condition-row');
+    if (row) {
+        row.remove();
+        updateEditConditionLogicDisplay();
+    }
+}
+
+function removeEditAction(button) {
+    const row = button.closest('.edit-action-row');
+    if (row) {
+        row.remove();
+    }
+}
+
+function updateEditConditionLogicDisplay() {
+    const rows = document.querySelectorAll('.edit-condition-row');
+    rows.forEach((row, index) => {
+        const logicCol = row.querySelector('.col-md-1:first-child');
+        if (index === 0) {
+            // First condition shouldn't show logic
+            logicCol.innerHTML = '';
+        } else {
+            // Ensure other conditions have logic selector
+            if (!logicCol.querySelector('select')) {
+                logicCol.innerHTML = `
+                    <select class="form-select" name="edit_condition_logic_${index + 1}">
+                        <option value="AND">AND</option>
+                        <option value="OR">OR</option>
+                    </select>
+                `;
+            }
+        }
+    });
+}
+
+function buildEditRuleData() {
+    const conditions = [];
+    const actions = [];
+
+    // Build conditions
+    const conditionRows = document.querySelectorAll('.edit-condition-row');
+    conditionRows.forEach((row, index) => {
+        const fieldEl = row.querySelector(`[name^="edit_condition_field_"]`);
+        const operatorEl = row.querySelector(`[name^="edit_condition_operator_"]`);
+        const valueEl = row.querySelector(`[name^="edit_condition_value_"]`);
+        const logicEl = row.querySelector(`[name^="edit_condition_logic_"]`);
+
+        if (fieldEl && operatorEl && valueEl && fieldEl.value && valueEl.value) {
+            const condition = {
+                field: fieldEl.value,
+                operator: operatorEl.value,
+                value: valueEl.value
+            };
+
+            // Add logic operator for conditions after the first one
+            if (index > 0 && logicEl && logicEl.value) {
+                condition.logic = logicEl.value;
+            }
+
+            conditions.push(condition);
+        }
+    });
+
+    // Build actions
+    const actionRows = document.querySelectorAll('.edit-action-row');
+    actionRows.forEach((row) => {
+        const typeEl = row.querySelector(`[name^="edit_action_type_"]`);
+        const valueEl = row.querySelector(`[name^="edit_action_value_"]`);
+
+        if (typeEl && valueEl && typeEl.value && valueEl.value) {
+            let finalValue = valueEl.value;
+
+            // Convert string boolean to actual boolean
+            if (typeEl.value === 'escalate' && 
+                (finalValue.toLowerCase() === 'true' || finalValue.toLowerCase() === 'false')) {
+                finalValue = finalValue.toLowerCase() === 'true';
+            }
+
+            actions.push({
+                type: typeEl.value,
+                value: finalValue
+            });
+        }
+    });
+
+    // Set hidden fields
+    document.getElementById('editConditions').value = JSON.stringify(conditions);
+    document.getElementById('editActions').value = JSON.stringify(actions);
 }
 
 function decodeHTMLEntities(text) {
