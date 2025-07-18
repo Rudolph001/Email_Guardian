@@ -76,14 +76,19 @@ def dashboard(session_id):
     all_processed_data = session_manager.get_processed_data(session_id)
     app.logger.info(f"Retrieved {len(all_processed_data) if all_processed_data else 0} processed records for session {session_id}")
 
-    # Separate data by dashboard type
+    # Separate data based on manual escalation status
     escalated_data = []
     case_management_data = []
+    session_cases = session_data.get('cases', {})
 
     if all_processed_data:
-        for record in all_processed_data:
-            dashboard_type = record.get('dashboard_type', 'case_management')
-            if dashboard_type == 'escalation':
+        for i, record in enumerate(all_processed_data):
+            # Check if this specific record was manually escalated
+            record_id = record.get('record_id', i)
+            case_info = session_cases.get(str(record_id), {})
+            case_status = case_info.get('status', '').lower()
+
+            if case_status == 'escalate':
                 escalated_data.append(record)
             else:
                 case_management_data.append(record)
@@ -151,23 +156,33 @@ def case_management(session_id):
     # Get processed data
     all_processed_data = session_manager.get_processed_data(session_id)
 
-    # Count escalated cases for the badge
+    # Count manually escalated cases for the badge and filter case management data
     escalated_count = 0
     non_escalated_data = []
+    session_cases = session_data.get('cases', {})
 
     if all_processed_data:
         for i, d in enumerate(all_processed_data):
-            dashboard_type = d.get('dashboard_type', 'case_management')
-            status = d.get('status', 'Active').lower()
+            # Check if this specific record was manually escalated
+            record_id = d.get('record_id', i)
+            case_info = session_cases.get(str(record_id), {})
+            case_status = case_info.get('status', '').lower()
 
-            # Count escalated cases
-            if dashboard_type == 'escalation' or status == 'escalated':
+            # Count and exclude manually escalated cases
+            if case_status == 'escalate':
                 escalated_count += 1
             else:
-                # Only include records that are NOT assigned to escalation dashboard
+                # Include in case management if not manually escalated
                 # Ensure record has an ID for actions
                 if 'record_id' not in d:
                     d['record_id'] = str(i)
+                
+                # Set status for display if it exists in session cases
+                if case_status:
+                    d['status'] = case_status.title()
+                elif 'status' not in d:
+                    d['status'] = 'Active'
+                
                 non_escalated_data.append(d)
 
     processed_data = non_escalated_data
@@ -232,19 +247,22 @@ def escalation_dashboard(session_id):
     # Debug logging
     app.logger.info(f"Escalation dashboard - Total records: {len(processed_data) if processed_data else 0}")
 
-    # Filter only escalated cases - check both status and dashboard_type
+    # Filter only manually escalated cases - check case status in session data
     escalated_cases = []
     if processed_data:
+        session_cases = session_data.get('cases', {})
         for i, d in enumerate(processed_data):
-            # Check if record is marked for escalation dashboard
-            dashboard_type = d.get('dashboard_type', 'case_management')
-            status = d.get('status', 'Active').lower()
+            # Check if this specific record was manually escalated
+            record_id = d.get('record_id', i)
+            case_info = session_cases.get(str(record_id), {})
+            case_status = case_info.get('status', '').lower()
 
-            # Include records that are either explicitly escalated or assigned to escalation dashboard
-            if dashboard_type == 'escalation' or status == 'escalated':
+            # Only include records that were manually escalated via the escalate button
+            if case_status == 'escalate':
                 # Ensure record has an ID for actions
                 if 'record_id' not in d:
                     d['record_id'] = str(i)
+                d['status'] = 'Escalated'  # Set display status
                 escalated_cases.append(d)
 
     app.logger.info(f"Escalation dashboard - Escalated cases found: {len(escalated_cases)}")

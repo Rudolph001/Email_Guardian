@@ -246,48 +246,40 @@ class DataProcessor:
             return df, 0
 
     def _apply_rules_with_escalation(self, df: pd.DataFrame) -> tuple:
-        """Apply rules and separate escalated records from remaining data"""
+        """Apply rules - rule matches go to case management with Critical risk, only manual escalations go to escalation dashboard"""
         try:
-            escalated_data = []
+            escalated_data = []  # This will be empty as we're not auto-escalating rule matches anymore
             remaining_data = []
 
             for index, row in df.iterrows():
                 record = row.to_dict()
                 processed_record = self._process_email_record(record, index)
 
-                # Check if any rules triggered escalation
+                # Check if any rules were matched
                 rule_results = processed_record.get('rule_results', {})
-                should_escalate = False
+                has_rule_matches = False
 
-                # Check if any rules were matched - if yes, escalate to escalation dashboard
-                # This follows the user's requirement: "if rule match then move that event straight to my escalation dashboard"
                 if isinstance(rule_results, dict):
                     matched_rules = rule_results.get('matched_rules', [])
-
-                    # If there are any matched rules, escalate (regardless of action)
                     if matched_rules and len(matched_rules) > 0:
-                        should_escalate = True
-                        self.logger.info(f"Escalating record {index} due to {len(matched_rules)} rule matches: {[r.get('name', 'Unknown') for r in matched_rules]}")
-
-                    # Also check for explicit escalate flag
-                    if rule_results.get('escalate', False):
-                        should_escalate = True
-                        self.logger.info(f"Escalating record {index} due to explicit escalate flag")
+                        has_rule_matches = True
+                        self.logger.info(f"Record {index} has {len(matched_rules)} rule matches: {[r.get('name', 'Unknown') for r in matched_rules]}")
                 elif isinstance(rule_results, list) and len(rule_results) > 0:
-                    # If there are any rule results at all, escalate
-                    should_escalate = True
-                    self.logger.info(f"Escalating record {index} due to {len(rule_results)} rule matches")
+                    has_rule_matches = True
+                    self.logger.info(f"Record {index} has {len(rule_results)} rule matches")
 
-                # Mark record for appropriate dashboard
-                if should_escalate:
-                    processed_record['dashboard_type'] = 'escalation'
-                    escalated_data.append(processed_record)
-                else:
-                    processed_record['dashboard_type'] = 'case_management'
-                    remaining_data.append(processed_record)
+                # All records go to case management initially
+                # Rule matches get Critical risk level to highlight them
+                if has_rule_matches:
+                    processed_record['ml_risk_level'] = 'Critical'  # Override risk level for rule matches
+                    processed_record['rule_priority'] = True  # Flag for priority handling
+                    self.logger.info(f"Setting Critical risk level for record {index} due to rule matches")
 
-            self.logger.info(f"Escalated {len(escalated_data)} records, {len(remaining_data)} remaining for case management")
-            return escalated_data, remaining_data
+                processed_record['dashboard_type'] = 'case_management'
+                remaining_data.append(processed_record)
+
+            self.logger.info(f"All {len(remaining_data)} records sent to case management ({len([r for r in remaining_data if r.get('rule_priority')])} with rule matches)")
+            return escalated_data, remaining_data  # escalated_data will be empty
 
         except Exception as e:
             self.logger.error(f"Error applying rules: {str(e)}")
@@ -459,8 +451,17 @@ class DataProcessor:
             for i, record in enumerate(processed_data):
                 if i < len(anomaly_scores):
                     record['ml_anomaly_score'] = anomaly_scores[i]
+                
+                # Preserve Critical risk level for rule matches, otherwise use ML risk level
                 if i < len(risk_levels):
-                    record['ml_risk_level'] = risk_levels[i]
+                    # If record has rule_priority flag (meaning it matched rules), keep Critical risk level
+                    if record.get('rule_priority') and record.get('ml_risk_level') == 'Critical':
+                        # Keep the Critical level set during rule processing
+                        self.logger.info(f"Preserving Critical risk level for record {i} due to rule matches")
+                    else:
+                        # Use ML-determined risk level for non-rule matches
+                        record['ml_risk_level'] = risk_levels[i]
+                
                 if i < len(clusters):
                     record['ml_cluster'] = clusters[i]
                 if i < len(attachment_classifications):

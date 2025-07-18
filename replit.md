@@ -11,6 +11,11 @@ Upload limit preference: High capacity (500MB) for large email data files.
 
 ## Recent Changes
 
+- **Updated Rule Processing Workflow** (July 18, 2025):
+  - Changed rule matches to go to case management dashboard with Critical risk level instead of directly to escalation
+  - Only manually escalated cases (via escalate button) now appear in escalation dashboard
+  - Rule matches are prioritized with Critical risk level to highlight them for review
+  - Cleaned up dashboard logic to properly separate manual escalations from rule matches
 - **Fixed Attachment Classification Bug** (July 18, 2025):
   - Resolved issue where ML attachment classification was returning `<class 'str'>` instead of actual classification
   - Fixed duplicate `analyze_emails` functions that were causing attachment_classifications to be missing
