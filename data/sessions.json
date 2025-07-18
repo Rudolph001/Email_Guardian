@@ -23,13 +23,55 @@
       "policy_name"
     ],
     "created_at": "2025-07-18T12:58:12.262437",
-    "updated_at": "2025-07-18T12:58:12.542748",
+    "updated_at": "2025-07-18T13:06:30.878386",
     "status": "active",
-    "total_records": 10,
+    "total_records": 9,
     "processed_records": 9,
     "filtered_records": 0,
     "cases": {},
     "processed_data": [
+      {
+        "_time": "2025-06-27T08:24:12.280787",
+        "sender": "carol@company.com",
+        "subject": "Quarterly Report",
+        "attachments": null,
+        "recipients": "dave@gmail.com",
+        "recipients_email_domain": "gmail.com",
+        "leaver": "YES",
+        "Termination": "2025-13",
+        "time_month": "2025-06",
+        "account_type": "employee",
+        "wordlist_attachment": "salary",
+        "wordlist_subject": "salary",
+        "bunit": "Engineering",
+        "department": "Recruitment",
+        "status": "Medium",
+        "user_response": "a",
+        "final_outcome": "f",
+        "policy_name": "policy_A",
+        "record_id": 6,
+        "domain_classification": "Personal",
+        "rule_results": {
+          "matched_rules": [
+            {
+              "id": 3,
+              "name": "Free Email Domains",
+              "description": "Free email domains are publicly available domains from which users can create email addresses for free."
+            }
+          ],
+          "actions": [],
+          "priority": "Low",
+          "escalate": false,
+          "notifications": []
+        },
+        "has_attachments": true,
+        "processing_timestamp": "2025-07-18T12:58:12.271575",
+        "dashboard_type": "escalation",
+        "ml_anomaly_score": 0.5307812270971617,
+        "ml_risk_level": "Low",
+        "ml_cluster": -1,
+        "anomaly_details": []
+      },
       {
         "_time": "2025-07-07T08:24:12.280711",
         "sender": "alice@company.com",
@@ -246,48 +288,6 @@
         ]
       },
       {
-        "_time": "2025-06-27T08:24:12.280787",
-        "sender": "carol@company.com",
-        "subject": "Quarterly Report",
-        "attachments": null,
-        "recipients": "dave@gmail.com",
-        "recipients_email_domain": "gmail.com",
-        "leaver": "YES",
-        "Termination": "2025-13",
-        "time_month": "2025-06",
-        "account_type": "employee",
-        "wordlist_attachment": "salary",
-        "wordlist_subject": "salary",
-        "bunit": "Engineering",
-        "department": "Recruitment",
-        "status": "Medium",
-        "user_response": "a",
-        "final_outcome": "f",
-        "policy_name": "policy_A",
-        "record_id": 6,
-        "domain_classification": "Personal",
-        "rule_results": {
-          "matched_rules": [
-            {
-              "id": 3,
-              "name": "Free Email Domains",
-              "description": "Free email domains are publicly available domains from which users can create email addresses for free."
-            }
-          ],
-          "actions": [],
-          "priority": "Low",
-          "escalate": false,
-          "notifications": []
-        },
-        "has_attachments": true,
-        "processing_timestamp": "2025-07-18T12:58:12.271575",
-        "dashboard_type": "case_management",
-        "ml_anomaly_score": 0.5307812270971617,
-        "ml_risk_level": "Low",
-        "ml_cluster": -1,
-        "anomaly_details": []
-      },
-      {
         "_time": "2025-07-14T08:24:12.280583",
         "sender": "carol@company.com",
         "subject": "Quarterly Report",
@@ -397,19 +397,17 @@
       }
     ],
     "processing_stats": {
-      "total_records": 10,
-      "whitelist_filtered": 1,
-      "escalated_records": 0,
-      "case_management_records": 9,
+      "escalated_records": 1,
+      "case_management_records": 8,
       "processing_steps": [
-        "Step 1: Filtered 1 whitelist domains",
-        "Step 2: Escalated 0 rule matches",
-        "Step 3: ML analysis completed on 9 events",
-        "Step 4: 9 events sorted by ML score"
+        "Step 1: Filtered whitelist domains",
+        "Step 2: Escalated 1 rule matches",
+        "Step 3: ML analysis completed",
+        "Step 4: 8 events sorted by ML score"
       ]
     },
-    "whitelist_filtered": 1,
-    "escalated_records": 0,
-    "case_management_records": 9
+    "whitelist_filtered": 0,
+    "escalated_records": 1,
+    "case_management_records": 8
   }
 }

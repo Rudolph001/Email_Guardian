@@ -604,50 +604,25 @@ def api_session_stats(session_id):
 
 @app.route('/api/reprocess_rules/<session_id>', methods=['POST'])
 def reprocess_rules(session_id):
-    """Reprocess existing session data against current rules"""
-    session_manager = SessionManager()
-    processed_data = session_manager.get_processed_data(session_id)
-    
-    if not processed_data:
-        return jsonify({'error': 'Session not found or no data available'}), 404
-    
+    """Reprocess existing session data with proper escalation logic"""
     try:
-        # Initialize processors
+        # Use the new reprocessing method that handles escalation correctly
         data_processor = DataProcessor()
-        rule_engine = RuleEngine()
+        result = data_processor.reprocess_existing_session(session_id)
         
-        # Reprocess each record against current rules
-        updated_count = 0
-        for record in processed_data:
-            # Apply current rules to the record
-            rule_results = rule_engine.process_email(record)
-            
-            # Update rule results
-            old_results = record.get('rule_results', {})
-            record['rule_results'] = rule_results
-            
-            # Update processing timestamp to show it was reprocessed
-            record['last_rule_processing'] = datetime.now().isoformat()
-            
-            # Check if rule results actually changed
-            if old_results != rule_results:
-                updated_count += 1
-        
-        # Save updated data back to session
-        save_result = session_manager.update_processed_data(session_id, processed_data)
-        
-        if save_result['success']:
+        if result['success']:
             return jsonify({
                 'success': True,
-                'message': f'Successfully reprocessed {len(processed_data)} records',
-                'updated_records': updated_count,
-                'total_records': len(processed_data)
+                'message': f'Successfully reprocessed session with {result["escalated_count"]} escalations and {result["case_management_count"]} case management records',
+                'escalated_count': result['escalated_count'],
+                'case_management_count': result['case_management_count'],
+                'total_processed': result['total_processed']
             })
         else:
-            return jsonify({'error': 'Failed to save reprocessed data'}), 500
+            return jsonify({'error': result['error']}), 500
             
     except Exception as e:
-        app.logger.error(f"Error reprocessing rules for session {session_id}: {str(e)}")
+        app.logger.error(f"Error reprocessing session {session_id}: {str(e)}")
         return jsonify({'error': f'Reprocessing failed: {str(e)}'}), 500
 
 # Error handlers

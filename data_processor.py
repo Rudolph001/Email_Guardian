@@ -26,6 +26,84 @@ class DataProcessor:
             'user_response', 'final_outcome', 'policy_name', 'justification'
         ]
     
+    def reprocess_existing_session(self, session_id: str) -> Dict:
+        """Reprocess an existing session with current rules and escalation logic"""
+        try:
+            # Load existing session data
+            session_data = self.session_manager.get_session(session_id)
+            if not session_data:
+                return {'success': False, 'error': 'Session not found'}
+            
+            # Get the processed data
+            processed_data = session_data.get('processed_data', [])
+            if not processed_data:
+                return {'success': False, 'error': 'No processed data found'}
+            
+            self.logger.info(f"Reprocessing {len(processed_data)} records for session {session_id}")
+            
+            # Reapply the 4-step workflow to existing data
+            escalated_data = []
+            case_management_data = []
+            
+            for index, record in enumerate(processed_data):
+                # Reapply rule processing
+                rule_results = self.rule_engine.process_email(record)
+                record['rule_results'] = rule_results
+                
+                # Apply escalation logic
+                matched_rules = rule_results.get('matched_rules', [])
+                should_escalate = False
+                
+                if matched_rules and len(matched_rules) > 0:
+                    should_escalate = True
+                    self.logger.info(f"Reprocessing: Escalating record {index} due to {len(matched_rules)} rule matches")
+                
+                if rule_results.get('escalate', False):
+                    should_escalate = True
+                
+                # Assign to appropriate dashboard
+                if should_escalate:
+                    record['dashboard_type'] = 'escalation'
+                    escalated_data.append(record)
+                else:
+                    record['dashboard_type'] = 'case_management'
+                    case_management_data.append(record)
+            
+            # Update session data
+            session_data['escalated_records'] = escalated_data
+            session_data['case_management_records'] = case_management_data
+            session_data['processed_data'] = escalated_data + case_management_data
+            session_data['updated_at'] = datetime.now().isoformat()
+            
+            # Save updated session
+            save_result = self.session_manager.update_session_data(session_id, escalated_data + case_management_data, {
+                'escalated_records': len(escalated_data),
+                'case_management_records': len(case_management_data),
+                'processing_steps': [
+                    f"Step 1: Filtered whitelist domains", 
+                    f"Step 2: Escalated {len(escalated_data)} rule matches",
+                    f"Step 3: ML analysis completed",
+                    f"Step 4: {len(case_management_data)} events sorted by ML score"
+                ]
+            })
+            
+            if not save_result.get('success'):
+                self.logger.error(f"Failed to save reprocessed data: {save_result.get('error')}")
+                return {'success': False, 'error': 'Failed to save reprocessed data'}
+            
+            self.logger.info(f"Reprocessed session {session_id}: {len(escalated_data)} escalated, {len(case_management_data)} case management")
+            
+            return {
+                'success': True,
+                'escalated_count': len(escalated_data),
+                'case_management_count': len(case_management_data),
+                'total_processed': len(processed_data)
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error reprocessing session {session_id}: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
     def process_csv(self, file_path: str, session_id: str, filename: str) -> Dict:
         """Process uploaded CSV file following the 4-step workflow"""
         try:
@@ -174,25 +252,24 @@ class DataProcessor:
                 rule_results = processed_record.get('rule_results', {})
                 should_escalate = False
                 
-                # Handle both dict and list formats for rule results
+                # Check if any rules were matched - if yes, escalate to escalation dashboard
+                # This follows the user's requirement: "if rule match then move that event straight to my escalation dashboard"
                 if isinstance(rule_results, dict):
-                    # Check if there's a matched_rules key with escalate action
                     matched_rules = rule_results.get('matched_rules', [])
-                    if matched_rules:
-                        for rule in matched_rules:
-                            if isinstance(rule, dict) and rule.get('action') == 'escalate':
-                                should_escalate = True
-                                break
                     
-                    # Also check for escalate flag directly
-                    if rule_results.get('escalate'):
+                    # If there are any matched rules, escalate (regardless of action)
+                    if matched_rules and len(matched_rules) > 0:
                         should_escalate = True
-                elif isinstance(rule_results, list):
-                    # Handle list format
-                    for result in rule_results:
-                        if isinstance(result, dict) and (result.get('triggered', False) and result.get('action') == 'escalate'):
-                            should_escalate = True
-                            break
+                        self.logger.info(f"Escalating record {index} due to {len(matched_rules)} rule matches: {[r.get('name', 'Unknown') for r in matched_rules]}")
+                    
+                    # Also check for explicit escalate flag
+                    if rule_results.get('escalate', False):
+                        should_escalate = True
+                        self.logger.info(f"Escalating record {index} due to explicit escalate flag")
+                elif isinstance(rule_results, list) and len(rule_results) > 0:
+                    # If there are any rule results at all, escalate
+                    should_escalate = True
+                    self.logger.info(f"Escalating record {index} due to {len(rule_results)} rule matches")
                 
                 # Mark record for appropriate dashboard
                 if should_escalate:
