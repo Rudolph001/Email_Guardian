@@ -103,8 +103,10 @@ class SessionManager:
             sessions = self.load_sessions()
 
             if session_id in sessions:
-                sessions[session_id]['processed_data'] = processed_data
-                sessions[session_id]['processed_records'] = len(processed_data)
+                # Filter out None values from processed_data
+                filtered_data = [record for record in processed_data if record is not None]
+                sessions[session_id]['processed_data'] = filtered_data
+                sessions[session_id]['processed_records'] = len(filtered_data)
                 sessions[session_id]['updated_at'] = datetime.now().isoformat()
 
                 # Add processing statistics if provided

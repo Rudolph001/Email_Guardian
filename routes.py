@@ -150,6 +150,10 @@ def dashboard(session_id):
 
     if all_processed_data:
         for i, record in enumerate(all_processed_data):
+            # Skip None records
+            if record is None:
+                continue
+                
             # Check if this specific record was manually escalated
             record_id = record.get('record_id', i)
             case_info = session_cases.get(str(record_id), {})
@@ -230,6 +234,10 @@ def case_management(session_id):
 
     if all_processed_data:
         for i, d in enumerate(all_processed_data):
+            # Skip None records
+            if d is None:
+                continue
+                
             # Check if this specific record was manually escalated
             record_id = d.get('record_id', i)
             case_info = session_cases.get(str(record_id), {})
@@ -468,6 +476,10 @@ def escalation_dashboard(session_id):
     if processed_data:
         session_cases = session_data.get('cases', {})
         for i, d in enumerate(processed_data):
+            # Skip None records
+            if d is None:
+                continue
+                
             # Check if this specific record was manually escalated
             record_id = d.get('record_id', i)
             case_info = session_cases.get(str(record_id), {})
