@@ -621,26 +621,36 @@ function buildRuleData() {
 }
 
 function viewRuleFromData(button) {
-    const id = button.dataset.ruleId;
-    const name = button.dataset.ruleName;
-    const description = button.dataset.ruleDescription;
-    const conditions = JSON.parse(button.dataset.ruleConditions);
-    const actions = JSON.parse(button.dataset.ruleActions);
-    const priority = button.dataset.rulePriority;
-    
-    viewRule(id, name, description, conditions, actions, priority);
+    try {
+        const id = button.dataset.ruleId;
+        const name = button.dataset.ruleName;
+        const description = button.dataset.ruleDescription;
+        const conditions = JSON.parse(button.dataset.ruleConditions);
+        const actions = JSON.parse(button.dataset.ruleActions);
+        const priority = button.dataset.rulePriority;
+        
+        viewRule(id, name, description, conditions, actions, priority);
+    } catch (error) {
+        console.error('Error viewing rule:', error);
+        alert('Error viewing rule: ' + error.message);
+    }
 }
 
 function editRuleFromData(button) {
-    const id = button.dataset.ruleId;
-    const name = button.dataset.ruleName;
-    const description = button.dataset.ruleDescription;
-    const conditions = JSON.parse(button.dataset.ruleConditions);
-    const actions = JSON.parse(button.dataset.ruleActions);
-    const priority = button.dataset.rulePriority;
-    const active = button.dataset.ruleActive === 'true';
-    
-    editRule(id, name, description, conditions, actions, priority, active);
+    try {
+        const id = button.dataset.ruleId;
+        const name = button.dataset.ruleName;
+        const description = button.dataset.ruleDescription;
+        const conditions = JSON.parse(button.dataset.ruleConditions);
+        const actions = JSON.parse(button.dataset.ruleActions);
+        const priority = button.dataset.rulePriority;
+        const active = button.dataset.ruleActive === 'true';
+        
+        editRule(id, name, description, conditions, actions, priority, active);
+    } catch (error) {
+        console.error('Error editing rule:', error);
+        alert('Error editing rule: ' + error.message);
+    }
 }
 
 function viewRule(id, name, description, conditions, actions, priority) {
