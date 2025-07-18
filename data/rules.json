@@ -5,9 +5,27 @@
     "description": "Flag emails from users marked as leavers",
     "conditions": [
       {
-        "field": "ml_risk_level",
+        "field": "leaver",
         "operator": "equals",
         "value": "Yes"
+      },
+      {
+        "field": "attachments",
+        "operator": "not_equals",
+        "value": "-",
+        "logic": "AND"
+      },
+      {
+        "field": "wordlist_attachment",
+        "operator": "not_equals",
+        "value": "-",
+        "logic": "AND"
+      },
+      {
+        "field": "wordlist_subject",
+        "operator": "not_equals",
+        "value": "-",
+        "logic": "AND"
       }
     ],
     "actions": [
@@ -19,77 +37,6 @@
     "priority": 1,
     "active": true,
     "created_at": "2025-01-18T00:00:00",
-    "updated_at": "2025-07-18T12:40:26.616213"
-  },
-  {
-    "id": 2,
-    "name": "Wordlist Matches",
-    "description": "Flag emails with wordlist matches in subject or attachments",
-    "conditions": [
-      {
-        "field": "wordlist_subject",
-        "operator": "equals",
-        "value": "Yes"
-      },
-      {
-        "field": "wordlist_attachment",
-        "operator": "equals",
-        "value": "Yes",
-        "logic": "OR"
-      }
-    ],
-    "actions": [
-      {
-        "type": "mark_priority",
-        "value": "Medium"
-      },
-      {
-        "type": "notify",
-        "value": "Content flagged by wordlist"
-      }
-    ],
-    "priority": 2,
-    "active": true,
-    "created_at": "2025-01-18T00:00:00",
-    "updated_at": "2025-01-18T00:00:00"
-  },
-  {
-    "id": 3,
-    "name": "Free Email Domains",
-    "description": "Free email domains are publicly available domains from which users can create email addresses for free.",
-    "conditions": [
-      {
-        "field": "recipients_email_domain",
-        "operator": "equals",
-        "value": "gmail.com, yahoo.com, yahoo.co.uk, yahoo.co.in, outlook.com, hotmail.com, live.com, msn.com, aol.com, icloud.com, mail.com, gmx.com, zoho.com, protonmail.com, protonmail.ch, tutanota.com, tutanota.de, yandex.com, yandex.ru, rambler.ru, mail.ru, inbox.ru, bk.ru, list.ru, fastmail.com, hushmail.com, rediffmail.com, lycos.com, email.com, hey.com, inbox.com, zoho.eu, my.com, qq.com, 126.com, 163.com, sina.com, yeah.net, foxmail.com, naver.com, daum.net, hanmail.net, web.de, freenet.de, gmx.de, gmx.net, t-online.de, netzero.net, juno.com, rocketmail.com, aim.com, usa.net, india.com, bigstring.com, startmail.com, posteo.de, disroot.org, mailfence.com, openmailbox.org, lavabit.com, runbox.com, zohomail.eu, onet.pl, wp.pl, interia.pl, o2.pl, centrum.cz, seznam.cz, email.cz, volny.cz, laposte.net, libero.it, tiscali.it, virgilio.it, alice.it, mail.be, scarlet.be, planet.nl, ziggo.nl, orange.fr, wanadoo.fr, sfr.fr, bluewin.ch, sunrise.ch, globo.com, bol.com.br, uol.com.br, terra.com.br, hotpop.com, hush.ai, icmail.net, keemail.me, mail2world.com, netcourrier.com, operamail.com, thexyz.com"
-      }
-    ],
-    "actions": [],
-    "priority": 2,
-    "active": true,
-    "created_at": "2025-07-18T11:46:14.455700",
-    "updated_at": "2025-07-18T11:46:14.455706"
-  },
-  {
-    "id": 4,
-    "name": "Temporary/Disposable Email Domains",
-    "description": "Temporary or Disposable Email Domains are domains used by email services that allow users to create short-lived, anonymous, or one-time-use email addresses. These services are commonly used to avoid spam, bypass account verification, or sign up for online services without revealing a personal or work email address.",
-    "conditions": [
-      {
-        "field": "recipients_email_domain",
-        "operator": "equals",
-        "value": "mailinator.com, 10minutemail.com, guerrillamail.com, yopmail.com, getnada.com, moakt.com, trashmail.com, spamgourmet.com, maildrop.cc, tempmailaddress.com, sharklasers.com, temp-mail.org"
-      }
-    ],
-    "actions": [
-      {
-        "type": "mark_priority",
-        "value": "Critical"
-      }
-    ],
-    "priority": 1,
-    "active": true,
-    "created_at": "2025-07-18T11:47:53.694353",
-    "updated_at": "2025-07-18T11:47:53.694360"
+    "updated_at": "2025-07-18T13:40:03.488670"
   }
 ]
