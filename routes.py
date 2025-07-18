@@ -840,6 +840,61 @@ def manual_reprocess_sessions():
     
     return redirect(url_for('admin'))
 
+@app.route('/analytics/whitelist/<session_id>')
+def whitelist_analysis(session_id):
+    """Detailed whitelist analysis view"""
+    session_manager = SessionManager()
+    session_data = session_manager.get_session(session_id)
+    if not session_data:
+        flash('Session not found', 'error')
+        return redirect(url_for('index'))
+    
+    # Get whitelist data
+    whitelists = session_manager.get_whitelists()
+    all_processed_data = session_manager.get_processed_data(session_id)
+    
+    # Calculate whitelist impact
+    whitelist_stats = {
+        'total_whitelisted_domains': len(whitelists.get('domains', [])),
+        'filtered_emails': session_data.get('whitelist_filtered', 0),
+        'analyzed_emails': len(all_processed_data) if all_processed_data else 0,
+        'domains': whitelists.get('domains', [])
+    }
+    
+    return render_template('whitelist_analysis.html', 
+                         session=session_data, 
+                         whitelist_stats=whitelist_stats)
+
+@app.route('/analytics/time/<session_id>')
+def time_analysis(session_id):
+    """Detailed time analysis view"""
+    session_manager = SessionManager()
+    session_data = session_manager.get_session(session_id)
+    if not session_data:
+        flash('Session not found', 'error')
+        return redirect(url_for('index'))
+    
+    all_processed_data = session_manager.get_processed_data(session_id)
+    
+    return render_template('time_analysis.html', 
+                         session=session_data, 
+                         processed_data=all_processed_data)
+
+@app.route('/analytics/senders/<session_id>')
+def sender_analysis(session_id):
+    """Detailed sender analysis view"""
+    session_manager = SessionManager()
+    session_data = session_manager.get_session(session_id)
+    if not session_data:
+        flash('Session not found', 'error')
+        return redirect(url_for('index'))
+    
+    all_processed_data = session_manager.get_processed_data(session_id)
+    
+    return render_template('sender_analysis.html', 
+                         session=session_data, 
+                         processed_data=all_processed_data)
+
 @app.route('/admin/attachment-keywords', methods=['POST'])
 def update_attachment_keywords():
     """Update attachment analysis keywords"""

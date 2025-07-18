@@ -1,0 +1,339 @@
+{% extends "base.html" %}
+
+{% block title %}Sender Analysis - {{ session.filename }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumb Navigation -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">All Sessions</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard', session_id=session.session_id) }}">{{ session.session_id }} Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Sender Analysis</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-users me-2"></i>Sender Analysis
+                    </h1>
+                    <p class="text-muted">{{ session.filename }} - Email sender patterns and risks</p>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('dashboard', session_id=session.session_id) }}" 
+                       class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sender Overview -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-primary mb-3">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    {% set unique_senders = processed_data | map(attribute='sender') | unique | list %}
+                    <h3 class="text-primary">{{ unique_senders | length }}</h3>
+                    <p class="text-muted">Unique Senders</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-success mb-3">
+                        <i class="fas fa-inbox"></i>
+                    </div>
+                    {% set unique_recipients = processed_data | map(attribute='recipient') | unique | list %}
+                    <h3 class="text-success">{{ unique_recipients | length }}</h3>
+                    <p class="text-muted">Unique Recipients</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-warning mb-3">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    {% set sender_recipient_pairs = [] %}
+                    {% for record in processed_data %}
+                        {% if record.sender and record.recipient %}
+                            {% set pair = record.sender + " -> " + record.recipient %}
+                            {% if pair not in sender_recipient_pairs %}
+                                {% if sender_recipient_pairs.append(pair) %}{% endif %}
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    <h3 class="text-warning">{{ sender_recipient_pairs | length }}</h3>
+                    <p class="text-muted">Unique Pairs</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sender Charts -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Top Senders</h5>
+                </div>
+                <div class="card-body" style="height: 300px;">
+                    <canvas id="topSendersChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Top Recipients</h5>
+                </div>
+                <div class="card-body" style="height: 300px;">
+                    <canvas id="topRecipientsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Risk by Sender -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Risk Distribution by Top Senders</h5>
+                </div>
+                <div class="card-body" style="height: 400px;">
+                    <canvas id="riskSenderChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- High Risk Senders -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">High Risk Senders</h5>
+                </div>
+                <div class="card-body">
+                    {% set high_risk_senders = {} %}
+                    {% for record in processed_data %}
+                        {% if record.sender and (record.ml_risk_level == 'High' or record.ml_risk_level == 'Critical') %}
+                            {% if high_risk_senders.update({record.sender: high_risk_senders.get(record.sender, 0) + 1}) %}{% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    {% set sorted_high_risk = high_risk_senders.items() | sort(attribute='1', reverse=True) | list %}
+                    
+                    {% if sorted_high_risk %}
+                        {% for sender, count in sorted_high_risk[:10] %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div>
+                                    <strong>{{ sender }}</strong>
+                                </div>
+                                <div>
+                                    <span class="badge bg-danger">{{ count }} high-risk</span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted">
+                            <i class="fas fa-check-circle fa-2x mb-2"></i>
+                            <p>No high-risk senders identified</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Volume Leaders</h5>
+                </div>
+                <div class="card-body">
+                    {% set sender_counts = {} %}
+                    {% for record in processed_data %}
+                        {% if record.sender %}
+                            {% if sender_counts.update({record.sender: sender_counts.get(record.sender, 0) + 1}) %}{% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    {% set sorted_senders = sender_counts.items() | sort(attribute='1', reverse=True) | list %}
+                    
+                    {% for sender, count in sorted_senders[:10] %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>{{ sender }}</strong>
+                            </div>
+                            <div>
+                                <span class="badge bg-primary">{{ count }} emails</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Top Senders Chart
+const sendersCtx = document.getElementById('topSendersChart').getContext('2d');
+const sendersData = {
+    {% set sender_counts = {} %}
+    {% for record in processed_data %}
+        {% if record.sender %}
+            {% if sender_counts.update({record.sender: sender_counts.get(record.sender, 0) + 1}) %}{% endif %}
+        {% endif %}
+    {% endfor %}
+    {% set top_senders = sender_counts.items() | sort(attribute='1', reverse=True) | list %}
+    labels: [{% for sender, count in top_senders[:10] %}'{{ sender.split('@')[0] if '@' in sender else sender }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        label: 'Emails Sent',
+        data: [{% for sender, count in top_senders[:10] %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}],
+        backgroundColor: '#007bff',
+        borderColor: '#007bff',
+        borderWidth: 1
+    }]
+};
+
+new Chart(sendersCtx, {
+    type: 'bar',
+    data: sendersData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Top Recipients Chart
+const recipientsCtx = document.getElementById('topRecipientsChart').getContext('2d');
+const recipientsData = {
+    {% set recipient_counts = {} %}
+    {% for record in processed_data %}
+        {% if record.recipient %}
+            {% if recipient_counts.update({record.recipient: recipient_counts.get(record.recipient, 0) + 1}) %}{% endif %}
+        {% endif %}
+    {% endfor %}
+    {% set top_recipients = recipient_counts.items() | sort(attribute='1', reverse=True) | list %}
+    labels: [{% for recipient, count in top_recipients[:10] %}'{{ recipient.split('@')[0] if '@' in recipient else recipient }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        label: 'Emails Received',
+        data: [{% for recipient, count in top_recipients[:10] %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}],
+        backgroundColor: '#28a745',
+        borderColor: '#28a745',
+        borderWidth: 1
+    }]
+};
+
+new Chart(recipientsCtx, {
+    type: 'bar',
+    data: recipientsData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y',
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Risk by Sender Chart
+const riskSenderCtx = document.getElementById('riskSenderChart').getContext('2d');
+const riskSenderData = {
+    {% set sender_risk_data = {} %}
+    {% set sender_counts = {} %}
+    {% for record in processed_data %}
+        {% if record.sender %}
+            {% if sender_counts.update({record.sender: sender_counts.get(record.sender, 0) + 1}) %}{% endif %}
+        {% endif %}
+    {% endfor %}
+    {% set top_senders = sender_counts.items() | sort(attribute='1', reverse=True) | list %}
+    {% for sender, count in top_senders[:10] %}
+        {% if sender_risk_data.update({sender: {'Low': 0, 'Medium': 0, 'High': 0, 'Critical': 0}}) %}{% endif %}
+    {% endfor %}
+    {% for record in processed_data %}
+        {% if record.sender in sender_risk_data %}
+            {% set risk = record.ml_risk_level or 'Low' %}
+            {% if sender_risk_data[record.sender].update({risk: sender_risk_data[record.sender].get(risk, 0) + 1}) %}{% endif %}
+        {% endif %}
+    {% endfor %}
+    labels: [{% for sender, count in top_senders[:10] %}'{{ sender.split('@')[0] if '@' in sender else sender }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [
+        {
+            label: 'Low',
+            data: [{% for sender, count in top_senders[:10] %}{{ sender_risk_data[sender].get('Low', 0) }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: '#28a745'
+        },
+        {
+            label: 'Medium',
+            data: [{% for sender, count in top_senders[:10] %}{{ sender_risk_data[sender].get('Medium', 0) }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: '#17a2b8'
+        },
+        {
+            label: 'High',
+            data: [{% for sender, count in top_senders[:10] %}{{ sender_risk_data[sender].get('High', 0) }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: '#ffc107'
+        },
+        {
+            label: 'Critical',
+            data: [{% for sender, count in top_senders[:10] %}{{ sender_risk_data[sender].get('Critical', 0) }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: '#dc3545'
+        }
+    ]
+};
+
+new Chart(riskSenderCtx, {
+    type: 'bar',
+    data: riskSenderData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top'
+            }
+        },
+        scales: {
+            x: {
+                stacked: true
+            },
+            y: {
+                stacked: true,
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

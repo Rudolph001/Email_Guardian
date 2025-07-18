@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Whitelist Analysis - {{ session.filename }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumb Navigation -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">All Sessions</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard', session_id=session.session_id) }}">{{ session.session_id }} Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Whitelist Analysis</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>Whitelist Analysis
+                    </h1>
+                    <p class="text-muted">{{ session.filename }} - Impact of domain whitelisting</p>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('dashboard', session_id=session.session_id) }}" 
+                       class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                    <a href="{{ url_for('admin') }}" 
+                       class="btn btn-outline-secondary">
+                        <i class="fas fa-cog me-2"></i>Manage Whitelist
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Whitelist Impact Overview -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-success mb-3">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="text-success">{{ whitelist_stats.filtered_emails }}</h3>
+                    <p class="text-muted">Emails Filtered</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-primary mb-3">
+                        <i class="fas fa-list"></i>
+                    </div>
+                    <h3 class="text-primary">{{ whitelist_stats.total_whitelisted_domains }}</h3>
+                    <p class="text-muted">Whitelisted Domains</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="stats-icon bg-warning mb-3">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3 class="text-warning">{{ whitelist_stats.analyzed_emails }}</h3>
+                    <p class="text-muted">Emails Analyzed</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Whitelist Impact Chart -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Whitelist Impact</h5>
+                </div>
+                <div class="card-body" style="height: 300px;">
+                    <canvas id="whitelistImpactChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Filtering Efficiency</h5>
+                </div>
+                <div class="card-body">
+                    {% set total_emails = whitelist_stats.filtered_emails + whitelist_stats.analyzed_emails %}
+                    {% set filter_rate = (whitelist_stats.filtered_emails / total_emails * 100) if total_emails > 0 else 0 %}
+                    
+                    <div class="mb-3">
+                        <h4 class="text-success">{{ "%.1f"|format(filter_rate) }}%</h4>
+                        <p class="text-muted">of emails filtered by whitelist</p>
+                    </div>
+                    
+                    <div class="progress mb-3" style="height: 20px;">
+                        <div class="progress-bar bg-success" style="width: {{ filter_rate }}%"></div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-6">
+                            <small class="text-muted">Filtered: {{ whitelist_stats.filtered_emails }}</small>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted">Analyzed: {{ whitelist_stats.analyzed_emails }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Whitelisted Domains List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>Current Whitelisted Domains
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if whitelist_stats.domains %}
+                        <div class="row">
+                            {% for domain in whitelist_stats.domains|sort %}
+                                <div class="col-md-4 mb-2">
+                                    <div class="badge bg-success p-2 w-100">
+                                        <i class="fas fa-shield-alt me-2"></i>{{ domain }}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted">
+                            <i class="fas fa-info-circle fa-2x mb-2"></i>
+                            <p>No whitelisted domains configured</p>
+                            <a href="{{ url_for('admin') }}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Add Whitelist Domains
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Whitelist Impact Chart
+const ctx = document.getElementById('whitelistImpactChart').getContext('2d');
+const data = {
+    labels: ['Filtered (Trusted)', 'Analyzed (Reviewed)'],
+    datasets: [{
+        data: [{{ whitelist_stats.filtered_emails }}, {{ whitelist_stats.analyzed_emails }}],
+        backgroundColor: ['#28a745', '#007bff'],
+        borderColor: ['#1e7e34', '#0056b3'],
+        borderWidth: 2
+    }]
+};
+
+new Chart(ctx, {
+    type: 'doughnut',
+    data: data,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

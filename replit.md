@@ -11,6 +11,19 @@ Upload limit preference: High capacity (500MB) for large email data files.
 
 ## Recent Changes
 
+- **Enhanced Session Dashboard with Multiple Analytics Views** (July 18, 2025):
+  - Added comprehensive analytics dashboard with 6 new chart types
+  - Whitelisted Domains Analysis chart showing filtered vs analyzed email breakdown
+  - Attachment Analysis chart categorizing attachment types (Business, Personal, Suspicious, etc.)
+  - Time Distribution chart showing email patterns by hour of day
+  - Top Senders & Recipients chart highlighting volume leaders
+  - Whitelist Impact card showing filtering effectiveness with progress bars
+  - Data Quality card displaying record completeness statistics
+  - Processing Stats card showing session metadata and ML analysis status
+  - Added dedicated analytics views: Whitelist Analysis, Time Analysis, Sender Analysis
+  - Created dropdown navigation menu for easy access to specialized analytics views
+  - Implemented smooth scrolling to chart sections
+  - Added breadcrumb navigation for better user experience
 - **Corporate Color Scheme Update** (July 18, 2025):
   - Updated application color palette to professional corporate theme
   - Changed from earthy colors to modern corporate blues, grays, and whites

@@ -11,6 +11,26 @@
                 <p class="text-muted">{{ session.filename }} - {{ session.created_at[:19] }}</p>
             </div>
             <div class="btn-group">
+                <div class="dropdown">
+                    <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-chart-bar me-2"></i>Analytics Views
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('whitelist_analysis', session_id=session.session_id) }}">
+                            <i class="fas fa-shield-alt me-2"></i>Whitelist Analysis
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('time_analysis', session_id=session.session_id) }}">
+                            <i class="fas fa-clock me-2"></i>Time Analysis
+                        </a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('sender_analysis', session_id=session.session_id) }}">
+                            <i class="fas fa-users me-2"></i>Sender Analysis
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" onclick="scrollToSection('additional-analytics')">
+                            <i class="fas fa-arrow-down me-2"></i>View All Charts
+                        </a></li>
+                    </ul>
+                </div>
                 <a href="{{ url_for('export_session', session_id=session.session_id) }}" 
                    class="btn btn-outline-success">
                     <i class="fas fa-download me-2"></i>Export Data
@@ -212,6 +232,158 @@
             </div>
             <div class="card-body" style="height: 250px;">
                 <canvas id="domainChart" width="300" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Analytics Row -->
+<div class="row mb-4" id="additional-analytics">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-shield-alt me-2"></i>Whitelisted Domains Analysis
+                </h5>
+            </div>
+            <div class="card-body" style="height: 250px;">
+                <canvas id="whitelistChart" width="300" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-paperclip me-2"></i>Attachment Analysis
+                </h5>
+            </div>
+            <div class="card-body" style="height: 250px;">
+                <canvas id="attachmentChart" width="300" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Time & Volume Analytics -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clock me-2"></i>Time Distribution
+                </h5>
+            </div>
+            <div class="card-body" style="height: 250px;">
+                <canvas id="timeChart" width="300" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users me-2"></i>Top Senders & Recipients
+                </h5>
+            </div>
+            <div class="card-body" style="height: 250px;">
+                <canvas id="sendersChart" width="300" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Analytics Cards -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-list me-2"></i>Whitelist Impact
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="text-center">
+                            <h4 class="text-success">{{ session.whitelist_filtered or 0 }}</h4>
+                            <small class="text-muted">Filtered Emails</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <h4 class="text-primary">{{ case_management_count + escalated_count }}</h4>
+                            <small class="text-muted">Analyzed Emails</small>
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <div class="progress mb-2">
+                    {% set total_emails = (session.whitelist_filtered or 0) + case_management_count + escalated_count %}
+                    {% set filtered_pct = ((session.whitelist_filtered or 0) / total_emails * 100) if total_emails > 0 else 0 %}
+                    <div class="progress-bar bg-success" style="width: {{ filtered_pct }}%"></div>
+                </div>
+                <small class="text-muted">{{ "%.1f"|format(filtered_pct) }}% emails filtered by whitelist</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-search me-2"></i>Data Quality
+                </h5>
+            </div>
+            <div class="card-body">
+                {% set complete_records = (case_management_data + escalated_data) | selectattr('sender') | selectattr('recipient') | list | length %}
+                {% set total_records = case_management_count + escalated_count %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Complete Records:</span>
+                        <span class="badge bg-success">{{ complete_records }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Total Records:</span>
+                        <span class="badge bg-primary">{{ total_records }}</span>
+                    </div>
+                </div>
+                <div class="progress mb-2">
+                    {% set quality_pct = (complete_records / total_records * 100) if total_records > 0 else 0 %}
+                    <div class="progress-bar bg-success" style="width: {{ quality_pct }}%"></div>
+                </div>
+                <small class="text-muted">{{ "%.1f"|format(quality_pct) }}% data completeness</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Processing Stats
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>Processing Time:</span>
+                        <span class="badge bg-info">{{ session.processing_time or 'N/A' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>ML Analysis:</span>
+                        <span class="badge bg-success">
+                            {% if ml_insights %}Complete{% else %}Pending{% endif %}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Rules Applied:</span>
+                        <span class="badge bg-warning">{{ escalated_count }}</span>
+                    </div>
+                </div>
+                <small class="text-muted">Session created: {{ session.created_at[:10] }}</small>
             </div>
         </div>
     </div>
@@ -501,6 +673,139 @@ new Chart(domainCtx, {
         }
     }
 });
+
+// Whitelist Analysis Chart
+const whitelistCtx = document.getElementById('whitelistChart').getContext('2d');
+const whitelistData = {
+    labels: ['Filtered (Whitelist)', 'Analyzed'],
+    datasets: [{
+        data: [{{ session.whitelist_filtered or 0 }}, {{ case_management_count + escalated_count }}],
+        backgroundColor: ['#28a745', '#007bff']
+    }]
+};
+
+new Chart(whitelistCtx, {
+    type: 'doughnut',
+    data: whitelistData,
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Attachment Analysis Chart
+const attachmentCtx = document.getElementById('attachmentChart').getContext('2d');
+const attachmentData = {
+    {% set attachment_counts = {} %}
+    {% for record in case_management_data + escalated_data %}
+        {% set attachment_class = record.attachment_classification or 'No Attachments' %}
+        {% if attachment_counts.update({attachment_class: attachment_counts.get(attachment_class, 0) + 1}) %}{% endif %}
+    {% endfor %}
+    labels: [{% for class in attachment_counts.keys() %}'{{ class }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        data: [{% for count in attachment_counts.values() %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}],
+        backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#6c757d', '#17a2b8']
+    }]
+};
+
+new Chart(attachmentCtx, {
+    type: 'pie',
+    data: attachmentData,
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    boxWidth: 12,
+                    font: {
+                        size: 11
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Time Distribution Chart
+const timeCtx = document.getElementById('timeChart').getContext('2d');
+const timeData = {
+    {% set hour_counts = {} %}
+    {% for record in case_management_data + escalated_data %}
+        {% if record.sent_timestamp %}
+            {% set hour = record.sent_timestamp.split('T')[1].split(':')[0] if 'T' in record.sent_timestamp else record.sent_timestamp.split(' ')[1].split(':')[0] if ' ' in record.sent_timestamp else '00' %}
+            {% if hour_counts.update({hour: hour_counts.get(hour, 0) + 1}) %}{% endif %}
+        {% endif %}
+    {% endfor %}
+    labels: [{% for hour in range(24) %}'{{ "%02d"|format(hour) }}:00'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        label: 'Emails Sent',
+        data: [{% for hour in range(24) %}{{ hour_counts.get("%02d"|format(hour), 0) }}{% if not loop.last %},{% endif %}{% endfor %}],
+        backgroundColor: '#007bff',
+        borderColor: '#007bff',
+        borderWidth: 1
+    }]
+};
+
+new Chart(timeCtx, {
+    type: 'bar',
+    data: timeData,
+    options: {
+        responsive: true,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Top Senders Chart
+const sendersCtx = document.getElementById('sendersChart').getContext('2d');
+const sendersData = {
+    {% set sender_counts = {} %}
+    {% for record in case_management_data + escalated_data %}
+        {% if record.sender %}
+            {% set sender = record.sender.split('@')[0] if '@' in record.sender else record.sender %}
+            {% if sender_counts.update({sender: sender_counts.get(sender, 0) + 1}) %}{% endif %}
+        {% endif %}
+    {% endfor %}
+    {% set top_senders = sender_counts.items() | sort(attribute='1', reverse=True) | list %}
+    labels: [{% for sender, count in top_senders[:5] %}'{{ sender }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        label: 'Email Count',
+        data: [{% for sender, count in top_senders[:5] %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}],
+        backgroundColor: ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1']
+    }]
+};
+
+new Chart(sendersCtx, {
+    type: 'bar',
+    data: sendersData,
+    options: {
+        responsive: true,
+        indexAxis: 'y',
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            x: {
+                beginAtZero: true
+            }
+        }
+    }
+});
 </script>
 <script>
     function reprocessRules() {
@@ -568,6 +873,12 @@ new Chart(domainCtx, {
             showNotification('Error getting debug data', 'error');
         });
     }
+
+function scrollToSection(sectionId) {
+    document.getElementById(sectionId).scrollIntoView({ 
+        behavior: 'smooth' 
+    });
+}
 </script>
     <!-- BAU Analysis Modal -->
     <div class="modal fade" id="bauModal" tabindex="-1" aria-labelledby="bauModalLabel" aria-hidden="true">

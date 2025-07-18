@@ -1,0 +1,326 @@
+{% extends "base.html" %}
+
+{% block title %}Time Analysis - {{ session.filename }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Breadcrumb Navigation -->
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('index') }}">All Sessions</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard', session_id=session.session_id) }}">{{ session.session_id }} Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Time Analysis</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-clock me-2"></i>Time Analysis
+                    </h1>
+                    <p class="text-muted">{{ session.filename }} - Email patterns over time</p>
+                </div>
+                <div class="btn-group">
+                    <a href="{{ url_for('dashboard', session_id=session.session_id) }}" 
+                       class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Distribution Charts -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Hourly Distribution</h5>
+                </div>
+                <div class="card-body" style="height: 300px;">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Daily Distribution</h5>
+                </div>
+                <div class="card-body" style="height: 300px;">
+                    <canvas id="dailyChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Risk by Time Analysis -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Risk Level by Time of Day</h5>
+                </div>
+                <div class="card-body" style="height: 400px;">
+                    <canvas id="riskTimeChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Time Statistics -->
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Peak Hours</h5>
+                </div>
+                <div class="card-body">
+                    {% set hourly_counts = {} %}
+                    {% for record in processed_data %}
+                        {% if record.sent_timestamp %}
+                            {% set hour = record.sent_timestamp.split('T')[1].split(':')[0] if 'T' in record.sent_timestamp else record.sent_timestamp.split(' ')[1].split(':')[0] if ' ' in record.sent_timestamp else '00' %}
+                            {% if hourly_counts.update({hour: hourly_counts.get(hour, 0) + 1}) %}{% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    {% set peak_hours = hourly_counts.items() | sort(attribute='1', reverse=True) | list %}
+                    
+                    {% for hour, count in peak_hours[:3] %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <strong>{{ hour }}:00</strong>
+                            </div>
+                            <div>
+                                <span class="badge bg-primary">{{ count }} emails</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Time Patterns</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">Business Hours (9-17)</small>
+                        {% set business_hours = [] %}
+                        {% for record in processed_data %}
+                            {% if record.sent_timestamp %}
+                                {% set hour = record.sent_timestamp.split('T')[1].split(':')[0] if 'T' in record.sent_timestamp else record.sent_timestamp.split(' ')[1].split(':')[0] if ' ' in record.sent_timestamp else '00' %}
+                                {% if hour|int >= 9 and hour|int <= 17 %}
+                                    {% if business_hours.append(record) %}{% endif %}
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        <div class="progress mb-2">
+                            {% set business_pct = (business_hours|length / processed_data|length * 100) if processed_data|length > 0 else 0 %}
+                            <div class="progress-bar bg-success" style="width: {{ business_pct }}%"></div>
+                        </div>
+                        <small>{{ business_hours|length }} emails ({{ "%.1f"|format(business_pct) }}%)</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <small class="text-muted">After Hours (18-08)</small>
+                        {% set after_hours = [] %}
+                        {% for record in processed_data %}
+                            {% if record.sent_timestamp %}
+                                {% set hour = record.sent_timestamp.split('T')[1].split(':')[0] if 'T' in record.sent_timestamp else record.sent_timestamp.split(' ')[1].split(':')[0] if ' ' in record.sent_timestamp else '00' %}
+                                {% if hour|int >= 18 or hour|int <= 8 %}
+                                    {% if after_hours.append(record) %}{% endif %}
+                                {% endif %}
+                            {% endif %}
+                        {% endfor %}
+                        <div class="progress mb-2">
+                            {% set after_pct = (after_hours|length / processed_data|length * 100) if processed_data|length > 0 else 0 %}
+                            <div class="progress-bar bg-warning" style="width: {{ after_pct }}%"></div>
+                        </div>
+                        <small>{{ after_hours|length }} emails ({{ "%.1f"|format(after_pct) }}%)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Risk Timing</h5>
+                </div>
+                <div class="card-body">
+                    {% set high_risk_after_hours = [] %}
+                    {% for record in processed_data %}
+                        {% if record.sent_timestamp and (record.ml_risk_level == 'High' or record.ml_risk_level == 'Critical') %}
+                            {% set hour = record.sent_timestamp.split('T')[1].split(':')[0] if 'T' in record.sent_timestamp else record.sent_timestamp.split(' ')[1].split(':')[0] if ' ' in record.sent_timestamp else '00' %}
+                            {% if hour|int >= 18 or hour|int <= 8 %}
+                                {% if high_risk_after_hours.append(record) %}{% endif %}
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    <div class="text-center mb-3">
+                        <h4 class="text-warning">{{ high_risk_after_hours|length }}</h4>
+                        <small class="text-muted">High-risk emails after hours</small>
+                    </div>
+                    
+                    {% if high_risk_after_hours|length > 0 %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>{{ high_risk_after_hours|length }}</strong> high-risk emails were sent outside business hours.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Hourly Distribution Chart
+const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+const hourlyData = {
+    {% set hour_counts = {} %}
+    {% for record in processed_data %}
+        {% if record.sent_timestamp %}
+            {% set hour = record.sent_timestamp.split('T')[1].split(':')[0] if 'T' in record.sent_timestamp else record.sent_timestamp.split(' ')[1].split(':')[0] if ' ' in record.sent_timestamp else '00' %}
+            {% if hour_counts.update({hour: hour_counts.get(hour, 0) + 1}) %}{% endif %}
+        {% endif %}
+    {% endfor %}
+    labels: [{% for hour in range(24) %}'{{ "%02d"|format(hour) }}:00'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        label: 'Emails',
+        data: [{% for hour in range(24) %}{{ hour_counts.get("%02d"|format(hour), 0) }}{% if not loop.last %},{% endif %}{% endfor %}],
+        backgroundColor: '#007bff',
+        borderColor: '#007bff',
+        borderWidth: 1
+    }]
+};
+
+new Chart(hourlyCtx, {
+    type: 'bar',
+    data: hourlyData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Daily Distribution Chart
+const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+const dailyData = {
+    {% set day_counts = {} %}
+    {% for record in processed_data %}
+        {% if record.sent_timestamp %}
+            {% set date = record.sent_timestamp.split('T')[0] if 'T' in record.sent_timestamp else record.sent_timestamp.split(' ')[0] if ' ' in record.sent_timestamp else record.sent_timestamp[:10] %}
+            {% if day_counts.update({date: day_counts.get(date, 0) + 1}) %}{% endif %}
+        {% endif %}
+    {% endfor %}
+    labels: [{% for date in day_counts.keys() %}'{{ date }}'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [{
+        label: 'Emails',
+        data: [{% for count in day_counts.values() %}{{ count }}{% if not loop.last %},{% endif %}{% endfor %}],
+        backgroundColor: '#28a745',
+        borderColor: '#28a745',
+        borderWidth: 1
+    }]
+};
+
+new Chart(dailyCtx, {
+    type: 'line',
+    data: dailyData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Risk by Time Chart
+const riskTimeCtx = document.getElementById('riskTimeChart').getContext('2d');
+const riskTimeData = {
+    {% set risk_by_hour = {} %}
+    {% for hour in range(24) %}
+        {% set hour_str = "%02d"|format(hour) %}
+        {% if risk_by_hour.update({hour_str: {'Low': 0, 'Medium': 0, 'High': 0, 'Critical': 0}}) %}{% endif %}
+    {% endfor %}
+    {% for record in processed_data %}
+        {% if record.sent_timestamp %}
+            {% set hour = record.sent_timestamp.split('T')[1].split(':')[0] if 'T' in record.sent_timestamp else record.sent_timestamp.split(' ')[1].split(':')[0] if ' ' in record.sent_timestamp else '00' %}
+            {% set risk = record.ml_risk_level or 'Low' %}
+            {% if risk_by_hour[hour].update({risk: risk_by_hour[hour].get(risk, 0) + 1}) %}{% endif %}
+        {% endif %}
+    {% endfor %}
+    labels: [{% for hour in range(24) %}'{{ "%02d"|format(hour) }}:00'{% if not loop.last %},{% endif %}{% endfor %}],
+    datasets: [
+        {
+            label: 'Low',
+            data: [{% for hour in range(24) %}{{ risk_by_hour["%02d"|format(hour)].get('Low', 0) }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: '#28a745'
+        },
+        {
+            label: 'Medium',
+            data: [{% for hour in range(24) %}{{ risk_by_hour["%02d"|format(hour)].get('Medium', 0) }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: '#17a2b8'
+        },
+        {
+            label: 'High',
+            data: [{% for hour in range(24) %}{{ risk_by_hour["%02d"|format(hour)].get('High', 0) }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: '#ffc107'
+        },
+        {
+            label: 'Critical',
+            data: [{% for hour in range(24) %}{{ risk_by_hour["%02d"|format(hour)].get('Critical', 0) }}{% if not loop.last %},{% endif %}{% endfor %}],
+            backgroundColor: '#dc3545'
+        }
+    ]
+};
+
+new Chart(riskTimeCtx, {
+    type: 'bar',
+    data: riskTimeData,
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top'
+            }
+        },
+        scales: {
+            x: {
+                stacked: true
+            },
+            y: {
+                stacked: true,
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
