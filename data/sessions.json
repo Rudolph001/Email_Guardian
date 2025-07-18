@@ -23,7 +23,7 @@
       "policy_name"
     ],
     "created_at": "2025-07-18T10:35:05.381066",
-    "updated_at": "2025-07-18T10:50:26.536008",
+    "updated_at": "2025-07-18T11:07:39.361989",
     "status": "active",
     "total_records": 0,
     "processed_records": 9,
@@ -84,7 +84,7 @@
         "ml_risk_level": "Low",
         "ml_cluster": -1,
         "notes": "",
-        "updated_at": "2025-07-18T10:50:26.535873"
+        "updated_at": "2025-07-18T11:07:39.361854"
       },
       {
         "_time": "2025-07-06T08:24:12.280656",
