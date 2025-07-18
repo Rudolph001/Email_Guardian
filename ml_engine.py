@@ -30,7 +30,8 @@ class MLEngine:
                 'insights': {}
             }
             
-            if df.empty:
+            if df.empty or len(df) == 0:
+                self.logger.info("No data to analyze - returning empty results")
                 return results
             
             # Prepare features for ML analysis

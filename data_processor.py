@@ -56,8 +56,17 @@ class DataProcessor:
                 processed_record = self._process_email_record(row.to_dict(), index)
                 processed_data.append(processed_record)
             
-            # Apply ML analysis
-            ml_results = self.ml_engine.analyze_emails(df_filtered)
+            # Apply ML analysis only if we have data
+            if len(df_filtered) > 0:
+                ml_results = self.ml_engine.analyze_emails(df_filtered)
+            else:
+                ml_results = {
+                    'anomaly_scores': [],
+                    'risk_levels': [],
+                    'interesting_patterns': [],
+                    'clusters': [],
+                    'insights': {}
+                }
             
             # Merge ML results with processed data
             processed_data = self._merge_ml_results(processed_data, ml_results)
@@ -211,22 +220,31 @@ class DataProcessor:
     def _merge_ml_results(self, processed_data: List[Dict], ml_results: Dict) -> List[Dict]:
         """Merge ML analysis results with processed data"""
         try:
+            # Safely get ML results with proper type checking
             anomaly_scores = ml_results.get('anomaly_scores', [])
             risk_levels = ml_results.get('risk_levels', [])
             clusters = ml_results.get('clusters', [])
             
+            # Ensure we have lists, not other types
+            if not isinstance(anomaly_scores, list):
+                anomaly_scores = []
+            if not isinstance(risk_levels, list):
+                risk_levels = []
+            if not isinstance(clusters, list):
+                clusters = []
+            
             for i, record in enumerate(processed_data):
-                if i < len(anomaly_scores):
+                if i < len(anomaly_scores) and isinstance(anomaly_scores[i], (int, float)):
                     record['ml_anomaly_score'] = float(anomaly_scores[i])
                 else:
                     record['ml_anomaly_score'] = 0.0
                 
-                if i < len(risk_levels):
+                if i < len(risk_levels) and isinstance(risk_levels[i], str):
                     record['ml_risk_level'] = risk_levels[i]
                 else:
                     record['ml_risk_level'] = 'Low'
                 
-                if i < len(clusters):
+                if i < len(clusters) and isinstance(clusters[i], (int, float)):
                     record['ml_cluster'] = int(clusters[i])
                 else:
                     record['ml_cluster'] = -1
