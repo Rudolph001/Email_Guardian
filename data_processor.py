@@ -417,6 +417,7 @@ class DataProcessor:
             anomaly_scores = ml_results.get('anomaly_scores', [])
             risk_levels = ml_results.get('risk_levels', [])
             clusters = ml_results.get('clusters', [])
+            attachment_classifications = ml_results.get('attachment_classifications', [])
             
             # Ensure we have lists, not other types (including bool, dict, str, etc.)
             if not isinstance(anomaly_scores, (list, tuple)):
@@ -428,11 +429,15 @@ class DataProcessor:
             if not isinstance(clusters, (list, tuple)):
                 self.logger.warning(f"clusters is not a list/tuple, got {type(clusters)}: {clusters}")
                 clusters = []
+            if not isinstance(attachment_classifications, (list, tuple)):
+                self.logger.warning(f"attachment_classifications is not a list/tuple, got {type(attachment_classifications)}: {attachment_classifications}")
+                attachment_classifications = []
             
             # Convert to lists if they are tuples
             anomaly_scores = list(anomaly_scores) if isinstance(anomaly_scores, tuple) else anomaly_scores
             risk_levels = list(risk_levels) if isinstance(risk_levels, tuple) else risk_levels
             clusters = list(clusters) if isinstance(clusters, tuple) else clusters
+            attachment_classifications = list(attachment_classifications) if isinstance(attachment_classifications, tuple) else attachment_classifications
             
             for i, record in enumerate(processed_data):
                 # Safely handle anomaly scores
@@ -465,6 +470,16 @@ class DataProcessor:
                     self.logger.warning(f"Error processing cluster for record {i}: {e}")
                     record['ml_cluster'] = -1
                 
+                # Safely handle attachment classifications
+                try:
+                    if i < len(attachment_classifications) and isinstance(attachment_classifications[i], str):
+                        record['attachment_classification'] = attachment_classifications[i]
+                    else:
+                        record['attachment_classification'] = 'Unknown'
+                except (IndexError, TypeError) as e:
+                    self.logger.warning(f"Error processing attachment classification for record {i}: {e}")
+                    record['attachment_classification'] = 'Unknown'
+                
                 # Add detailed anomaly analysis for high-anomaly emails
                 try:
                     if record['ml_anomaly_score'] > 0.7:
@@ -489,6 +504,8 @@ class DataProcessor:
                     record['ml_cluster'] = -1
                 if 'anomaly_details' not in record:
                     record['anomaly_details'] = []
+                if 'attachment_classification' not in record:
+                    record['attachment_classification'] = 'Unknown'
             return processed_data
     
     def get_domain_stats(self, processed_data: List[Dict]) -> Dict:

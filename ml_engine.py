@@ -19,6 +19,27 @@ class MLEngine:
         self.tfidf_vectorizer = TfidfVectorizer(max_features=1000, stop_words='english')
         self.label_encoder = LabelEncoder()
         self.logger = logging.getLogger(__name__)
+        
+        # Attachment classification keywords
+        self.business_keywords = [
+            'contract', 'agreement', 'proposal', 'invoice', 'report', 'presentation', 
+            'budget', 'financial', 'quarterly', 'annual', 'meeting', 'agenda', 
+            'minutes', 'policy', 'procedure', 'manual', 'guidelines', 'specification',
+            'requirements', 'project', 'timeline', 'roadmap', 'strategy', 'analysis',
+            'forecast', 'revenue', 'expense', 'tax', 'audit', 'compliance',
+            'memo', 'briefing', 'summary', 'overview', 'review', 'assessment',
+            'evaluation', 'performance', 'metrics', 'kpi', 'dashboard', 'chart'
+        ]
+        
+        self.personal_keywords = [
+            'personal', 'private', 'family', 'photo', 'picture', 'vacation', 'holiday',
+            'birthday', 'anniversary', 'wedding', 'graduation', 'resume', 'cv',
+            'medical', 'health', 'insurance', 'benefits', 'payroll', 'salary',
+            'leave', 'time-off', 'sick', 'doctor', 'appointment', 'receipt',
+            'bank', 'statement', 'loan', 'mortgage', 'credit', 'tax-return',
+            'social', 'security', 'passport', 'driver', 'license', 'birth',
+            'certificate', 'marriage', 'divorce', 'will', 'testament'
+        ]
 
     def analyze_emails(self, df):
         """Perform comprehensive ML analysis on email data"""
@@ -53,6 +74,10 @@ class MLEngine:
             # Clustering analysis
             clusters = self._perform_clustering(features)
             results['clusters'] = clusters.tolist()
+
+            # Classify attachments
+            attachment_classifications = self._classify_attachments(df)
+            results['attachment_classifications'] = attachment_classifications
 
             # Generate insights
             insights = self._generate_insights(df, anomaly_scores, risk_levels, patterns)
@@ -661,3 +686,78 @@ class MLEngine:
                 'clusters': [-1] * target_length,
                 'insights': {}
             }
+    
+    def _classify_attachments(self, df):
+        """Classify attachments as business, personal, or unknown based on filename analysis"""
+        try:
+            classifications = []
+            
+            if 'attachments' not in df.columns:
+                return ['No Attachments'] * len(df)
+            
+            for idx, row in df.iterrows():
+                attachments = row.get('attachments', '')
+                
+                if pd.isna(attachments) or str(attachments).strip() == '' or str(attachments).lower() == 'nan':
+                    classifications.append('No Attachments')
+                    continue
+                
+                # Parse multiple attachments (comma-separated)
+                attachment_list = str(attachments).split(',')
+                business_score = 0
+                personal_score = 0
+                total_attachments = len(attachment_list)
+                
+                for attachment in attachment_list:
+                    attachment = attachment.strip().lower()
+                    
+                    # Skip empty attachments
+                    if not attachment:
+                        continue
+                    
+                    # Check business keywords
+                    for keyword in self.business_keywords:
+                        if keyword in attachment:
+                            business_score += 1
+                            break
+                    
+                    # Check personal keywords
+                    for keyword in self.personal_keywords:
+                        if keyword in attachment:
+                            personal_score += 1
+                            break
+                    
+                    # Check file extensions for business patterns
+                    if any(ext in attachment for ext in ['.xlsx', '.pptx', '.docx', '.pdf']):
+                        if any(word in attachment for word in ['report', 'proposal', 'contract', 'invoice']):
+                            business_score += 0.5
+                    
+                    # Check file extensions for personal patterns
+                    if any(ext in attachment for ext in ['.jpg', '.jpeg', '.png', '.mp4', '.mp3']):
+                        if any(word in attachment for word in ['photo', 'pic', 'image', 'video']):
+                            personal_score += 0.5
+                
+                # Determine classification
+                if business_score > personal_score:
+                    if business_score >= total_attachments * 0.5:
+                        classifications.append('Business')
+                    else:
+                        classifications.append('Mixed')
+                elif personal_score > business_score:
+                    if personal_score >= total_attachments * 0.5:
+                        classifications.append('Personal')
+                    else:
+                        classifications.append('Mixed')
+                else:
+                    # No clear indicators found
+                    if total_attachments > 0:
+                        classifications.append('Unknown')
+                    else:
+                        classifications.append('No Attachments')
+            
+            self.logger.info(f"Classified {len(classifications)} attachment records")
+            return classifications
+            
+        except Exception as e:
+            self.logger.error(f"Error classifying attachments: {str(e)}")
+            return ['Unknown'] * len(df)
