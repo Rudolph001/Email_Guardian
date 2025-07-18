@@ -743,6 +743,44 @@ def api_session_stats(session_id):
     stats = session_manager.get_session_stats(session_id)
     return jsonify(stats)
 
+@app.route('/api/debug_data/<session_id>')
+def debug_data(session_id):
+    """Debug endpoint to show raw data values"""
+    try:
+        session_manager = SessionManager()
+        processed_data = session_manager.get_processed_data(session_id)
+        
+        if not processed_data:
+            return jsonify({'error': 'No data found'}), 404
+        
+        # Show first few records with attachment data
+        debug_info = []
+        for i, record in enumerate(processed_data[:5]):  # Show first 5 records
+            debug_info.append({
+                'record_index': i,
+                'sender': record.get('sender', 'N/A'),
+                'subject': record.get('subject', 'N/A'),
+                'attachments_raw': record.get('attachments', 'N/A'),
+                'attachments_type': str(type(record.get('attachments', ''))),
+                'has_attachments': record.get('has_attachments', False),
+                'attachment_classification': record.get('attachment_classification', 'N/A'),
+                'ml_risk_level': record.get('ml_risk_level', 'N/A')
+            })
+        
+        # Also show attachment keywords
+        keywords_data = session_manager.get_attachment_keywords()
+        
+        return jsonify({
+            'debug_records': debug_info,
+            'business_keywords': keywords_data.get('business_keywords', [])[:10],
+            'personal_keywords': keywords_data.get('personal_keywords', [])[:10],
+            'total_records': len(processed_data)
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error getting debug data: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/reprocess_rules/<session_id>', methods=['POST'])
 def reprocess_rules(session_id):
     """Reprocess existing session data with proper escalation logic"""

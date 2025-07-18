@@ -419,6 +419,12 @@ class DataProcessor:
             clusters = ml_results.get('clusters', [])
             attachment_classifications = ml_results.get('attachment_classifications', [])
 
+            # Debug logging for attachment data
+            self.logger.info(f"Debug: Processing {len(processed_data)} records for ML merge")
+            for i, record in enumerate(processed_data[:3]):  # Show first 3 records
+                attachments = record.get('attachments', '')
+                self.logger.info(f"Debug: Record {i} - attachments field: '{attachments}' (type: {type(attachments)})")
+
             # Ensure we have lists, not other types (including bool, dict, str, etc.)
             if not isinstance(anomaly_scores, (list, tuple)):
                 self.logger.warning(f"anomaly_scores is not a list/tuple, got {type(anomaly_scores)}: {anomaly_scores}")
@@ -439,6 +445,9 @@ class DataProcessor:
             clusters = list(clusters) if isinstance(clusters, tuple) else clusters
             attachment_classifications = list(attachment_classifications) if isinstance(attachment_classifications, tuple) else attachment_classifications
 
+            # Debug logging for attachment classifications
+            self.logger.info(f"Debug: ML attachment classifications: {attachment_classifications}")
+
             # Merge ML results with processed data
             for i, record in enumerate(processed_data):
                 if i < len(anomaly_scores):
@@ -449,6 +458,7 @@ class DataProcessor:
                     record['ml_cluster'] = clusters[i]
                 if i < len(attachment_classifications):
                     record['attachment_classification'] = attachment_classifications[i]
+                    self.logger.info(f"Debug: Record {i} got attachment classification: {attachment_classifications[i]}")
 
                 # Ensure we have a domain classification
                 if 'domain_classification' not in record:

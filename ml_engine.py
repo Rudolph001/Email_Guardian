@@ -770,7 +770,7 @@ class MLEngine:
                     classification_result = 'Mixed'
                 else:
                     classification_result = 'Unknown'
-                
+
                 self.logger.info(f"Attachment classification for '{str(attachments)}': {classification_result} (business: {business_score}, personal: {personal_score}, suspicious: {suspicious_score})")
                 classifications.append(classification_result)
 
@@ -780,3 +780,71 @@ class MLEngine:
         except Exception as e:
             self.logger.error(f"Error classifying attachments: {str(e)}")
             return ['Unknown'] * len(df)
+
+    def _classify_attachments(self, attachment_list):
+        """Classify attachments as Business, Personal, or Mixed"""
+        try:
+            if not attachment_list:
+                return 'Unknown'
+
+            # Debug logging
+            self.logger.info(f"Debug: Processing attachments: {attachment_list}")
+            self.logger.info(f"Debug: Business keywords: {self.business_keywords[:10]}")  # Show first 10
+            self.logger.info(f"Debug: Personal keywords: {self.personal_keywords[:10]}")    # Show first 10
+
+            business_score = 0
+            personal_score = 0
+            suspicious_score = 0
+
+            for attachment in attachment_list:
+                original_attachment = attachment
+                attachment = attachment.strip().lower()
+                self.logger.info(f"Debug: Processing attachment: '{original_attachment}' -> '{attachment}'")
+
+                # Check for business keywords
+                for keyword in self.business_keywords:
+                    if keyword in attachment:
+                        business_score += 1
+                        self.logger.info(f"Debug: Business keyword match: '{keyword}' in '{attachment}'")
+                        break
+
+                # Check for personal keywords
+                for keyword in self.personal_keywords:
+                    if keyword in attachment:
+                        personal_score += 1
+                        self.logger.info(f"Debug: Personal keyword match: '{keyword}' in '{attachment}'")
+                        break
+
+                # Check for suspicious keywords
+                for keyword in self.suspicious_keywords:
+                    if keyword in attachment:
+                        suspicious_score += 1
+                        self.logger.info(f"Debug: Suspicious keyword match: '{keyword}' in '{attachment}'")
+                        break
+
+                # Check file extensions for business patterns
+                if any(ext in attachment for ext in ['.xlsx', '.pptx', '.docx', '.pdf']):
+                    if any(word in attachment for word in ['report', 'proposal', 'contract', 'invoice']):
+                        business_score += 0.5
+                        self.logger.info(f"Debug: File extension + business word match for '{attachment}'")
+
+            self.logger.info(f"Debug: Final scores - Business: {business_score}, Personal: {personal_score}, Suspicious: {suspicious_score}")
+
+            # Determine classification
+            if suspicious_score > 0:
+                classification = 'Suspicious'
+            elif business_score > personal_score:
+                classification = 'Business'
+            elif personal_score > business_score:
+                classification = 'Personal'
+            elif business_score > 0 and personal_score > 0:
+                classification = 'Mixed'
+            else:
+                classification = 'Unknown'
+
+            self.logger.info(f"Debug: Final classification: {classification}")
+            return classification
+
+        except Exception as e:
+            self.logger.error(f"Error classifying attachments: {str(e)}")
+            return 'Unknown'

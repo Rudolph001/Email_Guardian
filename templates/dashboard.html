@@ -206,6 +206,23 @@
 </div>
 {% endif %}
 
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+               
+            </div>
+            <div class="btn-group">
+                        <button class="btn btn-outline-primary" onclick="reprocessRules()">
+                            <i class="fas fa-sync-alt me-2"></i>Reprocess Rules
+                        </button>
+                        <button class="btn btn-outline-info ms-2" onclick="debugData()">
+                            <i class="fas fa-bug me-2"></i>Debug Data
+                        </button>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
 
@@ -274,37 +291,69 @@ new Chart(domainCtx, {
 });
 </script>
 <script>
-    function reprocessRules(session_id) {
-        // Implement the logic to trigger rule reprocessing
-        // For example, you can use AJAX to send a request to the server
-        // to reprocess the rules for the given session_id.
-        console.log("Reprocessing rules for session: " + session_id);
+    function reprocessRules() {
+        if (confirm('This will reprocess all rules and update escalations. Continue?')) {
+            const sessionId = '{{ session.session_id }}';
 
-        fetch('/reprocess_rules/' + session_id, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                // You might need to include a CSRF token here
-            },
-            // You can include data in the body if needed
-            // body: JSON.stringify({}),
-        })
-        .then(response => {
-            if (response.ok) {
-                console.log("Rules reprocessing initiated successfully.");
-                // Optionally, display a success message to the user.
-                alert("Rules reprocessing initiated successfully. Please refresh the page to see updated results.");
-                //location.reload(); // Refresh the page after successful reprocessing
+            fetch(`/api/reprocess_rules/${sessionId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`Successfully reprocessed: ${data.escalated_count} escalations, ${data.case_management_count} case management records`, 'success');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                } else {
+                    showNotification(`Error: ${data.error}`, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error reprocessing rules', 'error');
+            });
+        }
+    }
+
+    function debugData() {
+        const sessionId = '{{ session.session_id }}';
+
+        fetch(`/api/debug_data/${sessionId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.debug_records) {
+                console.log('=== DEBUG DATA ===');
+                console.log('Business Keywords:', data.business_keywords);
+                console.log('Personal Keywords:', data.personal_keywords);
+                console.log('Records:', data.debug_records);
+
+                // Show in alert for easy viewing
+                let debugText = 'DEBUG DATA:\n\n';
+                debugText += 'Business Keywords: ' + data.business_keywords.join(', ') + '\n\n';
+                debugText += 'Records:\n';
+                data.debug_records.forEach((record, i) => {
+                    debugText += `Record ${i}:\n`;
+                    debugText += `  Sender: ${record.sender}\n`;
+                    debugText += `  Subject: ${record.subject}\n`;
+                    debugText += `  Attachments: ${record.attachments_raw}\n`;
+                    debugText += `  Attachment Type: ${record.attachments_type}\n`;
+                    debugText += `  Has Attachments: ${record.has_attachments}\n`;
+                    debugText += `  Classification: ${record.attachment_classification}\n`;
+                    debugText += `  Risk Level: ${record.ml_risk_level}\n\n`;
+                });
+
+                alert(debugText);
             } else {
-                console.error("Failed to initiate rules reprocessing.");
-                // Optionally, display an error message to the user.
-                alert("Failed to initiate rules reprocessing. Please check the console for details.");
+                showNotification(`Error: ${data.error}`, 'error');
             }
         })
         .catch(error => {
-            console.error("Error:", error);
-            // Optionally, display an error message to the user.
-            alert("An error occurred while initiating rules reprocessing. Please check the console for details.");
+            console.error('Error:', error);
+            showNotification('Error getting debug data', 'error');
         });
     }
 </script>
