@@ -11,6 +11,17 @@ Upload limit preference: High capacity (500MB) for large email data files.
 
 ## Recent Changes
 
+- **Exclusion Rules System for Import Filtering** (July 18, 2025):
+  - Built comprehensive exclusion rule system to filter records before import processing
+  - Added rule creation interface showing all available field names from CSV imports
+  - Implemented field-based filtering with operators: equals, contains, not_equals, starts_with, ends_with
+  - Created backend RuleEngine methods for exclusion rule management (add, delete, toggle, check)
+  - Integrated exclusion rules into data processor workflow as "Step 0" before whitelist filtering
+  - Added dedicated exclusion rules section in Rules Management page with create/manage interface
+  - Implemented API endpoints for exclusion rule CRUD operations (/api/exclusion-rules)
+  - Added case sensitivity option for precise filtering control
+  - Enhanced data processing pipeline to apply exclusion rules before any other filtering
+  - Exclusion rules help reduce processing load by filtering unwanted records at import time
 - **Domain Classifier System with Admin Management** (July 18, 2025):
   - Created comprehensive domain classification system with 5 categories: Trusted, Corporate, Personal, Public, Suspicious
   - Added dedicated admin panel tab for domain management with visual statistics and progress bars

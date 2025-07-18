@@ -432,36 +432,63 @@ class DataProcessor:
             }
 
     def _apply_whitelist_filtering_with_stats(self, df: pd.DataFrame) -> tuple:
-        """Apply whitelist domain filtering and return stats"""
+        """Apply exclusion rules and whitelist domain filtering, return stats"""
         try:
+            # Step 0: Apply exclusion rules first
+            initial_count = len(df)
+            filtered_by_exclusion = []
+            exclusion_filtered = 0
+
+            for index, row in df.iterrows():
+                record = row.to_dict()
+                
+                # Check exclusion rules
+                if self.rule_engine.should_exclude_record(record):
+                    exclusion_filtered += 1
+                    self.logger.debug(f"Excluded record {index} based on exclusion rules")
+                    continue
+                
+                filtered_by_exclusion.append(record)
+
+            self.logger.info(f"Excluded {exclusion_filtered} records based on exclusion rules")
+
+            # Convert back to DataFrame for whitelist processing
+            if not filtered_by_exclusion:
+                return pd.DataFrame(), exclusion_filtered
+
+            df_after_exclusion = pd.DataFrame(filtered_by_exclusion)
+
+            # Step 1: Apply whitelist domain filtering
             whitelists = self.session_manager.get_whitelists()
             whitelist_domains = whitelists.get('domains', [])
 
             if not whitelist_domains:
-                return df, 0
+                return df_after_exclusion, exclusion_filtered
 
             # Filter out whitelisted domains
-            original_count = len(df)
-            filtered_df = df.copy()
+            original_count = len(df_after_exclusion)
+            filtered_df = df_after_exclusion.copy()
 
             # Check sender domain (extract from sender email if needed)
-            if 'sender' in df.columns:
-                sender_domains = df['sender'].str.extract(r'@([^@]+)$')[0]
+            if 'sender' in df_after_exclusion.columns:
+                sender_domains = df_after_exclusion['sender'].str.extract(r'@([^@]+)$')[0]
                 sender_whitelist_mask = sender_domains.isin(whitelist_domains)
                 filtered_df = filtered_df[~sender_whitelist_mask]
 
             # Check recipients_email_domain
-            if 'recipients_email_domain' in df.columns:
+            if 'recipients_email_domain' in df_after_exclusion.columns:
                 recipients_whitelist_mask = filtered_df['recipients_email_domain'].isin(whitelist_domains)
                 filtered_df = filtered_df[~recipients_whitelist_mask]
 
             whitelist_count = original_count - len(filtered_df)
-            self.logger.info(f"Filtered out {whitelist_count} whitelisted records")
+            total_filtered = exclusion_filtered + whitelist_count
+            
+            self.logger.info(f"Filtered out {whitelist_count} whitelisted records, {total_filtered} total filtered")
 
-            return filtered_df, whitelist_count
+            return filtered_df, total_filtered
 
         except Exception as e:
-            self.logger.error(f"Error applying whitelist filtering: {str(e)}")
+            self.logger.error(f"Error applying filtering: {str(e)}")
             return df, 0
 
     def _apply_rules_with_escalation(self, df: pd.DataFrame) -> tuple:

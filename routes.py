@@ -1486,6 +1486,82 @@ def reset_domains():
         app.logger.error(f"Error resetting domains: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+# Exclusion Rules API Routes
+@app.route('/api/exclusion-rules', methods=['GET'])
+def get_exclusion_rules():
+    """Get all exclusion rules"""
+    try:
+        rule_engine = RuleEngine()
+        exclusion_rules = rule_engine.get_all_exclusion_rules()
+        field_names = RuleEngine.get_field_names()
+        
+        return jsonify({
+            'success': True,
+            'exclusion_rules': exclusion_rules,
+            'field_names': field_names
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error getting exclusion rules: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/exclusion-rules', methods=['POST'])
+def add_exclusion_rule():
+    """Add new exclusion rule"""
+    try:
+        data = request.json
+        rule_engine = RuleEngine()
+        
+        result = rule_engine.add_exclusion_rule(
+            name=data.get('name'),
+            description=data.get('description'),
+            field=data.get('field'),
+            operator=data.get('operator'),
+            value=data.get('value'),
+            case_sensitive=data.get('case_sensitive', False)
+        )
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        app.logger.error(f"Error adding exclusion rule: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/exclusion-rules/<int:rule_id>', methods=['DELETE'])
+def delete_exclusion_rule(rule_id):
+    """Delete exclusion rule"""
+    try:
+        rule_engine = RuleEngine()
+        result = rule_engine.delete_exclusion_rule(rule_id)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        app.logger.error(f"Error deleting exclusion rule: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/exclusion-rules/<int:rule_id>/toggle', methods=['POST'])
+def toggle_exclusion_rule(rule_id):
+    """Toggle exclusion rule active status"""
+    try:
+        rule_engine = RuleEngine()
+        result = rule_engine.toggle_exclusion_rule(rule_id)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        app.logger.error(f"Error toggling exclusion rule: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # Error handlers
 @app.errorhandler(404)
 def not_found_error(error):
