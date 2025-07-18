@@ -353,6 +353,41 @@ def resolve_escalation(session_id, record_id):
         app.logger.error(f"Available record IDs: {[r.get('record_id') for r in processed_data]}")
         return jsonify({'error': 'Escalation not found'}), 404
 
+@app.route('/api/escalation/<session_id>/<record_id>/generate-email', methods=['POST'])
+def generate_escalation_email(session_id, record_id):
+    """API endpoint to generate escalation email"""
+    session_manager = SessionManager()
+    processed_data = session_manager.get_processed_data(session_id)
+    
+    if not processed_data:
+        return jsonify({'error': 'Session not found'}), 404
+    
+    # Find the record
+    found_record = None
+    record_index = None
+    for i, record in enumerate(processed_data):
+        if (record.get('record_id') == record_id or 
+            str(record.get('record_id')) == record_id or
+            str(i) == record_id):
+            found_record = record
+            record_index = i
+            break
+    
+    if not found_record:
+        return jsonify({'error': 'Escalation not found'}), 404
+    
+    # Generate the draft email
+    result = session_manager.generate_draft_email(session_id, record_index)
+    
+    if result['success']:
+        return jsonify({
+            'success': True, 
+            'draft': result['draft'],
+            'message': 'Draft email generated successfully'
+        })
+    else:
+        return jsonify({'error': result['error']}), 500
+
 @app.route('/admin')
 def admin():
     """Admin panel for managing whitelists and settings"""
