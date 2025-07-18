@@ -119,9 +119,30 @@ def upload_file():
                     'message': f'File uploaded and processing started! Session ID: {session_id}'
                 })
             else:
-                return jsonify({'success': False, 'error': f'Error processing file: {result["error"]}'})
+                # Enhanced error response with detailed information
+                error_response = {
+                    'success': False, 
+                    'error': result.get('error', 'Unknown error occurred'),
+                    'error_type': result.get('error_type', 'unknown')
+                }
+                
+                # Add validation details if available
+                if 'validation_details' in result:
+                    validation_details = result['validation_details']
+                    error_response['validation_errors'] = validation_details.get('validation_errors', [])
+                    error_response['total_errors'] = validation_details.get('total_errors', 0)
+                    error_response['missing_columns'] = validation_details.get('missing_columns', [])
+                    error_response['available_columns'] = validation_details.get('available_columns', [])
+                
+                return jsonify(error_response)
+                
         except Exception as e:
-            return jsonify({'success': False, 'error': f'Error uploading file: {str(e)}'})
+            app.logger.error(f"Upload exception: {str(e)}")
+            return jsonify({
+                'success': False, 
+                'error': f'Error uploading file: {str(e)}',
+                'error_type': 'upload_exception'
+            })
 
         except Exception as e:
             flash(f'Error uploading file: {str(e)}', 'error')

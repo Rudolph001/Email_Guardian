@@ -126,16 +126,44 @@ class DataProcessor:
                 self.logger.info(f"Large file detected ({file_size / (1024*1024):.2f} MB), using chunked processing")
                 return self._process_large_csv(file_path, session_id, filename)
 
-            # Read CSV file normally for smaller files
-            df = pd.read_csv(file_path)
+            # Read CSV file with error handling
+            try:
+                df = pd.read_csv(file_path)
+            except UnicodeDecodeError as e:
+                return {
+                    'success': False, 
+                    'error': f'File encoding error: Unable to read CSV file. Please ensure it\'s saved as UTF-8. Error: {str(e)}',
+                    'error_type': 'encoding_error'
+                }
+            except pd.errors.EmptyDataError:
+                return {
+                    'success': False, 
+                    'error': 'CSV file is empty or contains no data',
+                    'error_type': 'empty_file'
+                }
+            except pd.errors.ParserError as e:
+                return {
+                    'success': False, 
+                    'error': f'CSV parsing error: {str(e)}. Please check file format and ensure proper CSV structure.',
+                    'error_type': 'parser_error'
+                }
 
             if df.empty:
-                return {'success': False, 'error': 'CSV file is empty'}
+                return {
+                    'success': False, 
+                    'error': 'CSV file contains no data rows',
+                    'error_type': 'no_data'
+                }
 
-            # Validate CSV structure
+            # Validate CSV structure with detailed error reporting
             validation_result = self._validate_csv(df)
             if not validation_result['valid']:
-                return {'success': False, 'error': validation_result['error']}
+                return {
+                    'success': False, 
+                    'error': validation_result['error'],
+                    'error_type': validation_result.get('error_type', 'validation_error'),
+                    'validation_details': validation_result
+                }
 
             # Create session
             csv_headers = df.columns.tolist()
@@ -198,8 +226,10 @@ class DataProcessor:
             return {'success': False, 'error': str(e)}
 
     def _validate_csv(self, df: pd.DataFrame) -> Dict:
-        """Validate CSV structure and content"""
+        """Validate CSV structure and content with detailed error reporting"""
         try:
+            validation_errors = []
+            
             # Check if DataFrame has required columns
             missing_columns = []
             critical_columns = ['_time', 'sender', 'subject', 'recipients_email_domain']
@@ -211,17 +241,112 @@ class DataProcessor:
             if missing_columns:
                 return {
                     'valid': False,
-                    'error': f'Missing critical columns: {", ".join(missing_columns)}'
+                    'error': f'Missing critical columns: {", ".join(missing_columns)}',
+                    'error_type': 'missing_columns',
+                    'missing_columns': missing_columns,
+                    'available_columns': list(df.columns)
                 }
 
+            # Check for data type issues and invalid values
+            for row_idx, row in df.head(100).iterrows():  # Check first 100 rows for validation
+                try:
+                    # Check _time field format
+                    time_value = row.get('_time')
+                    if pd.notna(time_value) and time_value != '-':
+                        try:
+                            pd.to_datetime(time_value)
+                        except:
+                            validation_errors.append({
+                                'row': row_idx + 2,  # +2 because pandas is 0-indexed and we have header
+                                'field': '_time',
+                                'value': str(time_value)[:100],  # Limit value length
+                                'error': 'Invalid date/time format'
+                            })
+                    
+                    # Check sender field format (should contain email)
+                    sender_value = row.get('sender')
+                    if pd.notna(sender_value) and sender_value != '-':
+                        if '@' not in str(sender_value) and str(sender_value).strip() != '':
+                            validation_errors.append({
+                                'row': row_idx + 2,
+                                'field': 'sender',
+                                'value': str(sender_value)[:100],
+                                'error': 'Sender field should contain email address'
+                            })
+                    
+                    # Check recipients_email_domain format
+                    domain_value = row.get('recipients_email_domain')
+                    if pd.notna(domain_value) and domain_value != '-':
+                        domain_str = str(domain_value).strip()
+                        if domain_str and ('.' not in domain_str or '@' in domain_str):
+                            validation_errors.append({
+                                'row': row_idx + 2,
+                                'field': 'recipients_email_domain',
+                                'value': str(domain_value)[:100],
+                                'error': 'Should be domain only (e.g., "company.com"), not full email'
+                            })
+                    
+                    # Check for extremely long values that might cause issues
+                    for col in df.columns:
+                        cell_value = row.get(col)
+                        if pd.notna(cell_value):
+                            cell_str = str(cell_value)
+                            if len(cell_str) > 1000:  # Flag very long values
+                                validation_errors.append({
+                                    'row': row_idx + 2,
+                                    'field': col,
+                                    'value': cell_str[:100] + '...',
+                                    'error': f'Value is too long ({len(cell_str)} characters)'
+                                })
+                
+                except Exception as field_error:
+                    validation_errors.append({
+                        'row': row_idx + 2,
+                        'field': 'unknown',
+                        'value': 'N/A',
+                        'error': f'Error processing row: {str(field_error)}'
+                    })
+
             # Check for completely empty rows
-            if df.isnull().all(axis=1).any():
-                self.logger.warning("Found completely empty rows in CSV")
+            empty_rows = df.isnull().all(axis=1)
+            if empty_rows.any():
+                empty_row_numbers = [idx + 2 for idx in empty_rows[empty_rows].index]
+                self.logger.warning(f"Found completely empty rows at: {empty_row_numbers}")
+                validation_errors.append({
+                    'row': empty_row_numbers[0] if empty_row_numbers else 'unknown',
+                    'field': 'all_fields',
+                    'value': 'empty',
+                    'error': f'Completely empty rows found at rows: {empty_row_numbers[:5]}'
+                })
+
+            # Return detailed errors if found
+            if validation_errors:
+                # Limit to first 10 errors to avoid overwhelming the user
+                limited_errors = validation_errors[:10]
+                error_summary = []
+                for err in limited_errors:
+                    error_summary.append(f"Row {err['row']}, Field '{err['field']}': {err['error']} (Value: '{err['value']}')")
+                
+                more_errors = len(validation_errors) - len(limited_errors)
+                if more_errors > 0:
+                    error_summary.append(f"... and {more_errors} more errors")
+                
+                return {
+                    'valid': False,
+                    'error': 'Data validation failed:\n' + '\n'.join(error_summary),
+                    'error_type': 'data_validation',
+                    'validation_errors': limited_errors,
+                    'total_errors': len(validation_errors)
+                }
 
             return {'valid': True}
 
         except Exception as e:
-            return {'valid': False, 'error': f'Validation error: {str(e)}'}
+            return {
+                'valid': False, 
+                'error': f'Validation error: {str(e)}',
+                'error_type': 'validation_exception'
+            }
 
     def _apply_whitelist_filtering_with_stats(self, df: pd.DataFrame) -> tuple:
         """Apply whitelist domain filtering and return stats"""
@@ -353,32 +478,63 @@ class DataProcessor:
             return data_list
 
     def _process_email_record(self, record: Dict, record_index: int) -> Dict:
-        """Process a single email record"""
+        """Process a single email record with detailed error handling"""
         try:
             # Start with original record and clean NaN values
             processed_record = self._clean_nan_values(record.copy())
             processed_record['record_id'] = record_index
 
-            # Apply domain classification
-            domain_classification = self._classify_domain(
-                record.get('recipients_email_domain', ''),
-                record.get('sender', '')
-            )
-            processed_record['domain_classification'] = domain_classification
+            # Apply domain classification with error handling
+            try:
+                domain_classification = self._classify_domain(
+                    record.get('recipients_email_domain', ''),
+                    record.get('sender', '')
+                )
+                processed_record['domain_classification'] = domain_classification
+            except Exception as domain_error:
+                self.logger.error(f"Error classifying domain for record {record_index}: {str(domain_error)}")
+                self.logger.error(f"Problematic values - recipients_email_domain: '{record.get('recipients_email_domain')}', sender: '{record.get('sender')}'")
+                processed_record['domain_classification'] = 'Unknown'
+                processed_record['domain_error'] = str(domain_error)
 
-            # Apply rules
-            rule_results = self.rule_engine.process_email(record)
-            processed_record['rule_results'] = rule_results
+            # Apply rules with error handling
+            try:
+                rule_results = self.rule_engine.process_email(record)
+                processed_record['rule_results'] = rule_results
+            except Exception as rule_error:
+                self.logger.error(f"Error applying rules for record {record_index}: {str(rule_error)}")
+                self.logger.error(f"Problematic record data: {dict(list(record.items())[:5])}")  # Log first 5 fields
+                processed_record['rule_results'] = {'matched_rules': [], 'escalate': False}
+                processed_record['rule_error'] = str(rule_error)
 
-            # Extract additional features
-            processed_record['has_attachments'] = self._has_valid_value(record.get('attachments', ''))
+            # Extract additional features with error handling
+            try:
+                processed_record['has_attachments'] = self._has_valid_value(record.get('attachments', ''))
+            except Exception as attachment_error:
+                self.logger.error(f"Error processing attachments for record {record_index}: {str(attachment_error)}")
+                self.logger.error(f"Attachment value: '{record.get('attachments')}'")
+                processed_record['has_attachments'] = False
+                processed_record['attachment_error'] = str(attachment_error)
+
             processed_record['processing_timestamp'] = datetime.now().isoformat()
 
             return processed_record
 
         except Exception as e:
-            self.logger.error(f"Error processing email record: {str(e)}")
-            return self._clean_nan_values(record)
+            self.logger.error(f"Critical error processing email record {record_index}: {str(e)}")
+            self.logger.error(f"Record keys: {list(record.keys()) if isinstance(record, dict) else 'Not a dict'}")
+            
+            # Return a minimal safe record
+            safe_record = self._clean_nan_values(record.copy()) if isinstance(record, dict) else {}
+            safe_record.update({
+                'record_id': record_index,
+                'processing_error': str(e),
+                'processing_timestamp': datetime.now().isoformat(),
+                'domain_classification': 'Unknown',
+                'rule_results': {'matched_rules': [], 'escalate': False},
+                'has_attachments': False
+            })
+            return safe_record
 
     def _classify_domain(self, recipient_domain: str, sender_email: str) -> str:
         """Classify domain as Trusted, Corporate, Personal, Public, or Suspicious"""
