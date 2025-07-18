@@ -338,74 +338,92 @@ function viewCaseDetails(sessionId, recordId) {
 }
 
 function renderCaseDetails(caseData) {
+    const mlExplanations = caseData.ml_explanations || {};
+    
     const content = `
         <div class="row">
+            <!-- Email Information -->
             <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h6 class="card-title mb-0">Email Information</h6>
+                <div class="card border-primary">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-envelope me-2"></i>Email Information
+                        </h6>
                     </div>
                     <div class="card-body">
-                        <table class="table table-sm">
-                            <tr>
-                                <td><strong>Sender:</strong></td>
-                                <td>${caseData.sender || 'N/A'}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Subject:</strong></td>
-                                <td>${caseData.subject || 'N/A'}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Recipients:</strong></td>
-                                <td>${caseData.recipients || 'N/A'}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Date/Time:</strong></td>
-                                <td>${caseData._time || 'N/A'}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Attachments:</strong></td>
-                                <td>${caseData.has_attachments ? 
-                                     `<span class="badge bg-warning">Yes</span><br><small>${caseData.attachments || ''}</small>` : 
-                                     '<span class="badge bg-success">No</span>'}</td>
-                            </tr>
-                        </table>
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <strong class="text-primary">From:</strong><br>
+                                <span class="text-dark">${caseData.sender || 'N/A'}</span>
+                            </div>
+                            <div class="col-12">
+                                <strong class="text-primary">Subject:</strong><br>
+                                <span class="text-dark">${caseData.subject || 'N/A'}</span>
+                            </div>
+                            <div class="col-12">
+                                <strong class="text-primary">To:</strong><br>
+                                <span class="text-dark">${caseData.recipients || 'N/A'}</span>
+                            </div>
+                            <div class="col-6">
+                                <strong class="text-primary">Date/Time:</strong><br>
+                                <small class="text-muted">${caseData._time || 'N/A'}</small>
+                            </div>
+                            <div class="col-6">
+                                <strong class="text-primary">Department:</strong><br>
+                                <small class="text-muted">${caseData.department || 'N/A'}</small>
+                            </div>
+                            <div class="col-12">
+                                <strong class="text-primary">Attachments:</strong><br>
+                                ${caseData.has_attachments ? 
+                                     `<span class="badge bg-warning"><i class="fas fa-paperclip me-1"></i>Yes</span>
+                                      <br><small class="text-muted">${caseData.attachments || 'File names not available'}</small>` : 
+                                     '<span class="badge bg-success"><i class="fas fa-check me-1"></i>No attachments</span>'
+                                }
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <!-- ML Risk Assessment -->
             <div class="col-md-6">
-                <div class="card">
-                    <div class="card-header">
-                        <h6 class="card-title mb-0">Risk Assessment</h6>
+                <div class="card border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-shield-alt me-2"></i>ML Risk Assessment
+                        </h6>
                     </div>
                     <div class="card-body">
-                        <table class="table table-sm">
-                            <tr>
-                                <td><strong>Risk Level:</strong></td>
-                                <td>
-                                    <span class="badge bg-${getRiskBadgeColor(caseData.ml_risk_level)}">
-                                        ${caseData.ml_risk_level || 'Unknown'}
-                                    </span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>Anomaly Score:</strong></td>
-                                <td>
-                                    ${caseData.ml_anomaly_score || 'N/A'}
-                                    ${caseData.ml_anomaly_score > 0.7 ? 
-                                        '<br><small class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>High Anomaly Detected</small>' : 
-                                        ''}
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><strong>ML Cluster:</strong></td>
-                                <td>${caseData.ml_cluster || 'N/A'}</td>
-                            </tr>
-                            <tr>
-                                <td><strong>Domain Classification:</strong></td>
-                                <td>${caseData.domain_classification || 'N/A'}</td>
-                            </tr>
-                        </table>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <strong class="text-danger">Risk Level:</strong><br>
+                                <span class="badge bg-${getRiskBadgeColor(caseData.ml_risk_level)} fs-6">
+                                    ${caseData.ml_risk_level || 'Unknown'}
+                                </span>
+                            </div>
+                            <div class="col-6">
+                                <strong class="text-danger">Anomaly Score:</strong><br>
+                                <span class="badge bg-dark fs-6">
+                                    ${caseData.ml_anomaly_score ? (caseData.ml_anomaly_score * 100).toFixed(1) + '%' : 'N/A'}
+                                </span>
+                            </div>
+                            <div class="col-6">
+                                <strong class="text-danger">ML Cluster:</strong><br>
+                                <span class="badge bg-info">
+                                    ${caseData.ml_cluster >= 0 ? '#' + caseData.ml_cluster : 'Unique'}
+                                </span>
+                            </div>
+                            <div class="col-6">
+                                <strong class="text-danger">Attachment Type:</strong><br>
+                                ${getAttachmentTypeBadge(caseData.attachment_classification)}
+                            </div>
+                            <div class="col-12">
+                                <strong class="text-danger">Domain Type:</strong><br>
+                                <span class="badge ${caseData.domain_classification === 'Personal' ? 'bg-warning' : 'bg-success'}">
+                                    ${caseData.domain_classification || 'Unknown'}
+                                </span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -579,9 +597,105 @@ function renderCaseDetails(caseData) {
                 </div>
             </div>
         </div>` : ''}
+        
+        <!-- ML Analysis Explanations -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card border-info">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-brain me-2"></i>AI Analysis & Explanations
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Risk Analysis -->
+                            <div class="col-md-6 mb-3">
+                                <div class="bg-light p-3 rounded">
+                                    <h6 class="text-primary mb-2">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Risk Analysis
+                                    </h6>
+                                    ${mlExplanations.risk_analysis ? 
+                                        mlExplanations.risk_analysis.map(item => `<p class="mb-1 small">${item}</p>`).join('') : 
+                                        '<p class="mb-0 small text-muted">No risk analysis available</p>'
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Anomaly Factors -->
+                            <div class="col-md-6 mb-3">
+                                <div class="bg-light p-3 rounded">
+                                    <h6 class="text-warning mb-2">
+                                        <i class="fas fa-search me-1"></i>Anomaly Factors
+                                    </h6>
+                                    ${mlExplanations.anomaly_factors ? 
+                                        mlExplanations.anomaly_factors.map(item => `<p class="mb-1 small">${item}</p>`).join('') : 
+                                        '<p class="mb-0 small text-muted">No anomaly factors identified</p>'
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Attachment Analysis -->
+                            <div class="col-md-6 mb-3">
+                                <div class="bg-light p-3 rounded">
+                                    <h6 class="text-info mb-2">
+                                        <i class="fas fa-paperclip me-1"></i>Attachment Analysis
+                                    </h6>
+                                    ${mlExplanations.attachment_analysis ? 
+                                        mlExplanations.attachment_analysis.map(item => `<p class="mb-1 small">${item}</p>`).join('') : 
+                                        '<p class="mb-0 small text-muted">No attachment analysis available</p>'
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Behavioral Patterns -->
+                            <div class="col-md-6 mb-3">
+                                <div class="bg-light p-3 rounded">
+                                    <h6 class="text-success mb-2">
+                                        <i class="fas fa-users me-1"></i>Behavioral Patterns
+                                    </h6>
+                                    ${mlExplanations.behavioral_patterns ? 
+                                        mlExplanations.behavioral_patterns.map(item => `<p class="mb-1 small">${item}</p>`).join('') : 
+                                        '<p class="mb-0 small text-muted">No behavioral patterns identified</p>'
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Recommendations -->
+                            <div class="col-12 mb-3">
+                                <div class="bg-success text-white p-3 rounded">
+                                    <h6 class="mb-2">
+                                        <i class="fas fa-lightbulb me-1"></i>AI Recommendations
+                                    </h6>
+                                    ${mlExplanations.recommendations ? 
+                                        mlExplanations.recommendations.map(item => `<p class="mb-1 small">${item}</p>`).join('') : 
+                                        '<p class="mb-0 small">No specific recommendations available</p>'
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     `;
     
     document.getElementById('caseDetailsContent').innerHTML = content;
+}
+
+function getAttachmentTypeBadge(type) {
+    switch(type) {
+        case 'Business':
+            return '<span class="badge bg-primary"><i class="fas fa-briefcase me-1"></i>Business</span>';
+        case 'Personal':
+            return '<span class="badge bg-warning"><i class="fas fa-user me-1"></i>Personal</span>';
+        case 'Mixed':
+            return '<span class="badge bg-info"><i class="fas fa-layer-group me-1"></i>Mixed</span>';
+        case 'No Attachments':
+            return '<span class="badge bg-secondary"><i class="fas fa-minus me-1"></i>None</span>';
+        default:
+            return '<span class="badge bg-light text-dark"><i class="fas fa-question me-1"></i>Unknown</span>';
+    }
 }
 
 function getRiskBadgeColor(risk) {

@@ -342,7 +342,102 @@ def get_case_details(session_id, record_id):
             return data
     
     cleaned_case_data = clean_nan_values(case_data)
+    
+    # Add detailed ML explanations for better user understanding
+    ml_explanations = generate_ml_explanations(cleaned_case_data)
+    cleaned_case_data['ml_explanations'] = ml_explanations
+    
     return jsonify(cleaned_case_data)
+
+def generate_ml_explanations(case_data):
+    """Generate user-friendly explanations for ML analysis results"""
+    explanations = {
+        'risk_analysis': [],
+        'anomaly_factors': [],
+        'attachment_analysis': [],
+        'behavioral_patterns': [],
+        'recommendations': []
+    }
+    
+    # Risk Level Analysis
+    risk_level = case_data.get('ml_risk_level', 'Unknown')
+    anomaly_score = case_data.get('ml_anomaly_score', 0)
+    
+    if risk_level == 'Critical':
+        explanations['risk_analysis'].append("This email shows multiple high-risk indicators that require immediate attention.")
+    elif risk_level == 'High':
+        explanations['risk_analysis'].append("Several concerning patterns detected that warrant investigation.")
+    elif risk_level == 'Medium':
+        explanations['risk_analysis'].append("Some unusual characteristics found, but within acceptable risk tolerance.")
+    elif risk_level == 'Low':
+        explanations['risk_analysis'].append("Email appears normal with minimal security concerns.")
+    
+    # Anomaly Score Explanation
+    if anomaly_score > 0.8:
+        explanations['anomaly_factors'].append("Highly unusual email patterns detected - significantly different from normal communication.")
+        explanations['anomaly_factors'].append("Factors: Unusual timing, recipient patterns, or content characteristics.")
+    elif anomaly_score > 0.6:
+        explanations['anomaly_factors'].append("Moderately unusual patterns detected - some characteristics deviate from normal behavior.")
+        explanations['anomaly_factors'].append("Factors: Uncommon sender-recipient combinations or timing patterns.")
+    elif anomaly_score > 0.3:
+        explanations['anomaly_factors'].append("Minor deviations from typical email patterns detected.")
+        explanations['anomaly_factors'].append("Factors: Slightly unusual timing or communication patterns.")
+    else:
+        explanations['anomaly_factors'].append("Email follows typical communication patterns with no significant anomalies.")
+    
+    # Attachment Analysis
+    attachment_type = case_data.get('attachment_classification', 'Unknown')
+    has_attachments = case_data.get('has_attachments', False)
+    
+    if has_attachments:
+        if attachment_type == 'Personal':
+            explanations['attachment_analysis'].append("⚠️ Personal attachments detected - may indicate data exfiltration risk.")
+            explanations['attachment_analysis'].append("File names suggest personal documents (family photos, personal files, etc.)")
+        elif attachment_type == 'Business':
+            explanations['attachment_analysis'].append("✅ Business-related attachments detected - appropriate for corporate communication.")
+            explanations['attachment_analysis'].append("File names suggest business documents (contracts, reports, invoices, etc.)")
+        elif attachment_type == 'Mixed':
+            explanations['attachment_analysis'].append("⚠️ Mixed attachment types - combination of business and personal files.")
+            explanations['attachment_analysis'].append("Review individual files to ensure appropriate business use.")
+        else:
+            explanations['attachment_analysis'].append("❓ Unclassified attachments - file names don't match known patterns.")
+            explanations['attachment_analysis'].append("Manual review recommended to determine file content and purpose.")
+    else:
+        explanations['attachment_analysis'].append("📧 No attachments detected - text-only communication.")
+    
+    # Behavioral Patterns
+    cluster = case_data.get('ml_cluster', -1)
+    if cluster >= 0:
+        explanations['behavioral_patterns'].append(f"Email belongs to communication cluster #{cluster}")
+        explanations['behavioral_patterns'].append("This represents a group of emails with similar characteristics and patterns.")
+    else:
+        explanations['behavioral_patterns'].append("Email doesn't fit into any established communication pattern.")
+        explanations['behavioral_patterns'].append("This uniqueness may indicate unusual or suspicious activity.")
+    
+    # Domain Analysis
+    domain_classification = case_data.get('domain_classification', 'Unknown')
+    if domain_classification == 'Personal':
+        explanations['behavioral_patterns'].append("⚠️ Personal email domain used for business communication.")
+        explanations['behavioral_patterns'].append("This may violate company policies and increase security risks.")
+    elif domain_classification == 'Corporate':
+        explanations['behavioral_patterns'].append("✅ Corporate email domain - appropriate for business use.")
+    
+    # Recommendations based on analysis
+    if risk_level in ['Critical', 'High']:
+        explanations['recommendations'].append("🔴 Immediate Action Required")
+        explanations['recommendations'].append("• Review email content and attachments immediately")
+        explanations['recommendations'].append("• Contact sender to verify legitimate business purpose")
+        explanations['recommendations'].append("• Consider blocking similar communications until verified")
+    elif risk_level == 'Medium':
+        explanations['recommendations'].append("🟡 Monitor and Review")
+        explanations['recommendations'].append("• Schedule review within 24 hours")
+        explanations['recommendations'].append("• Document findings for pattern analysis")
+    else:
+        explanations['recommendations'].append("🟢 Standard Processing")
+        explanations['recommendations'].append("• No immediate action required")
+        explanations['recommendations'].append("• Continue routine monitoring")
+    
+    return explanations
 
 @app.route('/api/case/<session_id>/<record_id>/update', methods=['POST'])
 def update_case_status(session_id, record_id):

@@ -490,22 +490,66 @@ function viewEscalationDetails(sessionId, recordId) {
 }
 
 function renderEscalationDetails(escalationData) {
+    const mlExplanations = escalationData.ml_explanations || {};
+    
     const content = `
         <div class="alert alert-danger mb-4">
             <div class="d-flex align-items-center">
                 <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
                 <div>
-                    <h6 class="alert-heading mb-1">Escalated Security Alert</h6>
+                    <h6 class="alert-heading mb-1">🚨 ESCALATED SECURITY ALERT</h6>
                     <small>This case has been escalated and requires immediate attention</small>
                 </div>
             </div>
         </div>
 
         <div class="row">
+            <!-- Email Information -->
             <div class="col-md-6">
-                <div class="card">
+                <div class="card border-danger">
                     <div class="card-header bg-danger text-white">
-                        <h6 class="card-title mb-0">Email Information</h6>
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-envelope me-2"></i>Email Information
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <strong class="text-danger">From:</strong><br>
+                                <span class="text-dark">${escalationData.sender || 'N/A'}</span>
+                            </div>
+                            <div class="col-12">
+                                <strong class="text-danger">Subject:</strong><br>
+                                <span class="text-dark">${escalationData.subject || 'N/A'}</span>
+                            </div>
+                            <div class="col-12">
+                                <strong class="text-danger">To:</strong><br>
+                                <span class="text-dark">${escalationData.recipients || 'N/A'}</span>
+                            </div>
+                            <div class="col-12">
+                                <strong class="text-danger">Date/Time:</strong><br>
+                                <small class="text-muted">${escalationData._time || 'N/A'}</small>
+                            </div>
+                            <div class="col-12">
+                                <strong class="text-danger">Attachments:</strong><br>
+                                ${escalationData.has_attachments ? 
+                                     `<span class="badge bg-warning"><i class="fas fa-paperclip me-1"></i>Yes</span>
+                                      <br><small class="text-muted">${escalationData.attachments || 'File names not available'}</small>` : 
+                                     '<span class="badge bg-success"><i class="fas fa-check me-1"></i>No attachments</span>'
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Critical Risk Assessment -->
+            <div class="col-md-6">
+                <div class="card border-danger">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-shield-alt me-2"></i>Critical Risk Assessment
+                        </h6>
                     </div>
                     <div class="card-body">
                         <table class="table table-sm">
@@ -651,9 +695,111 @@ function renderEscalationDetails(escalationData) {
                 </div>
             </div>
         </div>` : ''}
+        <!-- ML Analysis Explanations -->
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-brain me-2"></i>🤖 AI Analysis - Why This Email Was Escalated
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <!-- Risk Analysis -->
+                            <div class="col-md-6 mb-3">
+                                <div class="bg-danger p-3 rounded text-white">
+                                    <h6 class="mb-2">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Risk Analysis
+                                    </h6>
+                                    ${mlExplanations.risk_analysis ? 
+                                        mlExplanations.risk_analysis.map(item => `<p class="mb-1 small">${item}</p>`).join('') : 
+                                        '<p class="mb-0 small">Critical risk indicators detected requiring immediate investigation</p>'
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Anomaly Factors -->
+                            <div class="col-md-6 mb-3">
+                                <div class="bg-warning p-3 rounded text-dark">
+                                    <h6 class="mb-2">
+                                        <i class="fas fa-search me-1"></i>Anomaly Factors
+                                    </h6>
+                                    ${mlExplanations.anomaly_factors ? 
+                                        mlExplanations.anomaly_factors.map(item => `<p class="mb-1 small">${item}</p>`).join('') : 
+                                        '<p class="mb-0 small">Unusual patterns detected that deviate from normal email behavior</p>'
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Attachment Analysis -->
+                            <div class="col-md-6 mb-3">
+                                <div class="bg-info p-3 rounded text-white">
+                                    <h6 class="mb-2">
+                                        <i class="fas fa-paperclip me-1"></i>Attachment Analysis
+                                    </h6>
+                                    ${mlExplanations.attachment_analysis ? 
+                                        mlExplanations.attachment_analysis.map(item => `<p class="mb-1 small">${item}</p>`).join('') : 
+                                        '<p class="mb-0 small">Attachment patterns analyzed for potential data exfiltration risks</p>'
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Behavioral Patterns -->
+                            <div class="col-md-6 mb-3">
+                                <div class="bg-primary p-3 rounded text-white">
+                                    <h6 class="mb-2">
+                                        <i class="fas fa-users me-1"></i>Behavioral Patterns
+                                    </h6>
+                                    ${mlExplanations.behavioral_patterns ? 
+                                        mlExplanations.behavioral_patterns.map(item => `<p class="mb-1 small">${item}</p>`).join('') : 
+                                        '<p class="mb-0 small">Communication patterns analyzed for suspicious activity</p>'
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Urgent Recommendations -->
+                            <div class="col-12 mb-3">
+                                <div class="bg-dark p-3 rounded text-white">
+                                    <h6 class="mb-2">
+                                        <i class="fas fa-lightbulb me-1"></i>🚨 URGENT ACTIONS REQUIRED
+                                    </h6>
+                                    ${mlExplanations.recommendations ? 
+                                        mlExplanations.recommendations.map(item => `<p class="mb-1 small fw-bold">${item}</p>`).join('') : 
+                                        `<div class="small">
+                                            <strong>IMMEDIATE ACTIONS:</strong><br>
+                                            • Contact sender immediately to verify intent<br>
+                                            • Review all attachments for sensitive data<br>
+                                            • Verify legitimate business purpose<br>
+                                            • Document all investigation findings<br>
+                                            • Escalate to security team if necessary
+                                        </div>`
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     `;
 
     document.getElementById('escalationDetailsContent').innerHTML = content;
+}
+
+function getAttachmentTypeBadge(type) {
+    switch(type) {
+        case 'Business':
+            return '<span class="badge bg-primary"><i class="fas fa-briefcase me-1"></i>Business</span>';
+        case 'Personal':
+            return '<span class="badge bg-danger"><i class="fas fa-user me-1"></i>Personal</span>';
+        case 'Mixed':
+            return '<span class="badge bg-warning"><i class="fas fa-layer-group me-1"></i>Mixed</span>';
+        case 'No Attachments':
+            return '<span class="badge bg-secondary"><i class="fas fa-minus me-1"></i>None</span>';
+        default:
+            return '<span class="badge bg-light text-dark"><i class="fas fa-question me-1"></i>Unknown</span>';
+    }
 }
 
 function openResolutionModal() {

@@ -1,6 +1,6 @@
 {
-  "0b92c81b": {
-    "session_id": "0b92c81b",
+  "d7ceaac4": {
+    "session_id": "d7ceaac4",
     "filename": "dummy_email_data.csv",
     "csv_headers": [
       "_time",
@@ -22,8 +22,8 @@
       "final_outcome",
       "policy_name"
     ],
-    "created_at": "2025-07-18T13:12:46.271500",
-    "updated_at": "2025-07-18T13:12:46.600506",
+    "created_at": "2025-07-18T13:20:39.742954",
+    "updated_at": "2025-07-18T13:20:39.893187",
     "status": "active",
     "total_records": 10,
     "processed_records": 9,
@@ -65,7 +65,7 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:12:46.275960",
+        "processing_timestamp": "2025-07-18T13:20:39.746121",
         "dashboard_type": "escalation"
       },
       {
@@ -97,11 +97,12 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:12:46.275090",
+        "processing_timestamp": "2025-07-18T13:20:39.745430",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 1.0,
         "ml_risk_level": "Medium",
         "ml_cluster": -1,
+        "attachment_classification": "Unknown",
         "anomaly_details": [
           {
             "type": "Statistical Anomaly",
@@ -140,11 +141,12 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:12:46.276670",
+        "processing_timestamp": "2025-07-18T13:20:39.746761",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 1.0,
         "ml_risk_level": "Medium",
         "ml_cluster": -1,
+        "attachment_classification": "Unknown",
         "anomaly_details": [
           {
             "type": "Statistical Anomaly",
@@ -183,11 +185,12 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:12:46.275696",
+        "processing_timestamp": "2025-07-18T13:20:39.745867",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.9149502335019405,
         "ml_risk_level": "Medium",
         "ml_cluster": -1,
+        "attachment_classification": "Unknown",
         "anomaly_details": [
           {
             "type": "Statistical Anomaly",
@@ -226,11 +229,12 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:12:46.276384",
+        "processing_timestamp": "2025-07-18T13:20:39.746516",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.8279355691805653,
         "ml_risk_level": "Medium",
         "ml_cluster": -1,
+        "attachment_classification": "Unknown",
         "anomaly_details": [
           {
             "type": "Statistical Anomaly",
@@ -269,11 +273,12 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:12:46.274765",
+        "processing_timestamp": "2025-07-18T13:20:39.745222",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.30386787926342657,
         "ml_risk_level": "Low",
         "ml_cluster": -1,
+        "attachment_classification": "Unknown",
         "anomaly_details": []
       },
       {
@@ -305,11 +310,12 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:12:46.274083",
+        "processing_timestamp": "2025-07-18T13:20:39.744758",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.1393822862221647,
         "ml_risk_level": "Low",
         "ml_cluster": -1,
+        "attachment_classification": "Unknown",
         "anomaly_details": []
       },
       {
@@ -341,11 +347,12 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:12:46.275408",
+        "processing_timestamp": "2025-07-18T13:20:39.745651",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.10472085568373367,
         "ml_risk_level": "Low",
         "ml_cluster": -1,
+        "attachment_classification": "Unknown",
         "anomaly_details": []
       },
       {
@@ -377,11 +384,12 @@
           "notifications": []
         },
         "has_attachments": true,
-        "processing_timestamp": "2025-07-18T13:12:46.274440",
+        "processing_timestamp": "2025-07-18T13:20:39.744996",
         "dashboard_type": "case_management",
         "ml_anomaly_score": 0.0,
         "ml_risk_level": "Low",
         "ml_cluster": -1,
+        "attachment_classification": "Unknown",
         "anomaly_details": []
       }
     ],
