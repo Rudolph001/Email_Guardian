@@ -157,10 +157,10 @@
             <i class="fas fa-exclamation-triangle me-2"></i>Escalated Cases ({{ escalations|length }})
         </h5>
     </div>
-    <div class="card-body p-0">
+    <div class="card-body p-0" style="overflow: visible;">
         {% if escalations %}
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
+        <div class="table-responsive" style="overflow: visible;">
+            <table class="table table-hover mb-0" style="position: relative;">
                 <thead class="table-dark">
                     <tr>
                         <th>Priority</th>
@@ -283,14 +283,14 @@
                                         title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <div class="dropdown">
+                                <div class="dropdown position-relative">
                                     <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
                                             type="button" data-bs-toggle="dropdown"
                                             data-bs-auto-close="true"
                                             style="border-left: 1px solid #dee2e6;">
                                         <i class="fas fa-cog"></i>
                                     </button>
-                                    <ul class="dropdown-menu dropdown-menu-end" style="min-width: 200px;">
+                                    <ul class="dropdown-menu dropdown-menu-end" style="min-width: 200px; z-index: 1050; position: absolute;">
                                         <li><a class="dropdown-item" href="#" onclick="generateEscalationEmail('{{ session.session_id }}', '{{ escalation.get('record_id', loop.index0) }}')">
                                             <i class="fas fa-envelope text-primary me-2"></i>Generate Email
                                         </a></li>
