@@ -155,8 +155,11 @@ def case_management(session_id):
     if processed_data:
         non_escalated_data = []
         for i, d in enumerate(processed_data):
+            dashboard_type = d.get('dashboard_type', 'case_management')
             status = d.get('status', 'Active').lower()
-            if status != 'escalated':
+            
+            # Only include records that are NOT assigned to escalation dashboard
+            if dashboard_type != 'escalation' and status != 'escalated':
                 # Ensure record has an ID for actions
                 if 'record_id' not in d:
                     d['record_id'] = str(i)
@@ -222,12 +225,16 @@ def escalation_dashboard(session_id):
     # Debug logging
     app.logger.info(f"Escalation dashboard - Total records: {len(processed_data) if processed_data else 0}")
     
-    # Filter only escalated cases - be more flexible with status matching
+    # Filter only escalated cases - check both status and dashboard_type
     escalated_cases = []
     if processed_data:
         for i, d in enumerate(processed_data):
+            # Check if record is marked for escalation dashboard
+            dashboard_type = d.get('dashboard_type', 'case_management')
             status = d.get('status', 'Active').lower()
-            if status == 'escalated':
+            
+            # Include records that are either explicitly escalated or assigned to escalation dashboard
+            if dashboard_type == 'escalation' or status == 'escalated':
                 # Ensure record has an ID for actions
                 if 'record_id' not in d:
                     d['record_id'] = str(i)
