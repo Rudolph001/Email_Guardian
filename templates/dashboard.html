@@ -15,6 +15,13 @@
                    class="btn btn-primary">
                     <i class="fas fa-list me-2"></i>View Cases
                 </a>
+                <a href="{{ url_for('escalation_dashboard', session_id=session.session_id) }}" 
+                   class="btn btn-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Escalations
+                    <span class="badge bg-white text-danger ms-1">
+                        {{ processed_data|selectattr('status', 'equalto', 'Escalated')|list|length }}
+                    </span>
+                </a>
                 <a href="{{ url_for('export_session', session_id=session.session_id) }}" 
                    class="btn btn-outline-success">
                     <i class="fas fa-download me-2"></i>Export Data

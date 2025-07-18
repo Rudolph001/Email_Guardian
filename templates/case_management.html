@@ -11,6 +11,13 @@
                 <p class="text-muted">{{ session.filename }} - {{ cases|length }} cases</p>
             </div>
             <div class="btn-group">
+                <a href="{{ url_for('escalation_dashboard', session_id=session.session_id) }}" 
+                   class="btn btn-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Escalations
+                    <span class="badge bg-white text-danger ms-1">
+                        {{ cases|selectattr('status', 'equalto', 'Escalated')|list|length }}
+                    </span>
+                </a>
                 <a href="{{ url_for('dashboard', session_id=session.session_id) }}" 
                    class="btn btn-outline-primary">
                     <i class="fas fa-chart-line me-2"></i>Dashboard

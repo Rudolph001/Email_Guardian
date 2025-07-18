@@ -1,0 +1,725 @@
+
+{% extends "base.html" %}
+
+{% block title %}Escalation Dashboard - {{ session.filename }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="h3 mb-0">Escalation Dashboard</h1>
+                <p class="text-muted">{{ session.filename }} - {{ escalations|length }} escalated cases</p>
+            </div>
+            <div class="btn-group">
+                <a href="{{ url_for('case_management', session_id=session.session_id) }}" 
+                   class="btn btn-outline-primary">
+                    <i class="fas fa-arrow-left me-2"></i>Case Management
+                </a>
+                <a href="{{ url_for('dashboard', session_id=session.session_id) }}" 
+                   class="btn btn-outline-primary">
+                    <i class="fas fa-chart-line me-2"></i>Dashboard
+                </a>
+                <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-home me-2"></i>Sessions
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-white text-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="card-title mb-0">{{ escalations|length }}</h5>
+                        <p class="card-text">Total Escalations</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-white text-warning">
+                        <i class="fas fa-fire"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="card-title mb-0">
+                            {{ escalations|selectattr('ml_risk_level', 'equalto', 'Critical')|list|length }}
+                        </h5>
+                        <p class="card-text">Critical Priority</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-white text-info">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="card-title mb-0">
+                            {{ escalations|selectattr('status', 'equalto', 'Escalated')|list|length }}
+                        </h5>
+                        <p class="card-text">Pending Review</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card stats-card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="stats-icon bg-white text-success">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="ms-3">
+                        <h5 class="card-title mb-0">
+                            {{ escalations|selectattr('status', 'equalto', 'Resolved')|list|length }}
+                        </h5>
+                        <p class="card-text">Resolved</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-filter me-2"></i>Filters & Search
+        </h5>
+    </div>
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label for="risk_filter" class="form-label">Risk Level</label>
+                <select name="risk_filter" id="risk_filter" class="form-select">
+                    <option value="all" {{ 'selected' if current_filters.risk_filter == 'all' }}>All Risk Levels</option>
+                    {% for level in risk_levels %}
+                    <option value="{{ level }}" {{ 'selected' if current_filters.risk_filter == level }}>{{ level }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="rule_filter" class="form-label">Rule Matches</label>
+                <select name="rule_filter" id="rule_filter" class="form-select">
+                    <option value="all" {{ 'selected' if current_filters.rule_filter == 'all' }}>All Cases</option>
+                    <option value="matched" {{ 'selected' if current_filters.rule_filter == 'matched' }}>Rule Matched</option>
+                    <option value="unmatched" {{ 'selected' if current_filters.rule_filter == 'unmatched' }}>No Rules Matched</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="priority_filter" class="form-label">Priority</label>
+                <select name="priority_filter" id="priority_filter" class="form-select">
+                    <option value="all" {{ 'selected' if current_filters.priority_filter == 'all' }}>All Priorities</option>
+                    <option value="high" {{ 'selected' if current_filters.priority_filter == 'high' }}>High Priority</option>
+                    <option value="medium" {{ 'selected' if current_filters.priority_filter == 'medium' }}>Medium Priority</option>
+                    <option value="low" {{ 'selected' if current_filters.priority_filter == 'low' }}>Low Priority</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="search" class="form-label">Search</label>
+                <div class="input-group">
+                    <input type="text" name="search" id="search" class="form-control" 
+                           placeholder="Search sender, subject, recipients..." 
+                           value="{{ current_filters.search }}">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Escalations Table -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-exclamation-triangle me-2"></i>Escalated Cases ({{ escalations|length }})
+        </h5>
+    </div>
+    <div class="card-body p-0">
+        {% if escalations %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Priority</th>
+                        <th>Date/Time</th>
+                        <th>Sender</th>
+                        <th>Subject</th>
+                        <th>Recipients</th>
+                        <th>Risk Level</th>
+                        <th>Rule Matches</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for escalation in escalations %}
+                    <tr class="{% if escalation.get('ml_risk_level') == 'Critical' %}table-danger{% elif escalation.get('ml_risk_level') == 'High' %}table-warning{% endif %}">
+                        <td>
+                            {% set risk_level = escalation.get('ml_risk_level', 'Unknown') %}
+                            {% if risk_level in ['Critical', 'High'] %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-fire me-1"></i>High
+                            </span>
+                            {% elif risk_level == 'Medium' %}
+                            <span class="badge bg-warning">
+                                <i class="fas fa-exclamation me-1"></i>Medium
+                            </span>
+                            {% else %}
+                            <span class="badge bg-info">
+                                <i class="fas fa-info-circle me-1"></i>Low
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                {{ escalation.get('_time', 'N/A')[:19] if escalation.get('_time') else 'N/A' }}
+                            </small>
+                            {% if escalation.get('updated_at') %}
+                            <br><small class="text-warning">
+                                <i class="fas fa-clock me-1"></i>Updated: {{ escalation.get('updated_at')[:19] }}
+                            </small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-sm me-2">
+                                    <span class="avatar-title bg-danger rounded-circle">
+                                        {{ escalation.get('sender', 'N/A')[:1].upper() }}
+                                    </span>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">{{ escalation.get('sender', 'N/A') }}</div>
+                                    <small class="text-muted">{{ escalation.get('recipients_email_domain', 'N/A') }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <div class="fw-bold">{{ escalation.get('subject', 'N/A')[:50] }}{% if escalation.get('subject', '')|length > 50 %}...{% endif %}</div>
+                                {% if escalation.get('has_attachments') %}
+                                <small class="text-warning">
+                                    <i class="fas fa-paperclip me-1"></i>Has Attachments
+                                </small>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <div>{{ escalation.get('recipients', 'N/A')[:30] }}{% if escalation.get('recipients', '')|length > 30 %}...{% endif %}</div>
+                                <small class="text-muted">{{ escalation.get('department', 'N/A') }}</small>
+                            </div>
+                        </td>
+                        <td>
+                            {% set risk_level = escalation.get('ml_risk_level', 'Unknown') %}
+                            {% if risk_level == 'Critical' %}
+                            <span class="badge bg-danger">{{ risk_level }}</span>
+                            {% elif risk_level == 'High' %}
+                            <span class="badge bg-warning">{{ risk_level }}</span>
+                            {% elif risk_level == 'Medium' %}
+                            <span class="badge bg-info">{{ risk_level }}</span>
+                            {% elif risk_level == 'Low' %}
+                            <span class="badge bg-success">{{ risk_level }}</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ risk_level }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if escalation.get('rule_results', {}).get('matched_rules') %}
+                            <span class="badge bg-warning">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                {{ escalation.get('rule_results', {}).get('matched_rules')|length }} Rules
+                            </span>
+                            {% else %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check me-1"></i>Clean
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set status = escalation.get('status', 'Escalated') %}
+                            {% if status == 'Escalated' %}
+                            <span class="badge bg-danger">
+                                <i class="fas fa-exclamation-triangle me-1"></i>{{ status }}
+                            </span>
+                            {% elif status == 'Under Investigation' %}
+                            <span class="badge bg-warning">
+                                <i class="fas fa-search me-1"></i>Investigating
+                            </span>
+                            {% elif status == 'Resolved' %}
+                            <span class="badge bg-success">
+                                <i class="fas fa-check-circle me-1"></i>{{ status }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary btn-sm" 
+                                        onclick="viewEscalationDetails('{{ session.session_id }}', '{{ escalation.get('record_id', '') }}')"
+                                        title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
+                                            type="button" data-bs-toggle="dropdown">
+                                        <i class="fas fa-cog"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li><a class="dropdown-item" href="#" onclick="resolveEscalation('{{ session.session_id }}', '{{ escalation.get('record_id', '') }}', 'Resolved', 'Threat mitigated')">
+                                            <i class="fas fa-check-circle text-success me-2"></i>Mark as Resolved
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="updateEscalationStatus('{{ session.session_id }}', '{{ escalation.get('record_id', '') }}', 'Under Investigation')">
+                                            <i class="fas fa-search text-warning me-2"></i>Under Investigation
+                                        </a></li>
+                                        <li><a class="dropdown-item" href="#" onclick="resolveEscalation('{{ session.session_id }}', '{{ escalation.get('record_id', '') }}', 'False Positive', 'Determined to be safe')">
+                                            <i class="fas fa-times-circle text-info me-2"></i>False Positive
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-shield-alt fa-3x text-success mb-3"></i>
+            <h5>No Escalations Found</h5>
+            <p class="text-muted">No escalated cases found for this session. This is good news!</p>
+            <a href="{{ url_for('case_management', session_id=session.session_id) }}" class="btn btn-primary">
+                <i class="fas fa-arrow-left me-2"></i>Back to Case Management
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Escalation Details Modal -->
+<div class="modal fade" id="escalationDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Escalation Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="escalationDetailsContent">
+                    <div class="text-center">
+                        <div class="spinner-border text-danger" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p>Loading escalation details...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-warning" onclick="openResolutionModal()">
+                    <i class="fas fa-gavel me-2"></i>Resolve Escalation
+                </button>
+                <button type="button" class="btn btn-primary" onclick="exportEscalationReport()">
+                    <i class="fas fa-download me-2"></i>Export Report
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Resolution Modal -->
+<div class="modal fade" id="resolutionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-gavel me-2"></i>Resolve Escalation
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="resolutionForm">
+                    <div class="mb-3">
+                        <label for="resolutionType" class="form-label">Resolution Type</label>
+                        <select class="form-select" id="resolutionType" required>
+                            <option value="">Select resolution...</option>
+                            <option value="Threat Mitigated">Threat Mitigated</option>
+                            <option value="False Positive">False Positive</option>
+                            <option value="Policy Violation">Policy Violation</option>
+                            <option value="User Training Required">User Training Required</option>
+                            <option value="Technical Issue">Technical Issue</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newStatusResolution" class="form-label">New Status</label>
+                        <select class="form-select" id="newStatusResolution" required>
+                            <option value="Resolved">Resolved</option>
+                            <option value="Closed">Closed</option>
+                            <option value="Cleared">Cleared</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="resolutionNotes" class="form-label">Resolution Notes</label>
+                        <textarea class="form-control" id="resolutionNotes" rows="4" 
+                                  placeholder="Describe the resolution actions taken..." required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" onclick="confirmResolution()">
+                    <i class="fas fa-check me-2"></i>Resolve Escalation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentEscalationId = null;
+let currentSessionId = null;
+
+function viewEscalationDetails(sessionId, recordId) {
+    currentSessionId = sessionId;
+    currentEscalationId = recordId;
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('escalationDetailsModal'));
+    modal.show();
+    
+    // Load escalation details
+    fetch(`/api/case/${sessionId}/${recordId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                throw new Error(data.error);
+            }
+            renderEscalationDetails(data);
+        })
+        .catch(error => {
+            document.getElementById('escalationDetailsContent').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error loading escalation details: ${error.message}
+                </div>
+            `;
+        });
+}
+
+function renderEscalationDetails(escalationData) {
+    const content = `
+        <div class="alert alert-danger mb-4">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                <div>
+                    <h6 class="alert-heading mb-1">Escalated Security Alert</h6>
+                    <small>This case has been escalated and requires immediate attention</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h6 class="card-title mb-0">Email Information</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Sender:</strong></td>
+                                <td>${escalationData.sender || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Subject:</strong></td>
+                                <td>${escalationData.subject || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Recipients:</strong></td>
+                                <td>${escalationData.recipients || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Date/Time:</strong></td>
+                                <td>${escalationData._time || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Attachments:</strong></td>
+                                <td>${escalationData.has_attachments ? 
+                                     `<span class="badge bg-warning">Yes</span><br><small>${escalationData.attachments || ''}</small>` : 
+                                     '<span class="badge bg-success">No</span>'}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="card-title mb-0">Risk Assessment</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Risk Level:</strong></td>
+                                <td>
+                                    <span class="badge bg-${getRiskBadgeColor(escalationData.ml_risk_level)}">
+                                        ${escalationData.ml_risk_level || 'Unknown'}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Anomaly Score:</strong></td>
+                                <td>${escalationData.ml_anomaly_score || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>ML Cluster:</strong></td>
+                                <td>${escalationData.ml_cluster || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Domain Classification:</strong></td>
+                                <td>${escalationData.domain_classification || 'N/A'}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="card-title mb-0">Rule Analysis</h6>
+                    </div>
+                    <div class="card-body">
+                        ${escalationData.rule_results && escalationData.rule_results.matched_rules ? 
+                            `<div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>${escalationData.rule_results.matched_rules.length} Rule(s) Matched</strong>
+                                <ul class="mt-2 mb-0">
+                                    ${escalationData.rule_results.matched_rules.map(rule => `<li>${rule}</li>`).join('')}
+                                </ul>
+                            </div>` :
+                            `<div class="alert alert-success">
+                                <i class="fas fa-check me-2"></i>No rules matched - escalated based on ML analysis
+                            </div>`}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="card-title mb-0">Escalation Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    <span class="badge bg-${getStatusBadgeColor(escalationData.status)}">
+                                        ${escalationData.status || 'Escalated'}
+                                    </span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>Escalated At:</strong></td>
+                                <td>${escalationData.updated_at || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Department:</strong></td>
+                                <td>${escalationData.department || 'N/A'}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Business Unit:</strong></td>
+                                <td>${escalationData.bunit || 'N/A'}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        ${escalationData.notes ? `
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Notes</h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-0">${escalationData.notes}</p>
+                    </div>
+                </div>
+            </div>
+        </div>` : ''}
+        
+        ${escalationData.resolution ? `
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="card-title mb-0">Resolution</h6>
+                    </div>
+                    <div class="card-body">
+                        <div><strong>Resolution Type:</strong> ${escalationData.resolution}</div>
+                        <div><strong>Resolved At:</strong> ${escalationData.resolved_at || 'N/A'}</div>
+                        ${escalationData.resolution_notes ? `<div><strong>Notes:</strong> ${escalationData.resolution_notes}</div>` : ''}
+                    </div>
+                </div>
+            </div>
+        </div>` : ''}
+    `;
+    
+    document.getElementById('escalationDetailsContent').innerHTML = content;
+}
+
+function openResolutionModal() {
+    const modal = new bootstrap.Modal(document.getElementById('resolutionModal'));
+    modal.show();
+}
+
+function updateEscalationStatus(sessionId, recordId, newStatus) {
+    currentSessionId = sessionId;
+    currentEscalationId = recordId;
+    
+    fetch(`/api/case/${sessionId}/${recordId}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            status: newStatus,
+            notes: `Status updated to ${newStatus}`
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error updating status: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error updating status: ' + error.message);
+    });
+}
+
+function resolveEscalation(sessionId, recordId, resolution, notes) {
+    currentSessionId = sessionId;
+    currentEscalationId = recordId;
+    
+    fetch(`/api/escalation/${sessionId}/${recordId}/resolve`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            resolution: resolution,
+            resolution_notes: notes,
+            new_status: 'Resolved'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error resolving escalation: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error resolving escalation: ' + error.message);
+    });
+}
+
+function confirmResolution() {
+    const resolutionType = document.getElementById('resolutionType').value;
+    const newStatus = document.getElementById('newStatusResolution').value;
+    const resolutionNotes = document.getElementById('resolutionNotes').value;
+    
+    if (!resolutionType || !newStatus || !resolutionNotes) {
+        alert('Please fill in all fields');
+        return;
+    }
+    
+    fetch(`/api/escalation/${currentSessionId}/${currentEscalationId}/resolve`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            resolution: resolutionType,
+            resolution_notes: resolutionNotes,
+            new_status: newStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modals and reload page
+            bootstrap.Modal.getInstance(document.getElementById('resolutionModal')).hide();
+            bootstrap.Modal.getInstance(document.getElementById('escalationDetailsModal')).hide();
+            location.reload();
+        } else {
+            alert('Error resolving escalation: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Error resolving escalation: ' + error.message);
+    });
+}
+
+function exportEscalationReport() {
+    alert('Export functionality would generate a detailed escalation report');
+}
+
+function getRiskBadgeColor(risk) {
+    switch(risk) {
+        case 'Critical': return 'danger';
+        case 'High': return 'warning';
+        case 'Medium': return 'info';
+        case 'Low': return 'success';
+        default: return 'secondary';
+    }
+}
+
+function getStatusBadgeColor(status) {
+    switch(status) {
+        case 'Escalated': return 'danger';
+        case 'Under Investigation': return 'warning';
+        case 'Resolved': return 'success';
+        case 'Closed': return 'secondary';
+        default: return 'primary';
+    }
+}
+</script>
+{% endblock %}

@@ -188,6 +188,70 @@ def case_management(session_id):
                              'search': search_query
                          })
 
+@app.route('/escalations/<session_id>')
+def escalation_dashboard(session_id):
+    """Escalation dashboard for managing escalated cases"""
+    session_manager = SessionManager()
+    session_data = session_manager.get_session(session_id)
+    if not session_data:
+        flash('Session not found', 'error')
+        return redirect(url_for('index'))
+    
+    # Get processed data
+    processed_data = session_manager.get_processed_data(session_id)
+    
+    # Filter only escalated cases
+    escalated_cases = [d for d in processed_data if d.get('status', '').lower() == 'escalated'] if processed_data else []
+    
+    # Get filter parameters
+    risk_filter = request.args.get('risk_filter', 'all')
+    rule_filter = request.args.get('rule_filter', 'all')
+    priority_filter = request.args.get('priority_filter', 'all')
+    search_query = request.args.get('search', '')
+    
+    # Apply additional filters
+    filtered_data = escalated_cases
+    
+    if risk_filter != 'all':
+        filtered_data = [d for d in filtered_data if d.get('ml_risk_level', '').lower() == risk_filter.lower()]
+    
+    if rule_filter != 'all':
+        if rule_filter == 'matched':
+            filtered_data = [d for d in filtered_data if d.get('rule_results', {}).get('matched_rules')]
+        elif rule_filter == 'unmatched':
+            filtered_data = [d for d in filtered_data if not d.get('rule_results', {}).get('matched_rules')]
+    
+    if priority_filter != 'all':
+        if priority_filter == 'high':
+            filtered_data = [d for d in filtered_data if d.get('ml_risk_level', '').lower() in ['critical', 'high']]
+        elif priority_filter == 'medium':
+            filtered_data = [d for d in filtered_data if d.get('ml_risk_level', '').lower() == 'medium']
+        elif priority_filter == 'low':
+            filtered_data = [d for d in filtered_data if d.get('ml_risk_level', '').lower() == 'low']
+    
+    if search_query:
+        search_lower = search_query.lower()
+        filtered_data = [d for d in filtered_data if 
+                        search_lower in d.get('sender', '').lower() or 
+                        search_lower in d.get('subject', '').lower() or 
+                        search_lower in d.get('recipients', '').lower()]
+    
+    # Get unique values for filter dropdowns
+    risk_levels = list(set(d.get('ml_risk_level', 'Unknown') for d in escalated_cases if escalated_cases))
+    priorities = ['High', 'Medium', 'Low']
+    
+    return render_template('escalation_dashboard.html', 
+                         session=session_data,
+                         escalations=filtered_data,
+                         risk_levels=risk_levels,
+                         priorities=priorities,
+                         current_filters={
+                             'risk_filter': risk_filter,
+                             'rule_filter': rule_filter,
+                             'priority_filter': priority_filter,
+                             'search': search_query
+                         })
+
 @app.route('/api/case/<session_id>/<record_id>')
 def get_case_details(session_id, record_id):
     """API endpoint to get detailed case information for popup"""
@@ -237,6 +301,38 @@ def update_case_status(session_id, record_id):
         return jsonify({'success': True, 'message': 'Case updated successfully'})
     else:
         return jsonify({'error': 'Case not found'}), 404
+
+@app.route('/api/escalation/<session_id>/<record_id>/resolve', methods=['POST'])
+def resolve_escalation(session_id, record_id):
+    """API endpoint to resolve escalated cases"""
+    session_manager = SessionManager()
+    processed_data = session_manager.get_processed_data(session_id)
+    
+    if not processed_data:
+        return jsonify({'error': 'Session not found'}), 404
+    
+    resolution = request.json.get('resolution')
+    resolution_notes = request.json.get('resolution_notes', '')
+    new_status = request.json.get('new_status', 'Resolved')
+    
+    # Find and update the record
+    updated = False
+    for record in processed_data:
+        if record.get('record_id') == record_id:
+            record['status'] = new_status
+            record['resolution'] = resolution
+            record['resolution_notes'] = resolution_notes
+            record['resolved_at'] = datetime.now().isoformat()
+            record['updated_at'] = datetime.now().isoformat()
+            updated = True
+            break
+    
+    if updated:
+        # Save updated data back to session
+        session_manager.update_processed_data(session_id, processed_data)
+        return jsonify({'success': True, 'message': 'Escalation resolved successfully'})
+    else:
+        return jsonify({'error': 'Escalation not found'}), 404
 
 @app.route('/admin')
 def admin():
