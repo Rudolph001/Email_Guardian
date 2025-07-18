@@ -417,14 +417,14 @@ function addCondition() {
             <div class="col-md-4">
                 <select class="form-select" name="condition_field_${conditionCounter}" onchange="updateConditionValue(this, ${conditionCounter})">
                     <option value="">Select Field</option>
-                    <option value="_time">Time/Date</option>
-                    <option value="sender">Sender Email</option>
-                    <option value="subject">Subject Text</option>
+                    <option value="_time">Time</option>
+                    <option value="sender">Sender</option>
+                    <option value="subject">Subject</option>
                     <option value="attachments">Attachments</option>
                     <option value="recipients">Recipients</option>
                     <option value="recipients_email_domain">Recipient Domain</option>
                     <option value="leaver">Leaver Status</option>
-                    <option value="Termination">Termination Date</option>
+                    <option value="termination_date">Termination Date</option>
                     <option value="time_month">Time Month</option>
                     <option value="account_type">Account Type</option>
                     <option value="wordlist_attachment">Attachment Wordlist</option>
@@ -435,6 +435,7 @@ function addCondition() {
                     <option value="user_response">User Response</option>
                     <option value="final_outcome">Final Outcome</option>
                     <option value="policy_name">Policy Name</option>
+					<option value="justification">Justification</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -803,14 +804,14 @@ function addEditCondition() {
             <div class="col-md-4">
                 <select class="form-select" name="edit_condition_field_${editConditionCounter}" onchange="updateEditConditionValue(this, ${editConditionCounter})">
                     <option value="">Select Field</option>
-                    <option value="_time">Time/Date</option>
-                    <option value="sender">Sender Email</option>
-                    <option value="subject">Subject Text</option>
+                    <option value="_time">Time</option>
+                    <option value="sender">Sender</option>
+                    <option value="subject">Subject</option>
                     <option value="attachments">Attachments</option>
                     <option value="recipients">Recipients</option>
                     <option value="recipients_email_domain">Recipient Domain</option>
                     <option value="leaver">Leaver Status</option>
-                    <option value="Termination">Termination Date</option>
+                    <option value="termination_date">Termination Date</option>
                     <option value="time_month">Time Month</option>
                     <option value="account_type">Account Type</option>
                     <option value="wordlist_attachment">Attachment Wordlist</option>
@@ -821,6 +822,7 @@ function addEditCondition() {
                     <option value="user_response">User Response</option>
                     <option value="final_outcome">Final Outcome</option>
                     <option value="policy_name">Policy Name</option>
+					<option value="justification">Justification</option>
                 </select>
             </div>
             <div class="col-md-3">
