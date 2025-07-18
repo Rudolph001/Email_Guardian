@@ -26,7 +26,8 @@
     "legal",
     "compliance",
     "audit",
-    "review"
+    "review",
+    "credit"
   ],
   "personal_keywords": [
     "family",
@@ -57,9 +58,9 @@
     "insurance",
     "tax",
     "bank",
-    "credit",
     "loan",
-    "mortgage"
+    "mortgage",
+    "school"
   ],
   "suspicious_keywords": [
     "confidential",
@@ -85,5 +86,5 @@
     "database",
     "db"
   ],
-  "updated_at": "2025-07-18T13:46:39.869076"
+  "updated_at": "2025-07-18T18:39:14.612908"
 }
