@@ -262,6 +262,10 @@ class RuleEngine:
 
     # Operator implementations
     def _equals(self, field_value: Any, condition_value: Any) -> bool:
+        # If condition_value contains commas, treat it as a list for backwards compatibility
+        if ',' in str(condition_value):
+            values = [v.strip().lower() for v in str(condition_value).split(',') if v.strip()]
+            return str(field_value).lower() in values
         return str(field_value).lower() == str(condition_value).lower()
 
     def _contains(self, field_value: Any, condition_value: Any) -> bool:
