@@ -97,8 +97,8 @@ class SessionManager:
         sessions = self.load_sessions()
         return list(sessions.values())
 
-    def update_session_data(self, session_id: str, processed_data: List[Dict]) -> bool:
-        """Update session with processed data"""
+    def update_session_data(self, session_id: str, processed_data: List[Dict], processing_stats: Dict = None) -> bool:
+        """Update session with processed data and processing statistics"""
         try:
             sessions = self.load_sessions()
 
@@ -106,6 +106,14 @@ class SessionManager:
                 sessions[session_id]['processed_data'] = processed_data
                 sessions[session_id]['processed_records'] = len(processed_data)
                 sessions[session_id]['updated_at'] = datetime.now().isoformat()
+                
+                # Add processing statistics if provided
+                if processing_stats:
+                    sessions[session_id]['processing_stats'] = processing_stats
+                    sessions[session_id]['total_records'] = processing_stats.get('total_records', len(processed_data))
+                    sessions[session_id]['whitelist_filtered'] = processing_stats.get('whitelist_filtered', 0)
+                    sessions[session_id]['escalated_records'] = processing_stats.get('escalated_records', 0)
+                    sessions[session_id]['case_management_records'] = processing_stats.get('case_management_records', 0)
 
                 self.logger.info(f"Updating session {session_id} with {len(processed_data)} processed records")
 
@@ -117,11 +125,11 @@ class SessionManager:
                     else:
                         self.logger.error(f"Failed to verify saved data for session {session_id}")
 
-                    return True
+                    return {'success': True}
                 else:
-                     return False
+                     return {'success': False, 'error': 'Failed to save session'}
 
-            return False
+            return {'success': False, 'error': 'Session not found'}
 
         except Exception as e:
             self.logger.error(f"Error updating session data: {str(e)}")

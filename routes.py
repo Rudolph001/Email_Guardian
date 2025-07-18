@@ -47,7 +47,10 @@ def upload_file():
             result = processor.process_csv(file_path, session_id, filename)
             
             if result['success']:
-                flash(f'Successfully processed {result["total_records"]} records', 'success')
+                stats = result.get('processing_stats', {})
+                steps = stats.get('processing_steps', [])
+                steps_text = '; '.join(steps) if steps else 'Processing completed'
+                flash(f'Successfully processed {result["total_records"]} records. {steps_text}', 'success')
                 return redirect(url_for('dashboard', session_id=session_id))
             else:
                 flash(f'Error processing file: {result["error"]}', 'error')
@@ -62,26 +65,38 @@ def upload_file():
 
 @app.route('/dashboard/<session_id>')
 def dashboard(session_id):
-    """Main dashboard for a specific session"""
+    """Main dashboard for a specific session showing processing summary"""
     session_manager = SessionManager()
     session_data = session_manager.get_session(session_id)
     if not session_data:
         flash('Session not found', 'error')
         return redirect(url_for('index'))
     
-    # Get processed data
-    processed_data = session_manager.get_processed_data(session_id)
-    app.logger.info(f"Retrieved {len(processed_data) if processed_data else 0} processed records for session {session_id}")
+    # Get processed data and separate by dashboard type
+    all_processed_data = session_manager.get_processed_data(session_id)
+    app.logger.info(f"Retrieved {len(all_processed_data) if all_processed_data else 0} processed records for session {session_id}")
     
-    # Debug: Log first record if available
-    if processed_data:
-        app.logger.info(f"Sample record keys: {list(processed_data[0].keys()) if processed_data[0] else 'Empty record'}")
+    # Separate data by dashboard type
+    escalated_data = []
+    case_management_data = []
     
-    # Get ML insights
+    if all_processed_data:
+        for record in all_processed_data:
+            dashboard_type = record.get('dashboard_type', 'case_management')
+            if dashboard_type == 'escalation':
+                escalated_data.append(record)
+            else:
+                case_management_data.append(record)
+    
+    # Get processing statistics
+    processing_stats = session_data.get('processing_stats', {})
+    processing_steps = processing_stats.get('processing_steps', [])
+    
+    # Get ML insights for case management data only
     ml_engine = MLEngine()
     try:
-        if processed_data:
-            ml_insights = ml_engine.get_insights(processed_data)
+        if case_management_data:
+            ml_insights = ml_engine.get_insights(case_management_data)
             app.logger.info(f"ML insights generated: {ml_insights.get('total_emails', 0)} emails analyzed")
         else:
             ml_insights = {
@@ -101,7 +116,7 @@ def dashboard(session_id):
     except Exception as e:
         app.logger.error(f"Error getting ML insights: {str(e)}")
         ml_insights = {
-            'total_emails': len(processed_data) if processed_data else 0,
+            'total_emails': len(case_management_data),
             'risk_distribution': {},
             'anomaly_summary': {
                 'high_anomaly_count': 0,
@@ -115,23 +130,14 @@ def dashboard(session_id):
             'recommendations': []
         }
     
-    # Get rule results
-    rule_engine = RuleEngine()
-    try:
-        rule_results = rule_engine.get_rule_results(session_id)
-    except Exception as e:
-        app.logger.error(f"Error getting rule results: {str(e)}")
-        rule_results = {}
-    
-    # Ensure processed_data is a list
-    if not isinstance(processed_data, list):
-        processed_data = []
-    
-    return render_template('dashboard.html', 
+    return render_template('dashboard.html',
                          session=session_data,
-                         processed_data=processed_data,
+                         escalated_data=escalated_data,
+                         case_management_data=case_management_data,
+                         processing_steps=processing_steps,
                          ml_insights=ml_insights,
-                         rule_results=rule_results)
+                         escalated_count=len(escalated_data),
+                         case_management_count=len(case_management_data))
 
 @app.route('/cases/<session_id>')
 def case_management(session_id):

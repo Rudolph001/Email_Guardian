@@ -27,8 +27,10 @@ class DataProcessor:
         ]
     
     def process_csv(self, file_path: str, session_id: str, filename: str) -> Dict:
-        """Process uploaded CSV file"""
+        """Process uploaded CSV file following the 4-step workflow"""
         try:
+            self.logger.info(f"Starting CSV processing for session {session_id}")
+            
             # Read CSV file
             df = pd.read_csv(file_path)
             
@@ -47,45 +49,52 @@ class DataProcessor:
             if not session_result['success']:
                 return session_result
             
-            # Apply whitelist filtering
-            df_filtered = self._apply_whitelist_filtering(df)
+            # STEP 1: Apply whitelist filtering - ignore whitelisted domains
+            self.logger.info("STEP 1: Filtering whitelist domains...")
+            df_filtered, whitelist_count = self._apply_whitelist_filtering_with_stats(df)
             
-            # Process each email record
-            processed_data = []
-            for index, row in df_filtered.iterrows():
-                processed_record = self._process_email_record(row.to_dict(), index)
-                processed_data.append(processed_record)
+            # STEP 2: Apply rules - move matching events to escalation dashboard
+            self.logger.info("STEP 2: Checking rules and identifying escalations...")
+            escalated_data, remaining_data = self._apply_rules_with_escalation(df_filtered)
             
-            # Apply ML analysis only if we have data
-            if len(df_filtered) > 0:
-                ml_results = self.ml_engine.analyze_emails(df_filtered)
-            else:
-                ml_results = {
-                    'anomaly_scores': [],
-                    'risk_levels': [],
-                    'interesting_patterns': [],
-                    'clusters': [],
-                    'insights': {}
-                }
+            # STEP 3: Run ML analysis on remaining data
+            self.logger.info("STEP 3: Running ML analysis on remaining events...")
+            ml_results = self._run_ml_analysis(remaining_data)
             
-            # Merge ML results with processed data
-            processed_data = self._merge_ml_results(processed_data, ml_results)
+            # STEP 4: Sort remaining data by ML score (high to low) for case management
+            self.logger.info("STEP 4: Sorting data by ML score for case management...")
+            case_management_data = self._prepare_case_management_data(remaining_data, ml_results)
+            
+            # Combine all processed data
+            all_processed_data = escalated_data + case_management_data
+            
+            # Save processing results
+            processing_stats = {
+                'total_records': len(df),
+                'whitelist_filtered': whitelist_count,
+                'escalated_records': len(escalated_data),
+                'case_management_records': len(case_management_data),
+                'processing_steps': [
+                    f"Step 1: Filtered {whitelist_count} whitelist domains",
+                    f"Step 2: Escalated {len(escalated_data)} rule matches",
+                    f"Step 3: ML analysis completed on {len(remaining_data)} events",
+                    f"Step 4: {len(case_management_data)} events sorted by ML score"
+                ]
+            }
             
             # Save processed data to session
-            self.logger.info(f"Saving {len(processed_data)} processed records to session {session_id}")
-            if processed_data:
-                self.logger.info(f"Sample processed record keys: {list(processed_data[0].keys())}")
-            
-            save_result = self.session_manager.update_session_data(session_id, processed_data)
-            if not save_result['success']:
+            self.logger.info(f"Saving {len(all_processed_data)} processed records to session {session_id}")
+            save_result = self.session_manager.update_session_data(session_id, all_processed_data, processing_stats)
+            if not save_result.get('success'):
                 self.logger.error(f"Failed to save processed data: {save_result.get('error')}")
             
             return {
                 'success': True,
                 'total_records': len(df),
                 'filtered_records': len(df_filtered),
-                'processed_records': len(processed_data),
-                'session_id': session_id
+                'processed_records': len(all_processed_data),
+                'session_id': session_id,
+                'processing_stats': processing_stats
             }
             
         except Exception as e:
@@ -118,16 +127,17 @@ class DataProcessor:
         except Exception as e:
             return {'valid': False, 'error': f'Validation error: {str(e)}'}
     
-    def _apply_whitelist_filtering(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Apply whitelist domain filtering"""
+    def _apply_whitelist_filtering_with_stats(self, df: pd.DataFrame) -> tuple:
+        """Apply whitelist domain filtering and return stats"""
         try:
             whitelists = self.session_manager.get_whitelists()
             whitelist_domains = whitelists.get('domains', [])
             
             if not whitelist_domains:
-                return df
+                return df, 0
             
             # Filter out whitelisted domains
+            original_count = len(df)
             filtered_df = df.copy()
             
             # Check sender domain (extract from sender email if needed)
@@ -141,13 +151,105 @@ class DataProcessor:
                 recipients_whitelist_mask = filtered_df['recipients_email_domain'].isin(whitelist_domains)
                 filtered_df = filtered_df[~recipients_whitelist_mask]
             
-            self.logger.info(f"Filtered out {len(df) - len(filtered_df)} whitelisted records")
+            whitelist_count = original_count - len(filtered_df)
+            self.logger.info(f"Filtered out {whitelist_count} whitelisted records")
             
-            return filtered_df
+            return filtered_df, whitelist_count
             
         except Exception as e:
             self.logger.error(f"Error applying whitelist filtering: {str(e)}")
-            return df
+            return df, 0
+    
+    def _apply_rules_with_escalation(self, df: pd.DataFrame) -> tuple:
+        """Apply rules and separate escalated records from remaining data"""
+        try:
+            escalated_data = []
+            remaining_data = []
+            
+            for index, row in df.iterrows():
+                record = row.to_dict()
+                processed_record = self._process_email_record(record, index)
+                
+                # Check if any rules triggered escalation
+                rule_results = processed_record.get('rule_results', {})
+                should_escalate = False
+                
+                if isinstance(rule_results, dict):
+                    for rule_id, result in rule_results.items():
+                        if result.get('triggered', False) and result.get('action') == 'escalate':
+                            should_escalate = True
+                            break
+                
+                # Mark record for appropriate dashboard
+                if should_escalate:
+                    processed_record['dashboard_type'] = 'escalation'
+                    escalated_data.append(processed_record)
+                else:
+                    processed_record['dashboard_type'] = 'case_management'
+                    remaining_data.append(processed_record)
+            
+            self.logger.info(f"Escalated {len(escalated_data)} records, {len(remaining_data)} remaining for case management")
+            return escalated_data, remaining_data
+            
+        except Exception as e:
+            self.logger.error(f"Error applying rules: {str(e)}")
+            # Return all as case management if error occurs
+            processed_data = []
+            for index, row in df.iterrows():
+                record = row.to_dict()
+                processed_record = self._process_email_record(record, index)
+                processed_record['dashboard_type'] = 'case_management'
+                processed_data.append(processed_record)
+            return [], processed_data
+    
+    def _run_ml_analysis(self, data_list: List[Dict]) -> Dict:
+        """Run ML analysis on remaining data"""
+        try:
+            if not data_list:
+                return {
+                    'anomaly_scores': [],
+                    'risk_levels': [],
+                    'interesting_patterns': [],
+                    'clusters': [],
+                    'insights': {}
+                }
+            
+            # Convert list of dicts to DataFrame for ML analysis
+            df = pd.DataFrame(data_list)
+            ml_results = self.ml_engine.analyze_emails(df)
+            
+            return ml_results
+            
+        except Exception as e:
+            self.logger.error(f"Error in ML analysis: {str(e)}")
+            return {
+                'anomaly_scores': [0.0] * len(data_list),
+                'risk_levels': ['Low'] * len(data_list),
+                'interesting_patterns': [],
+                'clusters': [-1] * len(data_list),
+                'insights': {}
+            }
+    
+    def _prepare_case_management_data(self, data_list: List[Dict], ml_results: Dict) -> List[Dict]:
+        """Sort data by ML score (high to low) and add ML results"""
+        try:
+            if not data_list:
+                return []
+            
+            # Merge ML results with data
+            updated_data = self._merge_ml_results(data_list, ml_results)
+            
+            # Sort by ML anomaly score (high to low)
+            sorted_data = sorted(updated_data, 
+                               key=lambda x: x.get('ml_anomaly_score', 0.0), 
+                               reverse=True)
+            
+            self.logger.info(f"Sorted {len(sorted_data)} records by ML score for case management")
+            return sorted_data
+            
+        except Exception as e:
+            self.logger.error(f"Error preparing case management data: {str(e)}")
+            return data_list
     
     def _process_email_record(self, record: Dict, record_index: int) -> Dict:
         """Process a single email record"""

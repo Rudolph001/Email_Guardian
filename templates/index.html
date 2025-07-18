@@ -166,12 +166,22 @@
                         <label for="file" class="form-label">Select CSV File</label>
                         <input type="file" class="form-control" id="file" name="file" accept=".csv" required>
                         <div class="form-text">
-                            Upload a CSV file containing Tessian email data. The first row should contain column headers.
+                            Upload a CSV file containing Tessian email data. Max file size: 500MB. First row should contain column headers.
                         </div>
                     </div>
                     
                     <div class="alert alert-info">
-                        <h6><i class="fas fa-info-circle me-2"></i>Expected Columns:</h6>
+                        <h6><i class="fas fa-info-circle me-2"></i>Processing Workflow:</h6>
+                        <div class="workflow-steps">
+                            <ol class="mb-2">
+                                <li><strong>Whitelist Filtering:</strong> Remove events matching your whitelist domains</li>
+                                <li><strong>Rule Matching:</strong> Check events against security rules, move matches to escalation dashboard</li>
+                                <li><strong>ML Analysis:</strong> Run machine learning analysis on remaining events</li>
+                                <li><strong>Case Management:</strong> Sort remaining data by ML score (high to low)</li>
+                            </ol>
+                        </div>
+                        
+                        <h6><i class="fas fa-table me-2"></i>Expected Columns:</h6>
                         <div class="row">
                             <div class="col-md-6">
                                 <ul class="list-unstyled small">
