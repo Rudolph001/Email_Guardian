@@ -397,9 +397,26 @@ function renderCaseDetails(caseData) {
                             `<div class="alert alert-warning">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
                                 <strong>${caseData.rule_results.matched_rules.length} Rule(s) Matched</strong>
-                                <ul class="mt-2 mb-0">
-                                    ${caseData.rule_results.matched_rules.map(rule => `<li>${rule}</li>`).join('')}
-                                </ul>
+                            </div>
+                            <div class="list-group">
+                                ${caseData.rule_results.matched_rules.map(rule => `
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1">${typeof rule === 'object' ? rule.name || 'Unnamed Rule' : rule}</h6>
+                                            ${typeof rule === 'object' && rule.priority ? 
+                                                `<span class="badge bg-${rule.priority <= 2 ? 'danger' : rule.priority <= 3 ? 'warning' : 'info'}">
+                                                    Priority ${rule.priority}
+                                                </span>` : ''}
+                                        </div>
+                                        ${typeof rule === 'object' && rule.description ? 
+                                            `<p class="mb-1 text-muted">${rule.description}</p>` : ''}
+                                        ${typeof rule === 'object' && rule.conditions ? 
+                                            `<small class="text-muted">
+                                                <i class="fas fa-filter me-1"></i>
+                                                ${rule.conditions.length} condition(s) matched
+                                            </small>` : ''}
+                                    </div>
+                                `).join('')}
                             </div>` :
                             `<div class="alert alert-success">
                                 <i class="fas fa-check me-2"></i>No rules matched - email appears clean
@@ -408,21 +425,53 @@ function renderCaseDetails(caseData) {
                 </div>
             </div>
             
-            ${caseData.ml_anomaly_score > 0.7 && caseData.anomaly_details ? `
+            ${caseData.ml_anomaly_score > 0.7 ? `
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-header">
                         <h6 class="card-title mb-0">
                             <i class="fas fa-exclamation-triangle text-danger me-2"></i>
-                            Anomaly Details
+                            Anomaly Analysis
                         </h6>
                     </div>
                     <div class="card-body">
                         <div class="alert alert-danger">
                             <i class="fas fa-search me-2"></i>
-                            <strong>High Anomaly Detected - Detailed Analysis:</strong>
+                            <strong>High Anomaly Detected (Score: ${parseFloat(caseData.ml_anomaly_score).toFixed(4)})</strong>
                         </div>
-                        ${caseData.anomaly_details.map(detail => `
+                        ${caseData.anomaly_details ? 
+                            caseData.anomaly_details.map(detail => `
+                                <div class="mb-3 p-3 border rounded">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong class="text-danger">${detail.type || 'Anomaly Detected'}</strong>
+                                            <p class="mb-1 text-muted">${detail.description || 'Unusual pattern detected in email data'}</p>
+                                            ${detail.field ? `<small class="text-muted"><strong>Field:</strong> ${detail.field}</small>` : ''}
+                                        </div>
+                                        <span class="badge bg-${detail.severity === 'Critical' ? 'danger' : detail.severity === 'High' ? 'warning' : 'info'}">
+                                            ${detail.severity || 'High'}
+                                        </span>
+                                    </div>
+                                </div>
+                            `).join('') :
+                            `<div class="mb-3 p-3 border rounded bg-light">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                                    <div>
+                                        <strong>Statistical Anomaly</strong>
+                                        <p class="mb-0 text-muted">This email shows unusual patterns compared to typical email behavior</p>
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <small class="text-muted">
+                                        <strong>Possible indicators:</strong> Unusual attachment patterns, atypical sending times, 
+                                        uncommon recipient combinations, or irregular content structure.
+                                    </small>
+                                </div>
+                            </div>`}
+                    </div>
+                </div>
+            </div>` : ''}
                             <div class="alert alert-${detail.severity === 'Critical' ? 'danger' : detail.severity === 'High' ? 'warning' : detail.severity === 'Medium' ? 'info' : 'secondary'} mb-2">
                                 <div class="d-flex justify-content-between">
                                     <strong>${detail.type}</strong>

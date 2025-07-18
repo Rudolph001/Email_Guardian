@@ -8,6 +8,7 @@ from datetime import datetime
 import json
 import logging
 import re
+from typing import Dict, List
 
 class MLEngine:
     """Advanced ML engine for email anomaly detection and analysis"""
@@ -295,6 +296,94 @@ class MLEngine:
             self.logger.error(f"Error discovering patterns: {str(e)}")
         
         return patterns
+    
+    def analyze_anomaly_details(self, record: Dict) -> List[Dict]:
+        """Generate detailed anomaly analysis for high-risk emails"""
+        try:
+            anomaly_details = []
+            
+            # Check for unusual attachment patterns
+            if record.get('has_attachments'):
+                attachments = record.get('attachments', '')
+                if any(ext in attachments.lower() for ext in ['.exe', '.bat', '.scr', '.zip']):
+                    anomaly_details.append({
+                        'type': 'Suspicious Attachment Type',
+                        'description': 'Email contains potentially dangerous file types',
+                        'field': 'attachments',
+                        'severity': 'High'
+                    })
+                
+                # Check for multiple attachments
+                if len(attachments.split(',')) > 3:
+                    anomaly_details.append({
+                        'type': 'Multiple Attachments',
+                        'description': 'Email contains an unusually high number of attachments',
+                        'field': 'attachments',
+                        'severity': 'Medium'
+                    })
+            
+            # Check for unusual recipient patterns
+            recipients = record.get('recipients', '')
+            if recipients and len(recipients.split(',')) > 5:
+                anomaly_details.append({
+                    'type': 'Mass Distribution',
+                    'description': 'Email sent to an unusually large number of recipients',
+                    'field': 'recipients',
+                    'severity': 'High'
+                })
+            
+            # Check for external domain communication
+            sender_domain = record.get('sender', '').split('@')[-1] if '@' in record.get('sender', '') else ''
+            recipient_domain = record.get('recipients_email_domain', '')
+            
+            if sender_domain and recipient_domain and sender_domain != recipient_domain:
+                public_domains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com']
+                if recipient_domain.lower() in public_domains:
+                    anomaly_details.append({
+                        'type': 'External Personal Email',
+                        'description': 'Communication with external personal email services',
+                        'field': 'recipients_email_domain',
+                        'severity': 'Medium'
+                    })
+            
+            # Check for timing anomalies (if timestamp available)
+            timestamp = record.get('_time', '')
+            if timestamp:
+                try:
+                    from datetime import datetime
+                    email_time = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                    hour = email_time.hour
+                    
+                    # Check for off-hours activity (before 7 AM or after 7 PM)
+                    if hour < 7 or hour > 19:
+                        anomaly_details.append({
+                            'type': 'Off-Hours Activity',
+                            'description': 'Email sent during unusual business hours',
+                            'field': '_time',
+                            'severity': 'Medium'
+                        })
+                except:
+                    pass
+            
+            # If no specific anomalies found but score is high, add generic anomaly
+            if not anomaly_details:
+                anomaly_details.append({
+                    'type': 'Statistical Anomaly',
+                    'description': 'Email exhibits patterns that deviate significantly from normal behavior',
+                    'field': 'ml_analysis',
+                    'severity': 'High'
+                })
+            
+            return anomaly_details
+            
+        except Exception as e:
+            self.logger.error(f"Error analyzing anomaly details: {str(e)}")
+            return [{
+                'type': 'Analysis Error',
+                'description': f'Unable to analyze anomaly details: {str(e)}',
+                'field': 'system',
+                'severity': 'Low'
+            }]
     
     def _perform_clustering(self, features):
         """Perform clustering analysis to identify groups of similar emails"""
