@@ -97,6 +97,7 @@
                         <th>Subject</th>
                         <th>Recipients</th>
                         <th>Risk Level</th>
+                        <th>ML Score</th>
                         <th>Rule Matches</th>
                         <th>Status</th>
                         <th class="case-management" style="width: 180px;">Actions</th>
@@ -152,6 +153,11 @@
                             {% else %}
                             <span class="badge bg-secondary">{{ risk_level }}</span>
                             {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">
+                                {{ "%.2f"|format(case.get('ml_anomaly_score', 0)) }}
+                            </span>
                         </td>
                         <td>
                             {% if case.get('rule_results', {}).get('matched_rules') %}
