@@ -389,6 +389,9 @@ def generate_ml_explanations(case_data):
     attachment_type = case_data.get('attachment_classification', 'Unknown')
     has_attachments = case_data.get('has_attachments', False)
     
+    # Debug logging
+    app.logger.info(f"Attachment classification debug: {attachment_type}, has_attachments: {has_attachments}")
+    
     if has_attachments:
         if attachment_type == 'Personal':
             explanations['attachment_analysis'].append("⚠️ Personal attachments detected - may indicate data exfiltration risk.")
