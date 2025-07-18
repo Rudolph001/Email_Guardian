@@ -739,7 +739,6 @@ def update_case_status(session_id, record_id):
         # Check various possible record ID formats
         if (record.get('record_id') == record_id or 
             str(record.get('record_id')) == record_id or
-```python
             str(i) == record_id):
             record['status'] = new_status
             record['notes'] = notes
