@@ -174,9 +174,23 @@ class DataProcessor:
                 rule_results = processed_record.get('rule_results', {})
                 should_escalate = False
                 
+                # Handle both dict and list formats for rule results
                 if isinstance(rule_results, dict):
-                    for rule_id, result in rule_results.items():
-                        if result.get('triggered', False) and result.get('action') == 'escalate':
+                    # Check if there's a matched_rules key with escalate action
+                    matched_rules = rule_results.get('matched_rules', [])
+                    if matched_rules:
+                        for rule in matched_rules:
+                            if isinstance(rule, dict) and rule.get('action') == 'escalate':
+                                should_escalate = True
+                                break
+                    
+                    # Also check for escalate flag directly
+                    if rule_results.get('escalate'):
+                        should_escalate = True
+                elif isinstance(rule_results, list):
+                    # Handle list format
+                    for result in rule_results:
+                        if isinstance(result, dict) and (result.get('triggered', False) and result.get('action') == 'escalate'):
                             should_escalate = True
                             break
                 

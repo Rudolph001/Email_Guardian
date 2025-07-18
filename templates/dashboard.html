@@ -19,7 +19,7 @@
                    class="btn btn-danger">
                     <i class="fas fa-exclamation-triangle me-2"></i>Escalations
                     <span class="badge bg-white text-danger ms-1">
-                        {{ processed_data|selectattr('status', 'equalto', 'Escalated')|list|length }}
+                        {{ escalated_count }}
                     </span>
                 </a>
                 <a href="{{ url_for('export_session', session_id=session.session_id) }}" 
@@ -44,11 +44,11 @@
                         <i class="fas fa-envelope"></i>
                     </div>
                     <div class="ms-3">
-                        <h5 class="card-title mb-0">{{ processed_data|length }}</h5>
+                        <h5 class="card-title mb-0">{{ case_management_count + escalated_count }}</h5>
                         <p class="card-text text-muted">Total Emails</p>
                         <small class="text-muted">
                             <i class="fas fa-shield-alt me-1"></i>
-                            {{ session.filtered_records or 0 }} whitelisted
+                            {{ session.whitelist_filtered or 0 }} whitelisted
                         </small>
                     </div>
                 </div>
@@ -65,7 +65,7 @@
                     </div>
                     <div class="ms-3">
                         <h5 class="card-title mb-0">
-                            {{ processed_data|selectattr('ml_risk_level', 'equalto', 'Critical')|list|length }}
+                            {{ (case_management_data|selectattr('ml_risk_level', 'equalto', 'Critical')|list|length) + (escalated_data|selectattr('ml_risk_level', 'equalto', 'Critical')|list|length) }}
                         </h5>
                         <p class="card-text text-muted">Critical Risk</p>
                     </div>
@@ -83,7 +83,7 @@
                     </div>
                     <div class="ms-3">
                         <h5 class="card-title mb-0">
-                            {{ processed_data|selectattr('rule_results.matched_rules')|list|length }}
+                            {{ escalated_count }}
                         </h5>
                         <p class="card-text text-muted">Rule Matches</p>
                     </div>
@@ -101,7 +101,7 @@
                     </div>
                     <div class="ms-3">
                         <h5 class="card-title mb-0">
-                            {{ processed_data|selectattr('rule_results.escalate', 'equalto', true)|list|length }}
+                            {{ escalated_count }}
                         </h5>
                         <p class="card-text text-muted">Escalations</p>
                     </div>
@@ -110,6 +110,31 @@
         </div>
     </div>
 </div>
+
+<!-- Processing Summary -->
+{% if processing_steps %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-cogs me-2"></i>Processing Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="processing-summary">
+                    {% for step in processing_steps %}
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="fas fa-check-circle text-success me-2"></i>
+                        <span>{{ step }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- ML Insights -->
 <div class="row mb-4">
@@ -190,7 +215,7 @@
 const riskCtx = document.getElementById('riskChart').getContext('2d');
 const riskData = {
     {% set risk_counts = {} %}
-    {% for record in processed_data %}
+    {% for record in case_management_data + escalated_data %}
         {% set risk_level = record.ml_risk_level or 'Low' %}
         {% if risk_counts.update({risk_level: risk_counts.get(risk_level, 0) + 1}) %}{% endif %}
     {% endfor %}
@@ -218,7 +243,7 @@ new Chart(riskCtx, {
 const domainCtx = document.getElementById('domainChart').getContext('2d');
 const domainData = {
     {% set domain_counts = {} %}
-    {% for record in processed_data %}
+    {% for record in case_management_data + escalated_data %}
         {% set domain_class = record.domain_classification or 'Unknown' %}
         {% if domain_counts.update({domain_class: domain_counts.get(domain_class, 0) + 1}) %}{% endif %}
     {% endfor %}
