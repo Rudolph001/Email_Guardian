@@ -114,7 +114,7 @@ class SessionManager:
         sessions = self.load_sessions()
         return list(sessions.values())
 
-    def update_session_data(self, session_id: str, processed_data: List[Dict], processing_stats: Dict = None) -> bool:
+    def update_session_data(self, session_id: str, processed_data: List[Dict], processing_stats: Dict = None) -> Dict:
         """Update session with processed data and processing statistics"""
         try:
             sessions = self.load_sessions()
@@ -152,7 +152,7 @@ class SessionManager:
 
         except Exception as e:
             self.logger.error(f"Error updating session data: {str(e)}")
-            return False
+            return {'success': False, 'error': str(e)}
 
     def get_processed_data(self, session_id: str) -> List[Dict]:
         """Get processed data for a session"""
