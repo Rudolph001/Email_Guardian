@@ -177,7 +177,7 @@
                             <span class="badge bg-secondary">{{ status }}</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="actions-column">
                             <div class="btn-group btn-group-sm">
                                 <button class="btn btn-outline-primary btn-sm" 
                                         onclick="viewCaseDetails('{{ session.session_id }}', '{{ case.get('record_id', '') }}')"
@@ -186,10 +186,11 @@
                                 </button>
                                 <div class="dropdown">
                                     <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
-                                            type="button" data-bs-toggle="dropdown">
+                                            type="button" data-bs-toggle="dropdown" 
+                                            aria-expanded="false">
                                         <i class="fas fa-cog"></i>
                                     </button>
-                                    <ul class="dropdown-menu">
+                                    <ul class="dropdown-menu dropdown-menu-end">
                                         <li><a class="dropdown-item" href="#" onclick="updateCaseStatus('{{ session.session_id }}', '{{ case.get('record_id', '') }}', 'Cleared')">
                                             <i class="fas fa-check text-success me-2"></i>Mark as Cleared
                                         </a></li>
