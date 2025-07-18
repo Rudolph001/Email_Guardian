@@ -73,7 +73,24 @@ def dashboard(session_id):
     
     # Get ML insights
     ml_engine = MLEngine()
-    ml_insights = ml_engine.get_insights(processed_data)
+    try:
+        ml_insights = ml_engine.get_insights(processed_data)
+    except Exception as e:
+        app.logger.error(f"Error getting ML insights: {str(e)}")
+        ml_insights = {
+            'total_emails': len(processed_data) if processed_data else 0,
+            'risk_distribution': {},
+            'anomaly_summary': {
+                'high_anomaly_count': 0,
+                'anomaly_percentage': 0
+            },
+            'pattern_summary': {
+                'total_patterns': 0,
+                'critical_patterns': 0,
+                'high_patterns': 0
+            },
+            'recommendations': []
+        }
     
     # Get rule results
     rule_engine = RuleEngine()

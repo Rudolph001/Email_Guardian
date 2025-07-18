@@ -270,8 +270,15 @@ class MLEngine:
             return {
                 'total_emails': 0,
                 'risk_distribution': {},
-                'anomaly_summary': {},
-                'pattern_summary': {},
+                'anomaly_summary': {
+                    'high_anomaly_count': 0,
+                    'anomaly_percentage': 0
+                },
+                'pattern_summary': {
+                    'total_patterns': 0,
+                    'critical_patterns': 0,
+                    'high_patterns': 0
+                },
                 'recommendations': []
             }
         
@@ -281,4 +288,25 @@ class MLEngine:
         # Perform ML analysis
         ml_results = self.analyze_emails(df)
         
-        return ml_results['insights']
+        # Return the insights with proper structure
+        insights = ml_results['insights']
+        
+        # Ensure anomaly_summary has the required fields
+        if 'anomaly_summary' not in insights:
+            insights['anomaly_summary'] = {}
+        
+        if 'anomaly_percentage' not in insights['anomaly_summary']:
+            insights['anomaly_summary']['anomaly_percentage'] = 0
+        
+        if 'high_anomaly_count' not in insights['anomaly_summary']:
+            insights['anomaly_summary']['high_anomaly_count'] = 0
+        
+        # Ensure pattern_summary has the required fields
+        if 'pattern_summary' not in insights:
+            insights['pattern_summary'] = {}
+        
+        for field in ['total_patterns', 'critical_patterns', 'high_patterns']:
+            if field not in insights['pattern_summary']:
+                insights['pattern_summary'][field] = 0
+        
+        return insights
