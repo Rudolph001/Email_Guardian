@@ -51,7 +51,7 @@ class MLEngine:
         ]
 
     def analyze_emails(self, df):
-        """Perform comprehensive ML analysis on email data"""
+        """Perform comprehensive ML analysis on email data with batch processing"""
         try:
             results = {
                 'anomaly_scores': [],
@@ -65,7 +65,43 @@ class MLEngine:
                 self.logger.info("No data to analyze - returning empty results")
                 return results
 
-            # Prepare features for ML analysis
+            # For large datasets, process in batches
+            batch_size = 1000
+            total_rows = len(df)
+            
+            if total_rows > batch_size:
+                self.logger.info(f"Processing large dataset ({total_rows} records) in batches of {batch_size}")
+                
+                all_anomaly_scores = []
+                all_risk_levels = []
+                all_clusters = []
+                all_attachment_classifications = []
+                
+                for i in range(0, total_rows, batch_size):
+                    batch_df = df.iloc[i:i+batch_size].copy()
+                    self.logger.info(f"Processing batch {i//batch_size + 1}/{(total_rows + batch_size - 1)//batch_size}")
+                    
+                    # Process batch
+                    batch_results = self._process_batch(batch_df)
+                    
+                    all_anomaly_scores.extend(batch_results['anomaly_scores'])
+                    all_risk_levels.extend(batch_results['risk_levels'])
+                    all_clusters.extend(batch_results['clusters'])
+                    all_attachment_classifications.extend(batch_results['attachment_classifications'])
+                
+                results['anomaly_scores'] = all_anomaly_scores
+                results['risk_levels'] = all_risk_levels
+                results['clusters'] = all_clusters
+                results['attachment_classifications'] = all_attachment_classifications
+                
+                # Process patterns and insights on full dataset but with sampling
+                sampled_df = df.sample(n=min(2000, len(df)), random_state=42)
+                results['interesting_patterns'] = self._discover_patterns(sampled_df)
+                results['insights'] = self._generate_insights(sampled_df, all_anomaly_scores[:len(sampled_df)], all_risk_levels[:len(sampled_df)], results['interesting_patterns'])
+                
+                return results
+
+            # Prepare features for ML analysis (small dataset)
             features = self._prepare_features(df)
 
             # Anomaly detection
@@ -971,6 +1007,41 @@ class MLEngine:
             import traceback
             self.logger.error(f"Traceback: {traceback.format_exc()}")
             return ['Unknown'] * len(df)
+
+    def _process_batch(self, batch_df):
+        """Process a batch of emails for large datasets"""
+        try:
+            # Prepare features for this batch
+            features = self._prepare_features(batch_df)
+            
+            # Anomaly detection
+            anomaly_scores = self._detect_anomalies(features)
+            
+            # Risk level classification
+            risk_levels = self._classify_risk_levels(batch_df, anomaly_scores)
+            
+            # Clustering
+            clusters = self._perform_clustering(features)
+            
+            # Attachment classification
+            attachment_classifications = self._classify_attachments(batch_df)
+            
+            return {
+                'anomaly_scores': anomaly_scores.tolist() if hasattr(anomaly_scores, 'tolist') else list(anomaly_scores),
+                'risk_levels': risk_levels,
+                'clusters': clusters.tolist() if hasattr(clusters, 'tolist') else list(clusters),
+                'attachment_classifications': attachment_classifications
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error processing batch: {str(e)}")
+            batch_size = len(batch_df)
+            return {
+                'anomaly_scores': [0.0] * batch_size,
+                'risk_levels': ['Low'] * batch_size,
+                'clusters': [-1] * batch_size,
+                'attachment_classifications': ['Unknown'] * batch_size
+            }
 
     def _classify_single_attachment_list(self, attachment_list):
         """Classify attachments as Business, Personal, or Mixed"""

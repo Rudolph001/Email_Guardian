@@ -224,6 +224,10 @@ def case_management(session_id):
         flash('Session not found', 'error')
         return redirect(url_for('index'))
 
+    # Get pagination parameters
+    page = request.args.get('page', 1, type=int)
+    per_page = min(request.args.get('per_page', 50, type=int), 200)  # Limit max per page
+
     # Get processed data
     all_processed_data = session_manager.get_processed_data(session_id)
 
@@ -425,17 +429,35 @@ def case_management(session_id):
                         search_lower in d.get('recipients', '').lower() or
                         search_lower in d.get('attachment_classification', '').lower()]
 
+    # Calculate pagination
+    total_filtered = len(filtered_data)
+    start_idx = (page - 1) * per_page
+    end_idx = start_idx + per_page
+    paginated_data = filtered_data[start_idx:end_idx]
+    
+    # Calculate pagination info
+    total_pages = (total_filtered + per_page - 1) // per_page
+    has_prev = page > 1
+    has_next = page < total_pages
+    
     # Get unique values for filter dropdowns (exclude 'Escalated' since those cases are in escalation dashboard)
     risk_levels = list(set(d.get('ml_risk_level', 'Unknown') for d in processed_data if processed_data))
     statuses = list(set(d.get('status', 'Active') for d in processed_data if processed_data and d.get('status', 'Active').lower() != 'escalated'))
 
     return render_template('case_management.html', 
                          session=session_data,
-                         cases=filtered_data,
+                         cases=paginated_data,
                          escalated_count=escalated_count,
                          risk_levels=risk_levels,
                          statuses=statuses,
                          total_cases=len(processed_data),
+                         # Pagination info
+                         page=page,
+                         per_page=per_page,
+                         total_filtered=total_filtered,
+                         total_pages=total_pages,
+                         has_prev=has_prev,
+                         has_next=has_next,
                          current_filters={
                              'risk_filter': risk_filter,
                              'rule_filter': rule_filter,

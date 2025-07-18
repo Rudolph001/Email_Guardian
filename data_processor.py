@@ -116,7 +116,17 @@ class DataProcessor:
         try:
             self.logger.info(f"Starting CSV processing for session {session_id}")
 
-            # Read CSV file
+            # Check file size and read accordingly
+            import os
+            file_size = os.path.getsize(file_path)
+            self.logger.info(f"File size: {file_size / (1024*1024):.2f} MB")
+            
+            # For large files, use chunked reading
+            if file_size > 50 * 1024 * 1024:  # 50MB threshold
+                self.logger.info("Large file detected, using chunked processing")
+                return self._process_large_csv(file_path, session_id, filename)
+
+            # Read CSV file normally for smaller files
             df = pd.read_csv(file_path)
 
             if df.empty:
@@ -527,6 +537,79 @@ class DataProcessor:
             return None
         else:
             return data
+
+    def _process_large_csv(self, file_path: str, session_id: str, filename: str) -> Dict:
+        """Process large CSV files in chunks"""
+        try:
+            chunk_size = 1000
+            all_processed_data = []
+            total_records = 0
+            whitelist_count = 0
+            
+            # Read CSV headers first
+            df_sample = pd.read_csv(file_path, nrows=1)
+            csv_headers = df_sample.columns.tolist()
+            
+            # Validate CSV structure
+            validation_result = self._validate_csv(df_sample)
+            if not validation_result['valid']:
+                return {'success': False, 'error': validation_result['error']}
+            
+            # Create session
+            session_result = self.session_manager.create_session(session_id, filename, csv_headers)
+            if not session_result['success']:
+                return session_result
+            
+            self.logger.info(f"Processing large CSV in chunks of {chunk_size}")
+            
+            # Process file in chunks
+            chunk_iter = pd.read_csv(file_path, chunksize=chunk_size)
+            
+            for chunk_num, chunk_df in enumerate(chunk_iter):
+                self.logger.info(f"Processing chunk {chunk_num + 1}")
+                
+                total_records += len(chunk_df)
+                
+                # STEP 1: Apply whitelist filtering
+                df_filtered, chunk_whitelist_count = self._apply_whitelist_filtering_with_stats(chunk_df)
+                whitelist_count += chunk_whitelist_count
+                
+                # STEP 2: Apply rules
+                escalated_data, remaining_data = self._apply_rules_with_escalation(df_filtered)
+                
+                # STEP 3 & 4: ML analysis and sorting (in smaller batches)
+                if remaining_data:
+                    ml_results = self._run_ml_analysis(remaining_data)
+                    case_management_data = self._prepare_case_management_data(remaining_data, ml_results)
+                    all_processed_data.extend(escalated_data + case_management_data)
+            
+            # Save processing results
+            processing_stats = {
+                'total_records': total_records,
+                'whitelist_filtered': whitelist_count,
+                'escalated_records': len([d for d in all_processed_data if d.get('dashboard_type') == 'escalation']),
+                'case_management_records': len([d for d in all_processed_data if d.get('dashboard_type') == 'case_management']),
+                'processing_steps': [
+                    f"Step 1: Filtered {whitelist_count} whitelist domains",
+                    f"Step 2-4: Processed {len(all_processed_data)} records in chunks"
+                ]
+            }
+            
+            # Save processed data to session
+            self.logger.info(f"Saving {len(all_processed_data)} processed records to session {session_id}")
+            save_result = self.session_manager.update_session_data(session_id, all_processed_data, processing_stats)
+            
+            return {
+                'success': True,
+                'total_records': total_records,
+                'processed_records': len(all_processed_data),
+                'session_id': session_id,
+                'processing_stats': processing_stats
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error processing large CSV: {str(e)}")
+            return {'success': False, 'error': str(e)}
 
     def get_processing_summary(self, session_id: str) -> Dict:
         """Get processing summary for a session"""

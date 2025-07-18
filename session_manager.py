@@ -48,10 +48,27 @@ class SessionManager:
             return {}
 
     def save_sessions(self, sessions: Dict) -> bool:
-        """Save sessions to file"""
+        """Save sessions to file with compression for large datasets"""
         try:
-            with open(self.sessions_file, 'w') as f:
-                json.dump(sessions, f, indent=2, default=str)
+            import gzip
+            import json
+            
+            # Check if we need compression (>10MB when serialized)
+            json_str = json.dumps(sessions, default=str)
+            
+            if len(json_str) > 10 * 1024 * 1024:  # 10MB threshold
+                # Use gzip compression for large sessions
+                compressed_file = self.sessions_file + '.gz'
+                with gzip.open(compressed_file, 'wt', encoding='utf-8') as f:
+                    f.write(json_str)
+                # Keep a small metadata file
+                metadata = {sid: {k: v for k, v in session.items() if k not in ['processed_data']} 
+                          for sid, session in sessions.items()}
+                with open(self.sessions_file, 'w') as f:
+                    json.dump(metadata, f, indent=2, default=str)
+            else:
+                with open(self.sessions_file, 'w') as f:
+                    json.dump(sessions, f, indent=2, default=str)
             return True
         except Exception as e:
             self.logger.error(f"Error saving sessions: {str(e)}")
