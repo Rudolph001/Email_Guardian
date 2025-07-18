@@ -26,7 +26,8 @@ Upload limit preference: High capacity (500MB) for large email data files.
   - Created separate escalation and case management dashboards
   - Added visual progress indicators during import process
   - Updated upload modal to show processing workflow steps
-- **Migration to Replit Environment** (July 18, 2025): Successfully migrated project from Replit Agent to standard Replit environment
+- **Fixed ML Attachment Classification Bug** (July 18, 2025): Fixed critical bug where attachment classification was showing `<class 'str'>` instead of actual classification results due to duplicate function definitions in ML engine
+- **Migration to Replit Environment** (July 18, 2025): Successfully migrated project from Replit Agent to standard Replit environment with all functionality preserved
 - **Upload Limit Increase** (July 18, 2025): Increased file upload limit from 16MB to 500MB to handle large email datasets
 - **Security Configuration** (July 18, 2025): Implemented proper client/server separation with robust security practices
 

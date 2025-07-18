@@ -611,6 +611,7 @@ class MLEngine:
                     'risk_levels': [],
                     'interesting_patterns': [],
                     'clusters': [],
+                    'attachment_classifications': [],
                     'insights': {}
                 }
 
@@ -623,6 +624,7 @@ class MLEngine:
                     'risk_levels': ['Low'] * len(df),
                     'interesting_patterns': [],
                     'clusters': [-1] * len(df),
+                    'attachment_classifications': ['Unknown'] * len(df),
                     'insights': {}
                 }
 
@@ -637,6 +639,9 @@ class MLEngine:
 
             # Pattern detection
             patterns = self._detect_patterns(df, features)
+
+            # Attachment classification
+            attachment_classifications = self._classify_attachments(df)
 
             # Ensure all results are proper lists
             anomaly_scores_list = []
@@ -681,6 +686,7 @@ class MLEngine:
                 'risk_levels': risk_levels_list,
                 'interesting_patterns': patterns if isinstance(patterns, list) else [],
                 'clusters': clusters_list,
+                'attachment_classifications': attachment_classifications,
                 'insights': self._generate_insights(df, anomaly_scores_list, risk_levels_list, patterns)
             }
 
@@ -693,6 +699,7 @@ class MLEngine:
                 'risk_levels': ['Low'] * target_length,
                 'interesting_patterns': [],
                 'clusters': [-1] * target_length,
+                'attachment_classifications': ['Unknown'] * target_length,
                 'insights': {}
             }
 
