@@ -615,20 +615,26 @@ code {
     overflow-y: visible !important;
 }
 
-.dropdown {
+.actions-column {
+    position: relative !important;
+    width: 120px;
+}
+
+.actions-column .dropdown {
     position: static !important;
 }
 
-.dropdown-menu {
+.actions-column .dropdown-menu {
     position: absolute !important;
-    z-index: 1050 !important;
-    min-width: 200px;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    z-index: 1060 !important;
+    min-width: 180px;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
     right: 0 !important;
     left: auto !important;
     top: 100% !important;
     transform: none !important;
+    margin-top: 0 !important;
 }
 
 .table td {
@@ -652,12 +658,11 @@ code {
     font-size: 0.875rem;
 }
 
-/* Ensure actions column has proper positioning */
-.actions-column {
-    position: relative;
-    width: 120px;
-}
-
 .btn-group {
     position: relative;
+}
+
+/* Ensure table container allows dropdowns to overflow */
+.card-body {
+    overflow: visible !important;
 }
