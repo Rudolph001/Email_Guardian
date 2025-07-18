@@ -310,7 +310,8 @@ function addCondition() {
     newRow.innerHTML = `
         <div class="row">
             <div class="col-md-4">
-                <select class="form-select" name="condition_field_${conditionCounter}">
+                <select class="form-select" name="condition_field_${conditionCounter}" onchange="updateConditionValue(this, ${conditionCounter})">
+                    <option value="">Select Field</option>
                     <option value="leaver">Leaver</option>
                     <option value="wordlist_subject">Wordlist Subject</option>
                     <option value="wordlist_attachment">Wordlist Attachment</option>
@@ -329,7 +330,7 @@ function addCondition() {
                 </select>
             </div>
             <div class="col-md-4">
-                <input type="text" class="form-control" name="condition_value_${conditionCounter}" placeholder="Value">
+                <input type="text" class="form-control" name="condition_value_${conditionCounter}" placeholder="Value" id="condition_value_${conditionCounter}">
             </div>
             <div class="col-md-1">
                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeCondition(this)">
@@ -337,8 +338,55 @@ function addCondition() {
                 </button>
             </div>
         </div>
+        <div class="row mt-2">
+            <div class="col-md-11">
+                <div class="alert alert-success py-2" id="condition_values_${conditionCounter}" style="display: none;">
+                    <small><strong>Common Values:</strong> <span id="condition_values_list_${conditionCounter}"></span></small>
+                </div>
+            </div>
+        </div>
     `;
     container.appendChild(newRow);
+}
+
+function updateConditionValue(selectElement, conditionId) {
+    const fieldType = selectElement.value;
+    const valueInput = document.getElementById(`condition_value_${conditionId}`);
+    const valuesDiv = document.getElementById(`condition_values_${conditionId}`);
+    const valuesList = document.getElementById(`condition_values_list_${conditionId}`);
+    
+    // Clear previous values
+    valueInput.value = '';
+    valuesDiv.style.display = 'none';
+    
+    if (fieldType === 'leaver') {
+        valueInput.placeholder = 'Yes or No';
+        valuesList.innerHTML = '<code>Yes</code>, <code>No</code>';
+        valuesDiv.style.display = 'block';
+    } else if (fieldType === 'wordlist_subject' || fieldType === 'wordlist_attachment') {
+        valueInput.placeholder = 'Yes or No';
+        valuesList.innerHTML = '<code>Yes</code>, <code>No</code>';
+        valuesDiv.style.display = 'block';
+    } else if (fieldType === 'status') {
+        valueInput.placeholder = 'Email status';
+        valuesList.innerHTML = '<code>Active</code>, <code>Blocked</code>, <code>Sent</code>, <code>Delivered</code>';
+        valuesDiv.style.display = 'block';
+    } else if (fieldType === 'sender') {
+        valueInput.placeholder = 'Email address (e.g., user@domain.com)';
+        valuesList.innerHTML = 'Any email address or domain pattern';
+        valuesDiv.style.display = 'block';
+    } else if (fieldType === 'subject') {
+        valueInput.placeholder = 'Text to match in subject';
+        valuesList.innerHTML = 'Any text content or keywords';
+        valuesDiv.style.display = 'block';
+    } else if (fieldType === 'recipients_email_domain') {
+        valueInput.placeholder = 'Domain name (e.g., gmail.com)';
+        valuesList.innerHTML = '<code>gmail.com</code>, <code>outlook.com</code>, <code>company.com</code>';
+        valuesDiv.style.display = 'block';
+    } else {
+        valueInput.placeholder = 'Value';
+        valuesDiv.style.display = 'none';
+    }
 }
 
 function removeCondition(button) {
@@ -353,14 +401,18 @@ function addAction() {
     newRow.innerHTML = `
         <div class="row">
             <div class="col-md-4">
-                <select class="form-select" name="action_type_${actionCounter}">
+                <select class="form-select" name="action_type_${actionCounter}" onchange="updateActionValue(this, ${actionCounter})">
+                    <option value="">Select Action Type</option>
                     <option value="mark_priority">Mark Priority</option>
                     <option value="escalate">Escalate</option>
                     <option value="notify">Notify</option>
                 </select>
             </div>
             <div class="col-md-7">
-                <input type="text" class="form-control" name="action_value_${actionCounter}" placeholder="Value">
+                <div class="position-relative">
+                    <input type="text" class="form-control" name="action_value_${actionCounter}" placeholder="Value" id="action_value_${actionCounter}">
+                    <div class="invalid-feedback" id="action_help_${actionCounter}"></div>
+                </div>
             </div>
             <div class="col-md-1">
                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeAction(this)">
@@ -368,8 +420,45 @@ function addAction() {
                 </button>
             </div>
         </div>
+        <div class="row mt-2">
+            <div class="col-md-11">
+                <div class="alert alert-info py-2" id="action_values_${actionCounter}" style="display: none;">
+                    <small><strong>Available Values:</strong> <span id="values_list_${actionCounter}"></span></small>
+                </div>
+            </div>
+        </div>
     `;
     container.appendChild(newRow);
+}
+
+function updateActionValue(selectElement, actionId) {
+    const actionType = selectElement.value;
+    const valueInput = document.getElementById(`action_value_${actionId}`);
+    const helpDiv = document.getElementById(`action_help_${actionId}`);
+    const valuesDiv = document.getElementById(`action_values_${actionId}`);
+    const valuesList = document.getElementById(`values_list_${actionId}`);
+    
+    // Clear previous values
+    valueInput.value = '';
+    helpDiv.textContent = '';
+    valuesDiv.style.display = 'none';
+    
+    if (actionType === 'mark_priority') {
+        valueInput.placeholder = 'Priority level (Critical, High, Medium, Low)';
+        valuesList.innerHTML = '<code>Critical</code>, <code>High</code>, <code>Medium</code>, <code>Low</code>';
+        valuesDiv.style.display = 'block';
+    } else if (actionType === 'escalate') {
+        valueInput.placeholder = 'true or false';
+        valuesList.innerHTML = '<code>true</code>, <code>false</code>';
+        valuesDiv.style.display = 'block';
+    } else if (actionType === 'notify') {
+        valueInput.placeholder = 'Notification message';
+        valuesList.innerHTML = 'Any descriptive text message';
+        valuesDiv.style.display = 'block';
+    } else {
+        valueInput.placeholder = 'Value';
+        valuesDiv.style.display = 'none';
+    }
 }
 
 function removeAction(button) {
