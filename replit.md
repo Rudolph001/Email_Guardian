@@ -19,6 +19,7 @@ Upload limit preference: High capacity (500MB) for large email data files.
   - Background: Clean light gray (#f8fafc) for minimal professional appearance
   - Added Inter font family for modern, corporate typography
   - Updated all UI elements to match new corporate branding standards
+  - Removed escalation counter badge from case management view for cleaner interface
 - **Updated Rule Processing Workflow** (July 18, 2025):
   - Changed rule matches to go to case management dashboard with Critical risk level instead of directly to escalation
   - Only manually escalated cases (via escalate button) now appear in escalation dashboard

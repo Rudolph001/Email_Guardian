@@ -27,9 +27,6 @@
                 <a href="{{ url_for('escalation_dashboard', session_id=session.session_id) }}" 
                    class="btn btn-danger">
                     <i class="fas fa-exclamation-triangle me-2"></i>Escalations
-                    <span class="badge bg-white text-danger ms-1">
-                        {{ escalated_count }}
-                    </span>
                 </a>
                 <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
                     <i class="fas fa-home me-2"></i>All Sessions
