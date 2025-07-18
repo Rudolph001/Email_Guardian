@@ -171,7 +171,7 @@
                         <th>Risk Level</th>
                         <th>Rule Matches</th>
                         <th>Status</th>
-                        <th style="width: 180px;">Actions</th>
+                        <th style="width: 220px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -276,36 +276,33 @@
                             <span class="badge bg-secondary">{{ status }}</span>
                             {% endif %}
                         </td>
-                        <td style="min-width: 180px; width: 180px;">
-                            <div class="btn-group btn-group-sm" style="white-space: nowrap;">
+                        <td class="actions-column">
+                            <div class="d-flex gap-1 flex-wrap">
                                 <button class="btn btn-outline-primary btn-sm" 
                                         onclick="viewEscalationDetails('{{ session.session_id }}', '{{ escalation.get('record_id', loop.index0) }}')"
                                         title="View Details">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <div class="dropdown position-relative">
-                                    <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
-                                            type="button" data-bs-toggle="dropdown"
-                                            data-bs-auto-close="true"
-                                            style="border-left: 1px solid #dee2e6;">
-                                        <i class="fas fa-cog"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end" style="min-width: 200px; z-index: 1050; position: absolute;">
-                                        <li><a class="dropdown-item" href="#" onclick="generateEscalationEmail('{{ session.session_id }}', '{{ escalation.get('record_id', loop.index0) }}')">
-                                            <i class="fas fa-envelope text-primary me-2"></i>Generate Email
-                                        </a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item" href="#" onclick="resolveEscalation('{{ session.session_id }}', '{{ escalation.get('record_id', loop.index0) }}', 'Resolved', 'Threat mitigated')">
-                                            <i class="fas fa-check-circle text-success me-2"></i>Mark as Resolved
-                                        </a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="updateEscalationStatus('{{ session.session_id }}', '{{ escalation.get('record_id', loop.index0) }}', 'Under Investigation')">
-                                            <i class="fas fa-search text-warning me-2"></i>Under Investigation
-                                        </a></li>
-                                        <li><a class="dropdown-item" href="#" onclick="resolveEscalation('{{ session.session_id }}', '{{ escalation.get('record_id', loop.index0) }}', 'False Positive', 'Determined to be safe')">
-                                            <i class="fas fa-times-circle text-info me-2"></i>False Positive
-                                        </a></li>
-                                    </ul>
-                                </div>
+                                <button class="btn btn-outline-info btn-sm" 
+                                        onclick="generateEscalationEmail('{{ session.session_id }}', '{{ escalation.get('record_id', loop.index0) }}')"
+                                        title="Generate Email">
+                                    <i class="fas fa-envelope"></i>
+                                </button>
+                                <button class="btn btn-outline-warning btn-sm" 
+                                        onclick="updateEscalationStatus('{{ session.session_id }}', '{{ escalation.get('record_id', loop.index0) }}', 'Under Investigation')"
+                                        title="Under Investigation">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                                <button class="btn btn-outline-success btn-sm" 
+                                        onclick="resolveEscalation('{{ session.session_id }}', '{{ escalation.get('record_id', loop.index0) }}', 'Resolved', 'Threat mitigated')"
+                                        title="Mark as Resolved">
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" 
+                                        onclick="resolveEscalation('{{ session.session_id }}', '{{ escalation.get('record_id', loop.index0) }}', 'False Positive', 'Determined to be safe')"
+                                        title="False Positive">
+                                    <i class="fas fa-times-circle"></i>
+                                </button>
                             </div>
                         </td>
                     </tr>

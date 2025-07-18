@@ -664,8 +664,8 @@ code {
 
 /* Actions column styling */
 .actions-column {
-    width: 180px;
-    min-width: 180px;
+    width: 220px;
+    min-width: 220px;
 }
 
 .actions-column .btn-sm {
@@ -679,6 +679,12 @@ code {
 .actions-column .d-flex {
     justify-content: flex-start;
     align-items: center;
+}
+
+/* Specific styling for case management actions column */
+.case-management .actions-column {
+    width: 180px;
+    min-width: 180px;
 }
 
 /* Ensure table container allows dropdowns to overflow */
