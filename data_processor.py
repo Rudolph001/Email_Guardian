@@ -220,45 +220,82 @@ class DataProcessor:
     def _merge_ml_results(self, processed_data: List[Dict], ml_results: Dict) -> List[Dict]:
         """Merge ML analysis results with processed data"""
         try:
-            # Safely get ML results with proper type checking
+            # Safely get ML results with proper type checking and handle all possible types
             anomaly_scores = ml_results.get('anomaly_scores', [])
             risk_levels = ml_results.get('risk_levels', [])
             clusters = ml_results.get('clusters', [])
             
-            # Ensure we have lists, not other types
-            if not isinstance(anomaly_scores, list):
+            # Ensure we have lists, not other types (including bool, dict, str, etc.)
+            if not isinstance(anomaly_scores, (list, tuple)):
+                self.logger.warning(f"anomaly_scores is not a list/tuple, got {type(anomaly_scores)}: {anomaly_scores}")
                 anomaly_scores = []
-            if not isinstance(risk_levels, list):
+            if not isinstance(risk_levels, (list, tuple)):
+                self.logger.warning(f"risk_levels is not a list/tuple, got {type(risk_levels)}: {risk_levels}")
                 risk_levels = []
-            if not isinstance(clusters, list):
+            if not isinstance(clusters, (list, tuple)):
+                self.logger.warning(f"clusters is not a list/tuple, got {type(clusters)}: {clusters}")
                 clusters = []
             
+            # Convert to lists if they are tuples
+            anomaly_scores = list(anomaly_scores) if isinstance(anomaly_scores, tuple) else anomaly_scores
+            risk_levels = list(risk_levels) if isinstance(risk_levels, tuple) else risk_levels
+            clusters = list(clusters) if isinstance(clusters, tuple) else clusters
+            
             for i, record in enumerate(processed_data):
-                if i < len(anomaly_scores) and isinstance(anomaly_scores[i], (int, float)):
-                    record['ml_anomaly_score'] = float(anomaly_scores[i])
-                else:
+                # Safely handle anomaly scores
+                try:
+                    if i < len(anomaly_scores) and isinstance(anomaly_scores[i], (int, float)):
+                        record['ml_anomaly_score'] = float(anomaly_scores[i])
+                    else:
+                        record['ml_anomaly_score'] = 0.0
+                except (IndexError, TypeError, ValueError) as e:
+                    self.logger.warning(f"Error processing anomaly score for record {i}: {e}")
                     record['ml_anomaly_score'] = 0.0
                 
-                if i < len(risk_levels) and isinstance(risk_levels[i], str):
-                    record['ml_risk_level'] = risk_levels[i]
-                else:
+                # Safely handle risk levels
+                try:
+                    if i < len(risk_levels) and isinstance(risk_levels[i], str):
+                        record['ml_risk_level'] = risk_levels[i]
+                    else:
+                        record['ml_risk_level'] = 'Low'
+                except (IndexError, TypeError) as e:
+                    self.logger.warning(f"Error processing risk level for record {i}: {e}")
                     record['ml_risk_level'] = 'Low'
                 
-                if i < len(clusters) and isinstance(clusters[i], (int, float)):
-                    record['ml_cluster'] = int(clusters[i])
-                else:
+                # Safely handle clusters
+                try:
+                    if i < len(clusters) and isinstance(clusters[i], (int, float)):
+                        record['ml_cluster'] = int(clusters[i])
+                    else:
+                        record['ml_cluster'] = -1
+                except (IndexError, TypeError, ValueError) as e:
+                    self.logger.warning(f"Error processing cluster for record {i}: {e}")
                     record['ml_cluster'] = -1
                 
                 # Add detailed anomaly analysis for high-anomaly emails
-                if record['ml_anomaly_score'] > 0.7:
-                    record['anomaly_details'] = self.ml_engine.analyze_anomaly_details(record)
-                else:
+                try:
+                    if record['ml_anomaly_score'] > 0.7:
+                        record['anomaly_details'] = self.ml_engine.analyze_anomaly_details(record)
+                    else:
+                        record['anomaly_details'] = []
+                except Exception as e:
+                    self.logger.warning(f"Error getting anomaly details for record {i}: {e}")
                     record['anomaly_details'] = []
             
             return processed_data
             
         except Exception as e:
             self.logger.error(f"Error merging ML results: {str(e)}")
+            # Return processed data with default ML values if merging fails
+            for record in processed_data:
+                if 'ml_anomaly_score' not in record:
+                    record['ml_anomaly_score'] = 0.0
+                if 'ml_risk_level' not in record:
+                    record['ml_risk_level'] = 'Low'
+                if 'ml_cluster' not in record:
+                    record['ml_cluster'] = -1
+                if 'anomaly_details' not in record:
+                    record['anomaly_details'] = []
             return processed_data
     
     def get_domain_stats(self, processed_data: List[Dict]) -> Dict:
