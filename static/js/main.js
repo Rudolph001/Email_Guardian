@@ -763,14 +763,16 @@ function updateAttachmentRiskDisplay(data) {
         const factorsList = Object.entries(data.top_risk_factors)
             .slice(0, 5)
             .map(([factor, count]) => 
-                `<li class="d-flex justify-content-between mb-1">
-                    <span class="text-truncate" style="max-width: 200px;" title="${factor}">${factor}</span>
+                `<div class="d-flex justify-content-between align-items-start mb-2">
+                    <div class="flex-grow-1 me-2">
+                        <small class="text-dark" title="${factor}">${factor}</small>
+                    </div>
                     <span class="badge bg-secondary">${count}</span>
-                </li>`)
+                </div>`)
             .join('');
         
         topRiskFactorsElement.innerHTML = factorsList;
     } else {
-        topRiskFactorsElement.innerHTML = '<li><small class="text-muted">No risk factors found</small></li>';
+        topRiskFactorsElement.innerHTML = '<div class="text-muted small">No risk factors found</div>';
     }
 }
