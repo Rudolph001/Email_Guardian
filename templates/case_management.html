@@ -34,6 +34,9 @@
                 <button type="button" class="btn btn-outline-warning" onclick="checkProcessingErrors()">
                     <i class="fas fa-exclamation-triangle me-2"></i>Check Errors
                 </button>
+                <button type="button" class="btn btn-outline-info" onclick="toggleAdvancedML()">
+                    <i class="fas fa-brain me-2"></i>Advanced ML Analysis
+                </button>
             </div>
         </div>
 
@@ -1153,5 +1156,184 @@ document.addEventListener('DOMContentLoaded', function() {
     // Auto-check for errors if needed
     autoCheckErrors();
 });
+
+// Advanced ML Analysis Functions
+window.toggleAdvancedML = function() {
+    const existingSection = document.getElementById('advanced-ml-section');
+    if (existingSection) {
+        existingSection.remove();
+        return;
+    }
+    
+    const mlSection = document.createElement('div');
+    mlSection.id = 'advanced-ml-section';
+    mlSection.className = 'container-fluid mt-4';
+    mlSection.innerHTML = `
+        <div class="card">
+            <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-brain"></i> Advanced ML Intelligence Analysis
+                    <button class="btn btn-sm btn-outline-light float-end" onclick="toggleAdvancedML()">
+                        <i class="fas fa-times"></i> Close
+                    </button>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-12">
+                        <div class="btn-group mb-3" role="group">
+                            <button type="button" class="btn btn-primary" onclick="runAdvancedMLAnalysis()">
+                                <i class="fas fa-cogs"></i> Run Complete Analysis
+                            </button>
+                            <button type="button" class="btn btn-outline-success" onclick="loadJustificationAnalysisML()">
+                                <i class="fas fa-comments"></i> Justification Risk
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="loadDomainIntelligenceML()">
+                                <i class="fas fa-globe"></i> Domain Intelligence
+                            </button>
+                            <button type="button" class="btn btn-outline-warning" onclick="loadCommunicationPatternsML()">
+                                <i class="fas fa-network-wired"></i> Communication Analysis
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" onclick="loadTemporalAnalysisML()">
+                                <i class="fas fa-clock"></i> Time Patterns
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="mlLoadingIndicator" class="text-center py-4" style="display: none;">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <p class="mt-2">Running advanced ML analysis...</p>
+                </div>
+                
+                <div id="mlAnalysisResults" class="row"></div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(mlSection);
+    mlSection.scrollIntoView({ behavior: 'smooth' });
+};
+
+window.runAdvancedMLAnalysis = async function() {
+    const sessionId = window.location.pathname.split('/').pop();
+    const loadingIndicator = document.getElementById('mlLoadingIndicator');
+    const resultsContainer = document.getElementById('mlAnalysisResults');
+    
+    loadingIndicator.style.display = 'block';
+    
+    try {
+        const response = await fetch(`/api/advanced_ml_analysis/${sessionId}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
+        const insights = data.insights_report || {};
+        const summary = insights.executive_summary || {};
+        
+        resultsContainer.innerHTML = `
+            <div class="col-md-12 mb-4">
+                <div class="card border-success">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0"><i class="fas fa-chart-line"></i> ML Analysis Summary</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-3">
+                                <h5 class="text-success">${summary.total_ml_analyses_performed || 0}</h5>
+                                <small>Analyses Complete</small>
+                            </div>
+                            <div class="col-md-3">
+                                <h5 class="text-warning">${summary.high_risk_areas_identified || 0}</h5>
+                                <small>High Risk Found</small>
+                            </div>
+                            <div class="col-md-3">
+                                <h5 class="text-info">${summary.anomalies_detected || 0}</h5>
+                                <small>Anomalies</small>
+                            </div>
+                            <div class="col-md-3">
+                                <h5 class="text-primary">${data.total_records_analyzed || 0}</h5>
+                                <small>Records</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-12">
+                <div class="card border-info">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0"><i class="fas fa-lightbulb"></i> Key Security Insights</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-success">
+                            <i class="fas fa-check-circle"></i>
+                            Advanced ML analysis completed successfully. Individual analysis modules are available via the buttons above.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        console.log('Advanced ML Analysis completed:', data);
+        
+    } catch (error) {
+        console.error('Error running advanced ML analysis:', error);
+        resultsContainer.innerHTML = `
+            <div class="col-12">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i> Failed to run analysis: ${error.message}
+                </div>
+            </div>
+        `;
+    } finally {
+        loadingIndicator.style.display = 'none';
+    }
+};
+
+window.loadJustificationAnalysisML = async function() {
+    const sessionId = window.location.pathname.split('/').pop();
+    try {
+        const response = await fetch(`/api/justification_analysis/${sessionId}`);
+        const data = await response.json();
+        console.log('Justification analysis loaded:', data);
+    } catch (error) {
+        console.error('Error loading justification analysis:', error);
+    }
+};
+
+window.loadDomainIntelligenceML = async function() {
+    const sessionId = window.location.pathname.split('/').pop();
+    try {
+        const response = await fetch(`/api/recipient_domain_intelligence/${sessionId}`);
+        const data = await response.json();
+        console.log('Domain intelligence loaded:', data);
+    } catch (error) {
+        console.error('Error loading domain intelligence:', error);
+    }
+};
+
+window.loadCommunicationPatternsML = async function() {
+    const sessionId = window.location.pathname.split('/').pop();
+    try {
+        const response = await fetch(`/api/communication_patterns/${sessionId}`);
+        const data = await response.json();
+        console.log('Communication patterns loaded:', data);
+    } catch (error) {
+        console.error('Error loading communication patterns:', error);
+    }
+};
+
+window.loadTemporalAnalysisML = async function() {
+    const sessionId = window.location.pathname.split('/').pop();
+    try {
+        const response = await fetch(`/api/temporal_anomalies/${sessionId}`);
+        const data = await response.json();
+        console.log('Temporal analysis loaded:', data);
+    } catch (error) {
+        console.error('Error loading temporal analysis:', error);
+    }
+};
 </script>
 {% endblock %}

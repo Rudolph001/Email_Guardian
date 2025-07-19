@@ -6,6 +6,7 @@ from session_manager import SessionManager
 from data_processor import DataProcessor
 from rule_engine import RuleEngine
 from ml_engine import MLEngine
+from advanced_ml_engine import AdvancedMLEngine
 from domain_manager import DomainManager
 import os
 import pandas as pd
@@ -1168,6 +1169,170 @@ def get_processing_errors(session_id):
             'processing_failed': True,
             'total_errors': 1
         }), 500
+
+@app.route('/api/advanced_ml_analysis/<session_id>')
+def advanced_ml_analysis(session_id):
+    """Advanced ML analysis with justification sentiment, domain behavior, and communication patterns"""
+    try:
+        session_manager = SessionManager()
+        processed_data = session_manager.get_processed_data(session_id)
+        
+        if not processed_data:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        # Convert to DataFrame for analysis
+        df = pd.DataFrame(processed_data)
+        
+        if df.empty:
+            return jsonify({'error': 'No data available'}), 404
+        
+        # Run comprehensive ML analysis
+        advanced_ml_engine = AdvancedMLEngine()
+        analysis_results = advanced_ml_engine.analyze_comprehensive_email_data(df)
+        
+        # Generate insights report
+        insights_report = advanced_ml_engine.generate_ml_insights_report(analysis_results)
+        
+        return jsonify({
+            'analysis_results': analysis_results,
+            'insights_report': insights_report,
+            'total_records_analyzed': len(df),
+            'analysis_timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error in advanced ML analysis: {str(e)}")
+        return jsonify({'error': f'Analysis failed: {str(e)}'}), 500
+
+@app.route('/api/justification_analysis/<session_id>')
+def justification_analysis(session_id):
+    """Detailed analysis of justification field content"""
+    try:
+        session_manager = SessionManager()
+        processed_data = session_manager.get_processed_data(session_id)
+        
+        if not processed_data:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        df = pd.DataFrame(processed_data)
+        
+        if 'justification' not in df.columns:
+            return jsonify({'error': 'No justification field found'}), 404
+        
+        advanced_ml_engine = AdvancedMLEngine()
+        justification_results = advanced_ml_engine._analyze_justifications(df)
+        
+        return jsonify({
+            'justification_analysis': justification_results,
+            'total_justifications': len(df),
+            'analysis_timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error in justification analysis: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/recipient_domain_intelligence/<session_id>')
+def recipient_domain_intelligence(session_id):
+    """Advanced recipient domain behavior analysis"""
+    try:
+        session_manager = SessionManager()
+        processed_data = session_manager.get_processed_data(session_id)
+        
+        if not processed_data:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        df = pd.DataFrame(processed_data)
+        
+        advanced_ml_engine = AdvancedMLEngine()
+        domain_results = advanced_ml_engine._analyze_recipient_domains(df)
+        
+        return jsonify({
+            'domain_intelligence': domain_results,
+            'total_records': len(df),
+            'analysis_timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error in domain intelligence: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/communication_patterns/<session_id>')
+def communication_patterns_analysis(session_id):
+    """Email communication patterns and network analysis"""
+    try:
+        session_manager = SessionManager()
+        processed_data = session_manager.get_processed_data(session_id)
+        
+        if not processed_data:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        df = pd.DataFrame(processed_data)
+        
+        advanced_ml_engine = AdvancedMLEngine()
+        comm_results = advanced_ml_engine._analyze_communication_patterns(df)
+        network_results = advanced_ml_engine._analyze_email_networks(df)
+        
+        return jsonify({
+            'communication_patterns': comm_results,
+            'network_analysis': network_results,
+            'total_records': len(df),
+            'analysis_timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error in communication patterns analysis: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/temporal_anomalies/<session_id>')
+def temporal_anomalies_analysis(session_id):
+    """Temporal pattern analysis and anomaly detection"""
+    try:
+        session_manager = SessionManager()
+        processed_data = session_manager.get_processed_data(session_id)
+        
+        if not processed_data:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        df = pd.DataFrame(processed_data)
+        
+        advanced_ml_engine = AdvancedMLEngine()
+        temporal_results = advanced_ml_engine._analyze_temporal_patterns(df)
+        
+        return jsonify({
+            'temporal_analysis': temporal_results,
+            'total_records': len(df),
+            'analysis_timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error in temporal analysis: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/behavioral_clustering/<session_id>')
+def behavioral_clustering_analysis(session_id):
+    """User behavioral clustering and pattern recognition"""
+    try:
+        session_manager = SessionManager()
+        processed_data = session_manager.get_processed_data(session_id)
+        
+        if not processed_data:
+            return jsonify({'error': 'Session not found'}), 404
+        
+        df = pd.DataFrame(processed_data)
+        
+        advanced_ml_engine = AdvancedMLEngine()
+        clustering_results = advanced_ml_engine._cluster_user_behavior(df)
+        
+        return jsonify({
+            'behavioral_clustering': clustering_results,
+            'total_records': len(df),
+            'analysis_timestamp': datetime.now().isoformat()
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error in behavioral clustering: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/bau_analysis/<session_id>')
 def bau_analysis(session_id):

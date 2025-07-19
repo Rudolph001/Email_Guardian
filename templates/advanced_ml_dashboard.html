@@ -1,0 +1,508 @@
+<!-- Advanced ML Analysis Dashboard -->
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-brain"></i> Advanced ML Intelligence Dashboard
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Quick Actions -->
+                        <div class="col-md-12 mb-4">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-outline-primary" onclick="runAdvancedAnalysis()">
+                                    <i class="fas fa-cogs"></i> Run Complete Analysis
+                                </button>
+                                <button type="button" class="btn btn-outline-success" onclick="loadJustificationAnalysis()">
+                                    <i class="fas fa-comments"></i> Justification Analysis
+                                </button>
+                                <button type="button" class="btn btn-outline-info" onclick="loadDomainIntelligence()">
+                                    <i class="fas fa-globe"></i> Domain Intelligence
+                                </button>
+                                <button type="button" class="btn btn-outline-warning" onclick="loadCommunicationPatterns()">
+                                    <i class="fas fa-network-wired"></i> Communication Patterns
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="loadTemporalAnalysis()">
+                                    <i class="fas fa-clock"></i> Temporal Analysis
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Results Container -->
+                    <div id="analysisResults" class="row" style="display: none;">
+                        <!-- Executive Summary -->
+                        <div class="col-md-12 mb-4">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="fas fa-chart-line"></i> Executive Summary</h6>
+                                </div>
+                                <div class="card-body" id="executiveSummary">
+                                    <div class="row text-center">
+                                        <div class="col-md-3">
+                                            <h5 class="text-success" id="totalAnalyses">0</h5>
+                                            <small>ML Analyses Run</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h5 class="text-warning" id="highRiskItems">0</h5>
+                                            <small>High Risk Items</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h5 class="text-info" id="anomaliesDetected">0</h5>
+                                            <small>Anomalies Detected</small>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <h5 class="text-primary" id="recordsAnalyzed">0</h5>
+                                            <small>Records Analyzed</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Justification Analysis -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="fas fa-comments"></i> Justification Risk Analysis</h6>
+                                </div>
+                                <div class="card-body" id="justificationAnalysis">
+                                    <div class="loading-indicator">
+                                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                                        <span class="ms-2">Analyzing justifications...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Domain Intelligence -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-info">
+                                <div class="card-header bg-info text-white">
+                                    <h6 class="mb-0"><i class="fas fa-globe"></i> Recipient Domain Intelligence</h6>
+                                </div>
+                                <div class="card-body" id="domainIntelligence">
+                                    <div class="loading-indicator">
+                                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                                        <span class="ms-2">Analyzing domains...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Communication Patterns -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0"><i class="fas fa-network-wired"></i> Communication Patterns</h6>
+                                </div>
+                                <div class="card-body" id="communicationPatterns">
+                                    <div class="loading-indicator">
+                                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                                        <span class="ms-2">Analyzing communication patterns...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Temporal Analysis -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-secondary">
+                                <div class="card-header bg-secondary text-white">
+                                    <h6 class="mb-0"><i class="fas fa-clock"></i> Temporal Anomalies</h6>
+                                </div>
+                                <div class="card-body" id="temporalAnalysis">
+                                    <div class="loading-indicator">
+                                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                                        <span class="ms-2">Analyzing temporal patterns...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Behavioral Clustering -->
+                        <div class="col-md-12 mb-4">
+                            <div class="card border-dark">
+                                <div class="card-header bg-dark text-white">
+                                    <h6 class="mb-0"><i class="fas fa-users"></i> User Behavioral Clustering</h6>
+                                </div>
+                                <div class="card-body" id="behavioralClustering">
+                                    <div class="loading-indicator">
+                                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                                        <span class="ms-2">Clustering user behaviors...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Key Findings -->
+                        <div class="col-md-12">
+                            <div class="card border-danger">
+                                <div class="card-header bg-danger text-white">
+                                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Key Security Findings</h6>
+                                </div>
+                                <div class="card-body" id="keyFindings">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        Run advanced analysis to discover key security insights from your email data.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loading Indicator -->
+                    <div id="mainLoadingIndicator" class="text-center py-4" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Running advanced ML analysis on your email data...</p>
+                        <small class="text-muted">This may take a few moments for large datasets</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Advanced ML Dashboard JavaScript
+let currentSessionId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Get session ID from URL or current page
+    const pathParts = window.location.pathname.split('/');
+    currentSessionId = pathParts[pathParts.length - 1];
+    
+    console.log('Advanced ML Dashboard initialized for session:', currentSessionId);
+});
+
+async function runAdvancedAnalysis() {
+    if (!currentSessionId) {
+        alert('No session ID found');
+        return;
+    }
+
+    document.getElementById('mainLoadingIndicator').style.display = 'block';
+    document.getElementById('analysisResults').style.display = 'none';
+
+    try {
+        const response = await fetch(`/api/advanced_ml_analysis/${currentSessionId}`);
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        displayAdvancedAnalysisResults(data);
+        document.getElementById('analysisResults').style.display = 'block';
+
+        // Load individual analyses
+        await Promise.all([
+            loadJustificationAnalysis(),
+            loadDomainIntelligence(),
+            loadCommunicationPatterns(),
+            loadTemporalAnalysis(),
+            loadBehavioralClustering()
+        ]);
+
+    } catch (error) {
+        console.error('Error running advanced analysis:', error);
+        showError('Failed to run advanced analysis: ' + error.message);
+    } finally {
+        document.getElementById('mainLoadingIndicator').style.display = 'none';
+    }
+}
+
+function displayAdvancedAnalysisResults(data) {
+    // Update executive summary
+    const insights = data.insights_report || {};
+    const summary = insights.executive_summary || {};
+    
+    document.getElementById('totalAnalyses').textContent = summary.total_ml_analyses_performed || 0;
+    document.getElementById('highRiskItems').textContent = summary.high_risk_areas_identified || 0;
+    document.getElementById('anomaliesDetected').textContent = summary.anomalies_detected || 0;
+    document.getElementById('recordsAnalyzed').textContent = data.total_records_analyzed || 0;
+
+    // Display key findings
+    const findings = insights.key_findings || [];
+    const findingsHtml = findings.length > 0 ? 
+        findings.map(finding => `<div class="alert alert-warning mb-2"><i class="fas fa-exclamation-triangle"></i> ${finding}</div>`).join('') :
+        '<div class="alert alert-success"><i class="fas fa-check-circle"></i> No critical security issues detected</div>';
+    
+    document.getElementById('keyFindings').innerHTML = findingsHtml;
+}
+
+async function loadJustificationAnalysis() {
+    try {
+        const response = await fetch(`/api/justification_analysis/${currentSessionId}`);
+        const data = await response.json();
+
+        if (data.error) {
+            document.getElementById('justificationAnalysis').innerHTML = 
+                `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> ${data.error}</div>`;
+            return;
+        }
+
+        const analysis = data.justification_analysis;
+        let html = '';
+
+        if (analysis.risk_scores && analysis.risk_scores.length > 0) {
+            const avgRiskScore = (analysis.risk_scores.reduce((a, b) => a + b, 0) / analysis.risk_scores.length).toFixed(2);
+            const highRiskCount = analysis.risk_scores.filter(score => score > 5).length;
+            const urgentCount = analysis.urgency_indicators ? analysis.urgency_indicators.filter(Boolean).length : 0;
+
+            html = `
+                <div class="row text-center mb-3">
+                    <div class="col-4">
+                        <h6 class="text-primary">${avgRiskScore}</h6>
+                        <small>Avg Risk Score</small>
+                    </div>
+                    <div class="col-4">
+                        <h6 class="text-danger">${highRiskCount}</h6>
+                        <small>High Risk</small>
+                    </div>
+                    <div class="col-4">
+                        <h6 class="text-warning">${urgentCount}</h6>
+                        <small>Urgent Indicators</small>
+                    </div>
+                </div>
+                <div class="progress mb-2">
+                    <div class="progress-bar bg-danger" style="width: ${(highRiskCount / analysis.risk_scores.length * 100).toFixed(1)}%"></div>
+                </div>
+                <small class="text-muted">${highRiskCount} of ${analysis.risk_scores.length} justifications flagged as high risk</small>
+            `;
+        } else {
+            html = '<div class="alert alert-info">No justification data available for analysis</div>';
+        }
+
+        document.getElementById('justificationAnalysis').innerHTML = html;
+
+    } catch (error) {
+        document.getElementById('justificationAnalysis').innerHTML = 
+            '<div class="alert alert-danger">Error loading justification analysis</div>';
+    }
+}
+
+async function loadDomainIntelligence() {
+    try {
+        const response = await fetch(`/api/recipient_domain_intelligence/${currentSessionId}`);
+        const data = await response.json();
+
+        if (data.error) {
+            document.getElementById('domainIntelligence').innerHTML = 
+                `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> ${data.error}</div>`;
+            return;
+        }
+
+        const analysis = data.domain_intelligence;
+        let html = '';
+
+        if (analysis.domain_frequency) {
+            const totalDomains = Object.keys(analysis.domain_frequency).length;
+            const externalDomains = analysis.external_domains ? analysis.external_domains.size : 0;
+            const suspiciousDomains = analysis.suspicious_domains ? analysis.suspicious_domains.length : 0;
+
+            html = `
+                <div class="row text-center mb-3">
+                    <div class="col-4">
+                        <h6 class="text-info">${totalDomains}</h6>
+                        <small>Total Domains</small>
+                    </div>
+                    <div class="col-4">
+                        <h6 class="text-warning">${externalDomains}</h6>
+                        <small>External</small>
+                    </div>
+                    <div class="col-4">
+                        <h6 class="text-danger">${suspiciousDomains}</h6>
+                        <small>Suspicious</small>
+                    </div>
+                </div>
+            `;
+
+            if (analysis.top_external_domains) {
+                html += '<h6>Top External Domains:</h6><ul class="list-unstyled">';
+                Object.entries(analysis.top_external_domains).slice(0, 5).forEach(([domain, count]) => {
+                    html += `<li><small><span class="badge bg-secondary me-2">${count}</span>${domain}</small></li>`;
+                });
+                html += '</ul>';
+            }
+        } else {
+            html = '<div class="alert alert-info">No domain data available for analysis</div>';
+        }
+
+        document.getElementById('domainIntelligence').innerHTML = html;
+
+    } catch (error) {
+        document.getElementById('domainIntelligence').innerHTML = 
+            '<div class="alert alert-danger">Error loading domain intelligence</div>';
+    }
+}
+
+async function loadCommunicationPatterns() {
+    try {
+        const response = await fetch(`/api/communication_patterns/${currentSessionId}`);
+        const data = await response.json();
+
+        if (data.error) {
+            document.getElementById('communicationPatterns').innerHTML = 
+                `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> ${data.error}</div>`;
+            return;
+        }
+
+        const patterns = data.communication_patterns;
+        const network = data.network_analysis;
+        let html = '';
+
+        if (patterns.volume_patterns) {
+            const topSenders = patterns.volume_patterns.top_senders || {};
+            const uniqueSenders = patterns.volume_patterns.total_unique_senders || 0;
+            const uniqueRecipients = patterns.volume_patterns.total_unique_recipients || 0;
+
+            html = `
+                <div class="row text-center mb-3">
+                    <div class="col-4">
+                        <h6 class="text-primary">${uniqueSenders}</h6>
+                        <small>Unique Senders</small>
+                    </div>
+                    <div class="col-4">
+                        <h6 class="text-success">${uniqueRecipients}</h6>
+                        <small>Recipients</small>
+                    </div>
+                    <div class="col-4">
+                        <h6 class="text-info">${network.network_size || 0}</h6>
+                        <small>Network Size</small>
+                    </div>
+                </div>
+            `;
+
+            if (Object.keys(topSenders).length > 0) {
+                html += '<h6>Top Senders:</h6><ul class="list-unstyled">';
+                Object.entries(topSenders).slice(0, 3).forEach(([sender, count]) => {
+                    html += `<li><small><span class="badge bg-primary me-2">${count}</span>${sender}</small></li>`;
+                });
+                html += '</ul>';
+            }
+        } else {
+            html = '<div class="alert alert-info">No communication pattern data available</div>';
+        }
+
+        document.getElementById('communicationPatterns').innerHTML = html;
+
+    } catch (error) {
+        document.getElementById('communicationPatterns').innerHTML = 
+            '<div class="alert alert-danger">Error loading communication patterns</div>';
+    }
+}
+
+async function loadTemporalAnalysis() {
+    try {
+        const response = await fetch(`/api/temporal_anomalies/${currentSessionId}`);
+        const data = await response.json();
+
+        if (data.error) {
+            document.getElementById('temporalAnalysis').innerHTML = 
+                `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> ${data.error}</div>`;
+            return;
+        }
+
+        const temporal = data.temporal_analysis;
+        let html = '';
+
+        if (temporal.weekend_percentage !== undefined) {
+            const weekendPct = temporal.weekend_percentage.toFixed(1);
+            const afterHoursPct = temporal.after_hours_percentage.toFixed(1);
+            const anomalousCount = temporal.anomalous_times ? temporal.anomalous_times.length : 0;
+
+            html = `
+                <div class="row text-center mb-3">
+                    <div class="col-4">
+                        <h6 class="text-warning">${weekendPct}%</h6>
+                        <small>Weekend Activity</small>
+                    </div>
+                    <div class="col-4">
+                        <h6 class="text-danger">${afterHoursPct}%</h6>
+                        <small>After Hours</small>
+                    </div>
+                    <div class="col-4">
+                        <h6 class="text-info">${anomalousCount}</h6>
+                        <small>Anomalies</small>
+                    </div>
+                </div>
+            `;
+
+            if (weekendPct > 15 || afterHoursPct > 25) {
+                html += '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> High off-hours activity detected</div>';
+            } else {
+                html += '<div class="alert alert-success"><i class="fas fa-check-circle"></i> Normal temporal patterns</div>';
+            }
+        } else {
+            html = '<div class="alert alert-info">No temporal data available for analysis</div>';
+        }
+
+        document.getElementById('temporalAnalysis').innerHTML = html;
+
+    } catch (error) {
+        document.getElementById('temporalAnalysis').innerHTML = 
+            '<div class="alert alert-danger">Error loading temporal analysis</div>';
+    }
+}
+
+async function loadBehavioralClustering() {
+    try {
+        const response = await fetch(`/api/behavioral_clustering/${currentSessionId}`);
+        const data = await response.json();
+
+        if (data.error) {
+            document.getElementById('behavioralClustering').innerHTML = 
+                `<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> ${data.error}</div>`;
+            return;
+        }
+
+        const clustering = data.behavioral_clustering;
+        let html = '';
+
+        if (clustering.clusters) {
+            const clusterCount = Object.keys(clustering.clusters).length;
+            const totalUsers = clustering.total_users_clustered || 0;
+
+            html = `
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <h6 class="text-primary">${clusterCount}</h6>
+                        <small>Behavior Clusters</small>
+                    </div>
+                    <div class="col-6">
+                        <h6 class="text-success">${totalUsers}</h6>
+                        <small>Users Analyzed</small>
+                    </div>
+                </div>
+            `;
+
+            html += '<h6>User Clusters:</h6>';
+            Object.entries(clustering.clusters).forEach(([clusterId, users]) => {
+                html += `<div class="mb-2"><span class="badge bg-secondary me-2">Cluster ${clusterId}</span><small>${users.length} users</small></div>`;
+            });
+        } else if (clustering.status === 'insufficient_data_for_clustering') {
+            html = '<div class="alert alert-info">Insufficient data for behavioral clustering analysis</div>';
+        } else {
+            html = '<div class="alert alert-info">No clustering data available</div>';
+        }
+
+        document.getElementById('behavioralClustering').innerHTML = html;
+
+    } catch (error) {
+        document.getElementById('behavioralClustering').innerHTML = 
+            '<div class="alert alert-danger">Error loading behavioral clustering</div>';
+    }
+}
+
+function showError(message) {
+    document.getElementById('analysisResults').innerHTML = 
+        `<div class="col-12"><div class="alert alert-danger"><i class="fas fa-exclamation-circle"></i> ${message}</div></div>`;
+    document.getElementById('analysisResults').style.display = 'block';
+}
+</script>
