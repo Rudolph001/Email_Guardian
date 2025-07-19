@@ -232,7 +232,7 @@
                         <label for="exclusionRuleDescription" class="form-label">Description</label>
                         <textarea class="form-control" id="exclusionRuleDescription" rows="2"></textarea>
                     </div>
-                    
+
                     <!-- Conditions Section -->
                     <div class="mb-3">
                         <label class="form-label d-flex justify-content-between align-items-center">
@@ -245,7 +245,7 @@
                             <!-- Conditions will be added here -->
                         </div>
                     </div>
-                    
+
                     <div class="mb-3 form-check">
                         <input type="checkbox" class="form-check-input" id="exclusionRuleCaseSensitive">
                         <label class="form-check-label" for="exclusionRuleCaseSensitive">
@@ -282,10 +282,10 @@ function createExclusionRule() {
             if (data.success) {
                 // Store field names globally
                 fieldNames = data.field_names;
-                
+
                 // Reset form for new rule
                 setupExclusionRuleModal(false);
-                
+
                 // Show the modal
                 const modal = new bootstrap.Modal(document.getElementById('exclusionRuleModal'));
                 modal.show();
@@ -304,16 +304,16 @@ function setupExclusionRuleModal(isEdit, rule = null, conditions = null, fieldNa
     if (fieldNamesData) {
         fieldNames = fieldNamesData;
     }
-    
+
     // Clear the form
     document.getElementById('exclusionRuleName').value = isEdit && rule ? rule.name : '';
     document.getElementById('exclusionRuleDescription').value = isEdit && rule ? (rule.description || '') : '';
     document.getElementById('exclusionRuleCaseSensitive').checked = isEdit && rule ? rule.case_sensitive : false;
-    
+
     // Update modal title and button
     const modalTitle = document.querySelector('#exclusionRuleModal .modal-title');
     const saveButton = document.querySelector('#exclusionRuleModal .btn-primary');
-    
+
     if (isEdit) {
         modalTitle.textContent = 'Edit Exclusion Rule';
         saveButton.textContent = 'Update Rule';
@@ -325,11 +325,11 @@ function setupExclusionRuleModal(isEdit, rule = null, conditions = null, fieldNa
         saveButton.setAttribute('onclick', 'saveExclusionRule()');
         window.currentEditingRule = null;
     }
-    
+
     // Clear and setup conditions
     conditionCounter = 0;
     document.getElementById('exclusionConditionsContainer').innerHTML = '';
-    
+
     if (isEdit && conditions && conditions.length > 0) {
         // Add existing conditions for editing
         conditions.forEach((condition, index) => {
@@ -345,14 +345,14 @@ function setupExclusionRuleModal(isEdit, rule = null, conditions = null, fieldNa
 function addExclusionCondition(existingCondition = null) {
     conditionCounter++;
     const container = document.getElementById('exclusionConditionsContainer');
-    
+
     const conditionDiv = document.createElement('div');
     conditionDiv.className = 'condition-row border rounded p-3 mb-2';
     conditionDiv.setAttribute('data-condition-id', conditionCounter);
-    
+
     // Create field options with categories
     let fieldOptions = '<option value="">Select field...</option>';
-    
+
     // Add categorized field options
     if (fieldNames.imported_fields) {
         fieldOptions += '<optgroup label="Imported Fields">';
@@ -361,7 +361,7 @@ function addExclusionCondition(existingCondition = null) {
         });
         fieldOptions += '</optgroup>';
     }
-    
+
     if (fieldNames.ml_fields) {
         fieldOptions += '<optgroup label="ML Analysis Fields">';
         fieldNames.ml_fields.forEach(field => {
@@ -369,7 +369,7 @@ function addExclusionCondition(existingCondition = null) {
         });
         fieldOptions += '</optgroup>';
     }
-    
+
     if (fieldNames.risk_fields) {
         fieldOptions += '<optgroup label="Risk Assessment Fields">';
         fieldNames.risk_fields.forEach(field => {
@@ -377,7 +377,7 @@ function addExclusionCondition(existingCondition = null) {
         });
         fieldOptions += '</optgroup>';
     }
-    
+
     // Logic selector for subsequent conditions
     const logicSelector = conditionCounter > 1 ? `
         <div class="col-md-2">
@@ -388,7 +388,7 @@ function addExclusionCondition(existingCondition = null) {
             </select>
         </div>
     ` : '<div class="col-md-2"></div>';
-    
+
     conditionDiv.innerHTML = `
         <div class="row g-2">
             ${logicSelector}
@@ -420,9 +420,9 @@ function addExclusionCondition(existingCondition = null) {
             </div>
         </div>
     `;
-    
+
     container.appendChild(conditionDiv);
-    
+
     // Set the selected field value if editing
     if (existingCondition && existingCondition.field) {
         const fieldSelect = conditionDiv.querySelector('.condition-field');
@@ -435,7 +435,7 @@ function removeExclusionCondition(conditionId) {
     const conditionRow = document.querySelector(`[data-condition-id="${conditionId}"]`);
     if (conditionRow) {
         conditionRow.remove();
-        
+
         // If this was the first condition and there are others, remove logic selector from new first condition
         const remainingConditions = document.querySelectorAll('.condition-row');
         if (remainingConditions.length > 0) {
@@ -446,7 +446,7 @@ function removeExclusionCondition(conditionId) {
             }
         }
     }
-    
+
     // Ensure at least one condition exists
     if (document.querySelectorAll('.condition-row').length === 0) {
         addExclusionCondition();
@@ -458,18 +458,18 @@ function saveExclusionRule() {
     const name = document.getElementById('exclusionRuleName').value;
     const description = document.getElementById('exclusionRuleDescription').value;
     const caseSensitive = document.getElementById('exclusionRuleCaseSensitive').checked;
-    
+
     // Collect all conditions
     const conditions = [];
     const conditionRows = document.querySelectorAll('.condition-row');
-    
+
     conditionRows.forEach((row, index) => {
         const conditionId = row.getAttribute('data-condition-id');
         const logic = index === 0 ? 'AND' : (row.querySelector('.condition-logic')?.value || 'AND');
         const field = row.querySelector('.condition-field').value;
         const operator = row.querySelector('.condition-operator').value;
         const value = row.querySelector('.condition-value').value;
-        
+
         if (field && operator && value) {
             conditions.push({
                 field: field,
@@ -479,25 +479,25 @@ function saveExclusionRule() {
             });
         }
     });
-    
+
     // Validate
     if (!name) {
         showAlert('Please enter a rule name', 'error');
         return;
     }
-    
+
     if (conditions.length === 0) {
         showAlert('Please add at least one valid condition', 'error');
         return;
     }
-    
+
     const formData = {
         name: name,
         description: description,
         conditions: conditions,
         case_sensitive: caseSensitive
     };
-    
+
     fetch('/api/exclusion-rules', {
         method: 'POST',
         headers: {
@@ -509,13 +509,13 @@ function saveExclusionRule() {
     .then(data => {
         if (data.success) {
             showAlert('Exclusion rule created successfully!', 'success');
-            
+
             // Close modal and reset form
             const modal = bootstrap.Modal.getInstance(document.getElementById('exclusionRuleModal'));
             modal.hide();
             document.getElementById('exclusionRuleForm').reset();
             document.getElementById('exclusionConditionsContainer').innerHTML = '';
-            
+
             // Reload exclusion rules
             loadExclusionRules();
         } else {
@@ -533,32 +533,32 @@ function updateExclusionRule(ruleId) {
     const name = document.getElementById('exclusionRuleName').value.trim();
     const description = document.getElementById('exclusionRuleDescription').value.trim();
     const caseSensitive = document.getElementById('exclusionRuleCaseSensitive').checked;
-    
+
     if (!name) {
         showAlert('Rule name is required', 'error');
         return;
     }
-    
+
     // Collect conditions
     const conditions = [];
     const conditionRows = document.querySelectorAll('.condition-row');
-    
+
     if (conditionRows.length === 0) {
         showAlert('At least one condition is required', 'error');
         return;
     }
-    
+
     conditionRows.forEach((row, index) => {
         const field = row.querySelector('.condition-field').value;
         const operator = row.querySelector('.condition-operator').value;
         const value = row.querySelector('.condition-value').value.trim();
         const logic = row.querySelector('.condition-logic') ? row.querySelector('.condition-logic').value : 'AND';
-        
+
         if (!field || !operator || !value) {
             showAlert('All fields in each condition must be filled', 'error');
             return;
         }
-        
+
         conditions.push({
             field: field,
             operator: operator,
@@ -566,18 +566,18 @@ function updateExclusionRule(ruleId) {
             logic: logic
         });
     });
-    
+
     if (conditions.length === 0) {
         return; // Validation failed
     }
-    
+
     const ruleData = {
         name: name,
         description: description,
         conditions: conditions,
         case_sensitive: caseSensitive
     };
-    
+
     fetch(`/api/exclusion-rules/${ruleId}`, {
         method: 'PUT',
         headers: {
@@ -589,15 +589,15 @@ function updateExclusionRule(ruleId) {
     .then(data => {
         if (data.success) {
             showAlert('Exclusion rule updated successfully!', 'success');
-            
+
             // Close modal
             const modal = bootstrap.Modal.getInstance(document.getElementById('exclusionRuleModal'));
             modal.hide();
-            
+
             // Clear form
             document.getElementById('exclusionRuleForm').reset();
             document.getElementById('exclusionConditionsContainer').innerHTML = '';
-            
+
             // Reload exclusion rules
             loadExclusionRules();
         } else {
@@ -642,7 +642,7 @@ function loadExclusionRules() {
 // Function to display exclusion rules
 function displayExclusionRules(rules) {
     const container = document.getElementById('exclusionRulesContainer');
-    
+
     if (!rules || rules.length === 0) {
         container.innerHTML = `
             <div class="text-center py-4">
@@ -656,7 +656,7 @@ function displayExclusionRules(rules) {
         `;
         return;
     }
-    
+
     let html = `
         <div class="row">
             <div class="col-12 mb-3">
@@ -680,12 +680,12 @@ function displayExclusionRules(rules) {
                 </thead>
                 <tbody>
     `;
-    
+
     rules.forEach(rule => {
         const statusBadge = rule.active ? 
             '<span class="badge bg-success">Active</span>' : 
             '<span class="badge bg-secondary">Inactive</span>';
-            
+
         html += `
             <tr>
                 <td>
@@ -716,13 +716,13 @@ function displayExclusionRules(rules) {
             </tr>
         `;
     });
-    
+
     html += `
                 </tbody>
             </table>
         </div>
     `;
-    
+
     container.innerHTML = html;
 }
 
@@ -754,7 +754,7 @@ function editExclusionRule(ruleId) {
         if (data.success) {
             const rule = data.rule;
             const fieldNames = data.field_names;
-            
+
             // Handle backward compatibility - convert old format to new format
             let conditions = rule.conditions || [];
             if (conditions.length === 0 && rule.field) {
@@ -765,10 +765,10 @@ function editExclusionRule(ruleId) {
                     logic: 'AND'
                 }];
             }
-            
+
             // Setup modal for editing
             setupExclusionRuleModal(true, rule, conditions, fieldNames);
-            
+
             // Show the modal
             const modal = new bootstrap.Modal(document.getElementById('exclusionRuleModal'));
             modal.show();
@@ -787,7 +787,7 @@ function deleteExclusionRule(ruleId) {
     if (!confirm('Are you sure you want to delete this exclusion rule? This action cannot be undone.')) {
         return;
     }
-    
+
     fetch(`/api/exclusion-rules/${ruleId}`, {
         method: 'DELETE'
     })
@@ -810,11 +810,11 @@ function deleteExclusionRule(ruleId) {
 function showAlert(message, type) {
     const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
     const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
-    
+
     // Remove existing alerts
     const existingAlerts = document.querySelectorAll('.alert-dismissible');
     existingAlerts.forEach(alert => alert.remove());
-    
+
     // Create new alert
     const alertDiv = document.createElement('div');
     alertDiv.className = `alert ${alertClass} alert-dismissible fade show`;
@@ -823,11 +823,11 @@ function showAlert(message, type) {
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     `;
-    
+
     // Insert at the top of the page
     const container = document.querySelector('.container-fluid');
     container.insertBefore(alertDiv, container.firstChild);
-    
+
     // Auto-dismiss after 5 seconds
     setTimeout(() => {
         if (alertDiv && alertDiv.parentNode) {
