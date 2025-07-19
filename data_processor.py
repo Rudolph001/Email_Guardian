@@ -45,7 +45,15 @@ class DataProcessor:
                     lambda x: x.lower().strip() if isinstance(x, str) and pd.notna(x) else x
                 )
 
+        # Log column information for debugging BAU analysis
+        sample_data = {}
+        for col in df_copy.columns:
+            if col.lower() in ['sender', 'recipients', 'recipients_email_domain']:
+                sample_values = df_copy[col].head(3).tolist()
+                sample_data[col] = sample_values
+
         self.logger.info(f"Converted text data to lowercase for {len(df_copy.columns)} columns")
+        self.logger.info(f"Key email fields sample: {sample_data}")
         return df_copy
 
     def _clean_record_data(self, record):

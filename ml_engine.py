@@ -540,6 +540,56 @@ class MLEngine:
                     }
                 }
 
+            # Debug: Log available columns
+            self.logger.info(f"BAU Analysis - Available columns: {list(df.columns)}")
+
+            # Find the correct column names (case-insensitive)
+            sender_col = None
+            recipients_col = None
+            recipients_domain_col = None
+
+            # Map column names (case-insensitive)
+            col_mapping = {}
+            for col in df.columns:
+                col_lower = str(col).lower()
+                col_mapping[col_lower] = col
+
+            # Find sender column
+            for possible_name in ['sender', 'from', 'sender_email', 'from_email']:
+                if possible_name in col_mapping:
+                    sender_col = col_mapping[possible_name]
+                    break
+
+            # Find recipients column  
+            for possible_name in ['recipients', 'to', 'recipient', 'to_email', 'recipients_email']:
+                if possible_name in col_mapping:
+                    recipients_col = col_mapping[possible_name]
+                    break
+
+            # Find recipients domain column
+            for possible_name in ['recipients_email_domain', 'recipient_domain', 'to_domain', 'recipients_domain']:
+                if possible_name in col_mapping:
+                    recipients_domain_col = col_mapping[possible_name]
+                    break
+
+            self.logger.info(f"BAU Analysis - Found columns: sender='{sender_col}', recipients='{recipients_col}', recipients_domain='{recipients_domain_col}'")
+
+            if not sender_col and not recipients_col:
+                return {
+                    'bau_candidates': [],
+                    'bau_percentage': 0,
+                    'high_volume_pairs': [],
+                    'unique_domains': 0,
+                    'recommendations': ['Required email fields (sender/recipients) not found in data'],
+                    'total_communications': 0,
+                    'unique_patterns': 0,
+                    'bau_stats': {
+                        'bau_candidates_count': 0,
+                        'bau_percentage': 0,
+                        'high_volume_pairs': []
+                    }
+                }
+
             # Extract sender and recipient domains
             def extract_domain(email):
                 try:
@@ -556,38 +606,62 @@ class MLEngine:
             # Create domain pairs for analysis
             domain_pairs = []
             sender_recipient_pairs = []
+            processed_count = 0
 
             for _, row in df.iterrows():
                 try:
-                    sender = str(row.get('sender', '')).strip()
-                    sender_domain = extract_domain(sender)
-                    recipients = str(row.get('recipients', ''))
+                    # Get sender domain
+                    sender_domain = None
+                    if sender_col:
+                        sender = str(row.get(sender_col, '')).strip()
+                        sender_domain = extract_domain(sender)
 
-                    if sender_domain and recipients and recipients not in ['nan', 'None', '', 'null']:
-                        # Handle multiple recipients
-                        recipient_list = []
-                        if ',' in recipients:
-                            recipient_list = [r.strip() for r in recipients.split(',') if r.strip()]
-                        elif ';' in recipients:
-                            recipient_list = [r.strip() for r in recipients.split(';') if r.strip()]
-                        else:
-                            recipient_list = [recipients.strip()]
+                    # Get recipient domains - try multiple approaches
+                    recipient_domains = []
+                    
+                    # First try recipients_email_domain column if it exists
+                    if recipients_domain_col:
+                        recipient_domain = str(row.get(recipients_domain_col, '')).strip()
+                        if recipient_domain and recipient_domain not in ['nan', 'none', '', 'null', '-']:
+                            recipient_domains.append(recipient_domain.lower())
 
-                        for recipient in recipient_list:
-                            recipient_domain = extract_domain(recipient)
+                    # If no domain column or it's empty, extract from recipients email
+                    if not recipient_domains and recipients_col:
+                        recipients = str(row.get(recipients_col, ''))
+                        if recipients and recipients not in ['nan', 'None', '', 'null', '-']:
+                            # Handle multiple recipients
+                            recipient_list = []
+                            if ',' in recipients:
+                                recipient_list = [r.strip() for r in recipients.split(',') if r.strip()]
+                            elif ';' in recipients:
+                                recipient_list = [r.strip() for r in recipients.split(';') if r.strip()]
+                            else:
+                                recipient_list = [recipients.strip()]
+
+                            for recipient in recipient_list:
+                                recipient_domain = extract_domain(recipient)
+                                if recipient_domain:
+                                    recipient_domains.append(recipient_domain)
+
+                    # Create domain pairs
+                    if sender_domain:
+                        for recipient_domain in recipient_domains:
                             if recipient_domain and sender_domain != recipient_domain:
                                 pair = f"{sender_domain} -> {recipient_domain}"
                                 domain_pairs.append(pair)
                                 sender_recipient_pairs.append({
-                                    'sender': sender,
-                                    'recipient': recipient,
-                                    'sender_domain': sender_domain,
+                                    'sender': sender if sender_col else 'unknown',
                                     'recipient_domain': recipient_domain,
+                                    'sender_domain': sender_domain,
                                     'pair': pair
                                 })
+                                processed_count += 1
+
                 except Exception as e:
                     self.logger.debug(f"Error processing row in BAU analysis: {str(e)}")
                     continue
+
+            self.logger.info(f"BAU Analysis - Processed {processed_count} domain pairs from {len(df)} records")
 
             if not domain_pairs:
                 return {
@@ -595,7 +669,7 @@ class MLEngine:
                     'bau_percentage': 0,
                     'high_volume_pairs': [],
                     'unique_domains': 0,
-                    'recommendations': ['No valid domain pairs found for BAU analysis'],
+                    'recommendations': [f'No valid domain pairs found. Check that data contains sender/recipient email fields. Found columns: {list(df.columns)[:5]}'],
                     'total_communications': 0,
                     'unique_patterns': 0,
                     'bau_stats': {
