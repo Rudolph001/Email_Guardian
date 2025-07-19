@@ -61,7 +61,7 @@ class MLEngine:
                 'insights': {}
             }
 
-            if df.empty or len(df) == 0:
+            if len(df) == 0:
                 self.logger.info("No data to analyze - returning empty results")
                 return results
 
@@ -523,7 +523,7 @@ class MLEngine:
         Returns analysis of regular communication patterns that should be whitelisted
         """
         try:
-            if df.empty:
+            if len(df) == 0:
                 return {
                     'bau_candidates': [],
                     'bau_percentage': 0,
@@ -870,7 +870,7 @@ class MLEngine:
     def analyze_emails(self, df: pd.DataFrame) -> Dict:
         """Analyze emails and return ML insights"""
         try:
-            if df.empty:
+            if len(df) == 0:
                 return {
                     'anomaly_scores': [],
                     'risk_levels': [],
@@ -962,7 +962,7 @@ class MLEngine:
         except Exception as e:
             self.logger.error(f"Error in ML analysis: {str(e)}")
             # Return safe defaults
-            target_length = len(df) if not df.empty else 0
+            target_length = len(df) if len(df) > 0 else 0
             return {
                 'anomaly_scores': [0.0] * target_length,
                 'risk_levels': ['Low'] * target_length,

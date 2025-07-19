@@ -1183,7 +1183,7 @@ def advanced_ml_analysis(session_id):
         # Convert to DataFrame for analysis
         df = pd.DataFrame(processed_data)
         
-        if df.empty:
+        if len(df) == 0:
             return jsonify({'error': 'No data available'}), 404
         
         # Run comprehensive ML analysis
