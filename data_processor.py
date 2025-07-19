@@ -364,7 +364,7 @@ class DataProcessor:
 
             # Check for completely empty rows
             empty_rows = df.isnull().all(axis=1)
-            if len(empty_rows) > 0 and empty_rows.any():
+            if len(empty_rows) > 0 and empty_rows.sum() > 0:
                 empty_row_numbers = [idx + 2 for idx in empty_rows[empty_rows].index]
                 self.logger.warning(f"Found completely empty rows at: {empty_row_numbers}")
                 validation_errors.append({
@@ -510,13 +510,13 @@ class DataProcessor:
             if 'sender' in df_after_exclusion.columns:
                 sender_domains = df_after_exclusion['sender'].str.extract(r'@([^@]+)$')[0]
                 sender_whitelist_mask = sender_domains.isin(whitelist_domains)
-                if sender_whitelist_mask.any():
+                if sender_whitelist_mask.sum() > 0:
                     filtered_df = filtered_df[~sender_whitelist_mask]
 
             # Check recipients_email_domain
             if 'recipients_email_domain' in df_after_exclusion.columns:
                 recipients_whitelist_mask = filtered_df['recipients_email_domain'].isin(whitelist_domains)
-                if recipients_whitelist_mask.any():
+                if recipients_whitelist_mask.sum() > 0:
                     filtered_df = filtered_df[~recipients_whitelist_mask]
 
             whitelist_count = original_count - len(filtered_df)

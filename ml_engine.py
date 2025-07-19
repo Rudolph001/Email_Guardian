@@ -335,7 +335,7 @@ class MLEngine:
             if 'recipients_email_domain' in df.columns:
                 domain_counts = df['recipients_email_domain'].value_counts()
                 single_use_mask = domain_counts == 1
-                if single_use_mask.any():
+                if single_use_mask.sum() > 0:
                     suspicious_domains = domain_counts[single_use_mask].index
                     if len(suspicious_domains) > 5:
                         patterns.append({
@@ -349,7 +349,7 @@ class MLEngine:
                 attachment_matches = df['wordlist_attachment'] == 'Yes'
                 subject_matches = df['wordlist_subject'] == 'Yes'
                 both_matches_mask = attachment_matches & subject_matches
-                if both_matches_mask.any():
+                if both_matches_mask.sum() > 0:
                     both_matches_count = both_matches_mask.sum()
                     patterns.append({
                         'type': 'content',
@@ -360,7 +360,7 @@ class MLEngine:
             # Pattern 4: Leaver activity patterns
             if 'leaver' in df.columns:
                 leaver_mask = df['leaver'] == 'Yes'
-                if leaver_mask.any():
+                if leaver_mask.sum() > 0:
                     leaver_count = leaver_mask.sum()
                     patterns.append({
                         'type': 'behavioral',
