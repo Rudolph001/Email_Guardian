@@ -69,10 +69,11 @@
                 <div class="col-md-3">
                     <label for="risk_filter" class="form-label">Risk Level</label>
                     <select name="risk_filter" id="risk_filter" class="form-select">
-                        <option value="all" {{ 'selected' if current_filters.risk_filter == 'all' }}>All Risk Levels</option>
-                        {% for level in risk_levels %}
-                        <option value="{{ level }}" {{ 'selected' if current_filters.risk_filter == level }}>{{ level }}</option>
-                        {% endfor %}
+                        <option value="all" {{ 'selected' if current_filters.risk_filter == 'all' else '' }}>All Risk Levels</option>
+                        <option value="Critical" {{ 'selected' if current_filters.risk_filter == 'Critical' else '' }}>Critical</option>
+                        <option value="High" {{ 'selected' if current_filters.risk_filter == 'High' else '' }}>High</option>
+                        <option value="Medium" {{ 'selected' if current_filters.risk_filter == 'Medium' else '' }}>Medium</option>
+                        <option value="Low" {{ 'selected' if current_filters.risk_filter == 'Low' else '' }}>Low</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -686,7 +687,7 @@ function renderCaseDetails(caseData) {
                                             <strong class="text-danger">${detail.type || 'Anomaly Detected'}</strong>
                                             <p class="mb-1 text-muted">${detail.description || 'Unusual pattern detected in email data'}</p>
                                             ${detail.field ? `<small class="text-muted"><strong>Field:</strong> ${detail.field}</small>` : ''}
-                                        </div>
+                                                                       </div>
                                         <span class="badge bg-${detail.severity === 'Critical' ? 'danger' : detail.severity === 'High' ? 'warning' : 'info'}">
                                             ${detail.severity || 'High'}
                                         </span>
@@ -1017,7 +1018,7 @@ function loadSavedFilters() {
 
 function checkProcessingErrors() {
     const sessionId = '{{ session.session_id }}';
-    
+
     fetch(`/api/processing_errors/${sessionId}`)
         .then(response => response.json())
         .then(data => {
@@ -1034,7 +1035,7 @@ function checkProcessingErrors() {
                         No processing errors found. All data loaded successfully.
                     </p>
                 `;
-                
+
                 // Auto-hide success message after 3 seconds
                 setTimeout(() => {
                     errorSection.style.display = 'none';
@@ -1056,7 +1057,7 @@ function checkProcessingErrors() {
 function displayErrors(errors) {
     const errorSection = document.getElementById('errorSection');
     const errorContent = document.getElementById('errorContent');
-    
+
     let errorHtml = `
         <p class="mb-3">
             <strong>Found ${errors.length} processing error(s):</strong>
@@ -1074,7 +1075,7 @@ function displayErrors(errors) {
                 </thead>
                 <tbody>
     `;
-    
+
     errors.forEach((error, index) => {
         errorHtml += `
             <tr>
@@ -1094,7 +1095,7 @@ function displayErrors(errors) {
             </tr>
         `;
     });
-    
+
     errorHtml += `
                 </tbody>
             </table>
@@ -1106,7 +1107,7 @@ function displayErrors(errors) {
             </small>
         </div>
     `;
-    
+
     errorContent.innerHTML = errorHtml;
     errorSection.style.display = 'block';
 }
@@ -1119,7 +1120,7 @@ function hideErrors() {
 function autoCheckErrors() {
     const casesTable = document.querySelector('#casesTable tbody');
     const totalCases = {{ cases|length }};
-    
+
     if (totalCases === 0) {
         // Automatically check for processing errors if no cases are displayed
         setTimeout(() => {

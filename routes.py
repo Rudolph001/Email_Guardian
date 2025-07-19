@@ -258,7 +258,7 @@ def case_management(session_id):
         'risk_filter': request.args.get('risk_filter', 'all'),
         'rule_filter': request.args.get('rule_filter', 'all'),
         'status_filter': request.args.get('status_filter', 'all'),
-        'search': request.args.get('search', '')
+        'search': request.args.get('search', '').strip()
     }
     
     result = session_manager.get_processed_data(session_id, page=page, per_page=per_page, filters=filters)
@@ -267,6 +267,10 @@ def case_management(session_id):
     processed_data = result.get('data', [])
     total_records = result.get('total', 0)
     total_pages = result.get('total_pages', 0)
+    
+    # Debug logging for filtering
+    app.logger.info(f"Case management filters applied: {filters}")
+    app.logger.info(f"Filtered results: {total_records} records from {len(processed_data)} shown")
     
     # Count escalated cases from session data for badge
     session_cases = session_data.get('cases', {})

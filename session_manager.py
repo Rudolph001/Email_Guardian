@@ -354,48 +354,56 @@ class SessionManager:
         filtered_data = data
         
         try:
-            # Risk level filter
-            if filters.get('risk_filter') and filters['risk_filter'] != 'all':
-                filtered_data = [d for d in filtered_data if d.get('ml_risk_level', '').lower() == filters['risk_filter'].lower()]
-            
-            # Rule filter
-            if filters.get('rule_filter'):
-                if filters['rule_filter'] == 'matched':
-                    filtered_data = [d for d in filtered_data if d.get('rule_results', {}).get('matched_rules')]
-                elif filters['rule_filter'] == 'unmatched':
-                    filtered_data = [d for d in filtered_data if not d.get('rule_results', {}).get('matched_rules')]
-            
-            # Status filter
-            if filters.get('status_filter') and filters['status_filter'] != 'all':
-                filtered_data = [d for d in filtered_data if d.get('status', '').lower() == filters['status_filter'].lower()]
-            
-            # Search filter - faster string matching
-            if filters.get('search'):
-                search_term = filters['search'].lower()
-                filtered_data = [d for d in filtered_data if 
-                               search_term in str(d.get('sender', '')).lower() or
-                               search_term in str(d.get('subject', '')).lower() or
-                               search_term in str(d.get('recipients', '')).lower()]
-            
-            # Dashboard type filter
+            # Dashboard type filter - apply this first to get the correct dataset
             if filters.get('dashboard_type'):
                 session_cases = session_data.get('cases', {}) if session_data else {}
                 if filters['dashboard_type'] == 'escalation':
                     # Only escalated cases
-                    filtered_data = []
+                    escalated_data = []
                     for i, d in enumerate(data):
+                        if d is None:
+                            continue
                         record_id = d.get('record_id', i)
                         case_info = session_cases.get(str(record_id), {})
                         if case_info.get('status', '').lower() == 'escalate':
-                            filtered_data.append(d)
+                            escalated_data.append(d)
+                    filtered_data = escalated_data
                 elif filters['dashboard_type'] == 'case_management':
                     # Exclude escalated cases
-                    filtered_data = []
+                    case_mgmt_data = []
                     for i, d in enumerate(data):
+                        if d is None:
+                            continue
                         record_id = d.get('record_id', i)
                         case_info = session_cases.get(str(record_id), {})
                         if case_info.get('status', '').lower() != 'escalate':
-                            filtered_data.append(d)
+                            case_mgmt_data.append(d)
+                    filtered_data = case_mgmt_data
+            
+            # Risk level filter
+            if filters.get('risk_filter') and filters['risk_filter'] != 'all':
+                risk_filter = filters['risk_filter'].strip()
+                filtered_data = [d for d in filtered_data if d and d.get('ml_risk_level', '').strip().lower() == risk_filter.lower()]
+            
+            # Rule filter
+            if filters.get('rule_filter') and filters['rule_filter'] != 'all':
+                if filters['rule_filter'] == 'matched':
+                    filtered_data = [d for d in filtered_data if d and d.get('rule_results', {}).get('matched_rules')]
+                elif filters['rule_filter'] == 'unmatched':
+                    filtered_data = [d for d in filtered_data if d and not d.get('rule_results', {}).get('matched_rules')]
+            
+            # Status filter
+            if filters.get('status_filter') and filters['status_filter'] != 'all':
+                status_filter = filters['status_filter'].strip()
+                filtered_data = [d for d in filtered_data if d and d.get('status', '').strip().lower() == status_filter.lower()]
+            
+            # Search filter - faster string matching
+            if filters.get('search') and filters['search'].strip():
+                search_term = filters['search'].lower().strip()
+                filtered_data = [d for d in filtered_data if d and (
+                               search_term in str(d.get('sender', '')).lower() or
+                               search_term in str(d.get('subject', '')).lower() or
+                               search_term in str(d.get('recipients', '')).lower())]
         
         except Exception as e:
             self.logger.error(f"Error applying filters: {str(e)}")
