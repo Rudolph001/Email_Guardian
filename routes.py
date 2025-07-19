@@ -764,7 +764,7 @@ def admin():
     session_manager = SessionManager()
     domain_manager = DomainManager()
     whitelists = session_manager.get_whitelists()
-    attachment_keywords = session_manager.get_attachmentkeywords()
+    attachment_keywords = session_manager.get_attachment_keywords()
     sessions = session_manager.get_all_sessions()
     domain_classifications = domain_manager.get_domains()
 
