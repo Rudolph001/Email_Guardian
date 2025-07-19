@@ -972,6 +972,3 @@ class DataProcessor:
         except Exception as e:
             self.logger.error(f"Error getting processing summary: {str(e)}")
             return {}
-```
-
-Applying changes to fix array/DataFrame boolean context issues and DataFrame empty checks.
