@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize auto-refresh for dashboard
     initializeAutoRefresh();
+
+    // Initialize attachment risk intelligence
+    initializeAttachmentRiskIntelligence();
 });
 
 /**
@@ -703,16 +706,19 @@ function initializeAttachmentRiskIntelligence() {
     const sessionId = getSessionIdFromURL();
     if (!sessionId) {
         console.warn('Session ID not found in URL.');
-        document.getElementById('attachment-risk-content').innerHTML = `
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                Session ID not found in URL.  Unable to load attachment risk analytics.
-            </div>
-        `;
         return;
     }
 
-    document.getElementById('attachment-risk-content').innerHTML = '<p>Loading risk analysis...</p>';
+    // Check if the attachment risk elements exist
+    const criticalElement = document.getElementById('criticalAttachments');
+    const highRiskElement = document.getElementById('highRiskAttachments');
+    const avgScoreElement = document.getElementById('avgRiskScore');
+    const topRiskFactorsElement = document.getElementById('topRiskFactors');
+
+    if (!criticalElement || !highRiskElement || !avgScoreElement || !topRiskFactorsElement) {
+        console.log('Attachment risk intelligence elements not found on this page');
+        return;
+    }
 
     // Load attachment risk analytics
     fetch(`/api/attachment_risk_analytics/${sessionId}`)
@@ -721,134 +727,50 @@ function initializeAttachmentRiskIntelligence() {
             console.log('Attachment risk analytics data:', data);
 
             if (data.error) {
-                document.getElementById('attachment-risk-content').innerHTML = `
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Error: ${data.error}
-                    </div>
-                `;
+                topRiskFactorsElement.innerHTML = `<li><small class="text-danger">Error: ${data.error}</small></li>`;
                 return;
             }
 
-            updateAttachmentRiskSection(data);
+            updateAttachmentRiskDisplay(data);
         })
         .catch(error => {
             console.error('Error loading attachment risk analytics:', error);
-            document.getElementById('attachment-risk-content').innerHTML = `
-                <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-circle me-2"></i>
-                    Failed to load attachment risk analytics: ${error.message}
-                </div>
-            `;
+            topRiskFactorsElement.innerHTML = `<li><small class="text-danger">Failed to load risk data</small></li>`;
         });
 }
 
-function updateAttachmentRiskSection(data) {
-    const content = document.getElementById('attachment-risk-content');
+function updateAttachmentRiskDisplay(data) {
+    // Update the individual elements
+    const criticalElement = document.getElementById('criticalAttachments');
+    const highRiskElement = document.getElementById('highRiskAttachments');
+    const avgScoreElement = document.getElementById('avgRiskScore');
+    const topRiskFactorsElement = document.getElementById('topRiskFactors');
 
     // Risk overview metrics
     const criticalRisk = data.critical_risk_count || 0;
     const highRisk = data.high_risk_count || 0;
     const avgRiskScore = data.average_risk_score || 0;
 
-    console.log('Updating attachment risk section with:', { criticalRisk, highRisk, avgRiskScore });
+    console.log('Updating attachment risk display with:', { criticalRisk, highRisk, avgRiskScore });
 
-    content.innerHTML = `
-        <div class="row text-center mb-4">
-            <div class="col-md-4">
-                <div class="metric-card bg-danger text-white">
-                    <h3 class="display-4">${criticalRisk}</h3>
-                    <p class="mb-0">Critical Risk</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="metric-card bg-warning text-dark">
-                    <h3 class="display-4">${highRisk}</h3>
-                    <p class="mb-0">High Risk</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="metric-card bg-info text-white">
-                    <h3 class="display-4">${avgRiskScore}</h3>
-                    <p class="mb-0">Avg Risk Score</p>
-                </div>
-            </div>
-        </div>
+    // Update the metric displays
+    criticalElement.textContent = criticalRisk;
+    highRiskElement.textContent = highRisk;
+    avgScoreElement.textContent = avgRiskScore.toFixed(1);
 
-        <div class="row">
-            <div class="col-md-6">
-                <h5>Top Risk Factors:</h5>
-                <div class="risk-factors">
-                    ${Object.keys(data.top_risk_factors || {}).length > 0 ? 
-                        Object.entries(data.top_risk_factors).slice(0, 5).map(([factor, count]) => 
-                            `<div class="d-flex justify-content-between mb-2">
-                                <span class="text-truncate" style="max-width: 200px;" title="${factor}">${factor}</span>
-                                <span class="badge bg-warning">${count}</span>
-                            </div>`
-                        ).join('') :
-                        '<p class="text-muted">No risk factors identified</p>'
-                    }
-                </div>
-            </div>
-            <div class="col-md-6">
-                <h5>Malicious Indicators:</h5>
-                <div class="malicious-indicators">
-                    ${(data.malicious_indicators || []).length > 0 ? 
-                        data.malicious_indicators.slice(0, 5).map(indicator => 
-                            `<div class="alert alert-danger py-1 mb-1 small">${indicator}</div>`
-                        ).join('') :
-                        '<p class="text-muted">No malicious indicators detected</p>'
-                    }
-                </div>
-            </div>
-        </div>
-
-        ${(data.high_risk_emails || []).length > 0 ? `
-            <div class="row mt-3">
-                <div class="col-12">
-                    <h5>High Risk Emails:</h5>
-                    <div class="table-responsive">
-                        <table class="table table-sm">
-                            <thead>
-                                <tr>
-                                    <th>Sender</th>
-                                    <th>Subject</th>
-                                    <th>Risk Score</th>
-                                    <th>Risk Level</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${data.high_risk_emails.slice(0, 5).map(email => `
-                                    <tr>
-                                        <td class="text-truncate" style="max-width: 150px;" title="${email.sender || ''}">${email.sender || 'N/A'}</td>
-                                        <td class="text-truncate" style="max-width: 200px;" title="${email.subject || ''}">${email.subject || 'N/A'}</td>
-                                        <td><span class="badge bg-danger">${email.risk_score || 0}</span></td>
-                                        <td class="small">${email.risk_level || 'Unknown'}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        ` : `
-            <div class="row mt-3">
-                <div class="col-12">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        No high-risk emails detected in this session.
-                    </div>
-                </div>
-            </div>
-        `}
-
-        <div class="row mt-3">
-            <div class="col-12">
-                <small class="text-muted">
-                    Total emails with attachments: ${data.total_emails_with_attachments || 0} | 
-                    Total attachments: ${data.total_attachments || 0}
-                </small>
-            </div>
-        </div>
-    `;
+    // Update top risk factors
+    if (Object.keys(data.top_risk_factors || {}).length > 0) {
+        const factorsList = Object.entries(data.top_risk_factors)
+            .slice(0, 5)
+            .map(([factor, count]) => 
+                `<li class="d-flex justify-content-between mb-1">
+                    <span class="text-truncate" style="max-width: 200px;" title="${factor}">${factor}</span>
+                    <span class="badge bg-secondary">${count}</span>
+                </li>`)
+            .join('');
+        
+        topRiskFactorsElement.innerHTML = factorsList;
+    } else {
+        topRiskFactorsElement.innerHTML = '<li><small class="text-muted">No risk factors found</small></li>';
+    }
 }
