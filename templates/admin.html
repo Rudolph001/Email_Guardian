@@ -3,6 +3,17 @@
 {% block title %}Email Guardian - Admin Panel{% endblock %}
 
 {% block content %}
+<style>
+/* Ensure tab content is visible */
+.tab-content > .tab-pane {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+.tab-content > .tab-pane:not(.active) {
+    display: none !important;
+}
+</style>
 <div class="container-fluid">
     <!-- Header Section -->
     <div class="row mb-4">
@@ -938,6 +949,25 @@ function resetToDefaults() {
 
 // Allow Enter key to add domains
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap tabs
+    const triggerTabList = document.querySelectorAll('#adminTabs button[data-bs-toggle="tab"]');
+    triggerTabList.forEach(triggerEl => {
+        const tabTrigger = new bootstrap.Tab(triggerEl);
+        
+        triggerEl.addEventListener('click', event => {
+            event.preventDefault();
+            tabTrigger.show();
+        });
+    });
+    
+    // Ensure first tab is active and visible
+    const firstTab = document.querySelector('#adminTabs button[data-bs-toggle="tab"]');
+    const firstTabPane = document.querySelector('#whitelist');
+    if (firstTab && firstTabPane) {
+        firstTab.classList.add('active');
+        firstTabPane.classList.add('show', 'active');
+    }
+    
     ['trusted', 'corporate', 'personal', 'public', 'suspicious'].forEach(category => {
         const inputId = `new${category.charAt(0).toUpperCase() + category.slice(1)}Domain`;
         const input = document.getElementById(inputId);
