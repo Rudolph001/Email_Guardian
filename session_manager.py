@@ -1,7 +1,6 @@
+"""
 The code ensures that whitelist domains are stored and compared in lowercase for consistency.
-```
-
-```python
+"""
 import json
 import os
 import logging
@@ -610,7 +609,7 @@ Session ID: {session_id}
         stats = {
             'total_records': len(processed_data),
             'cases_cleared': sum(1 for case in cases.values() if case.get('status') == 'clear'),
-            'cases_escalated':':': sum(1 for case in cases.values() if case.get('status') == 'escalate'),
+            'cases_escalated': sum(1 for case in cases.values() if case.get('status') == 'escalate'),
             'cases_open': len(processed_data) - len(cases),
             'processing_date': session.get('created_at', ''),
             'filename': session.get('filename', '')
@@ -706,5 +705,3 @@ Session ID: {session_id}
         except Exception as e:
             self.logger.error(f"Error updating processed data for session {session_id}: {str(e)}")
             return {'success': False, 'error': str(e)}
-```The code ensures that all session data, including processed data and filter criteria, is handled in lowercase for consistent processing and filtering.
-```
