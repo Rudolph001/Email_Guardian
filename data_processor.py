@@ -101,7 +101,7 @@ class DataProcessor:
                 matched_rules = rule_results.get('matched_rules', [])
                 should_escalate = False
 
-                if matched_rules and len(matched_rules) > 0:
+                if matched_rules is not None and len(matched_rules) > 0:
                     should_escalate = True
                     self.logger.info(f"Reprocessing: Escalating record {index} due to {len(matched_rules)} rule matches")
 
@@ -546,7 +546,7 @@ class DataProcessor:
 
                 if isinstance(rule_results, dict):
                     matched_rules = rule_results.get('matched_rules', [])
-                    if matched_rules and len(matched_rules) > 0:
+                    if matched_rules is not None and len(matched_rules) > 0:
                         has_rule_matches = True
                         self.logger.info(f"Record {index} has {len(matched_rules)} rule matches: {[r.get('name', 'Unknown') for r in matched_rules]}")
                 elif isinstance(rule_results, list) and len(rule_results) > 0:
@@ -955,7 +955,8 @@ class DataProcessor:
 
                 # Rule matches
                 rule_results = record.get('rule_results', {})
-                if rule_results.get('matched_rules'):
+                matched_rules = rule_results.get('matched_rules', [])
+                if matched_rules and len(matched_rules) > 0:
                     rule_matches += 1
 
                 if rule_results.get('escalate'):
