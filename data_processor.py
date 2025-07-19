@@ -36,7 +36,7 @@ class DataProcessor:
     def _convert_dataframe_to_lowercase(self, df: pd.DataFrame) -> pd.DataFrame:
         """Convert all text data in DataFrame to lowercase, preserving column headers"""
         df_copy = df.copy()
-        
+
         # Convert all string columns to lowercase
         for column in df_copy.columns:
             if df_copy[column].dtype == 'object':  # Object dtype usually indicates string data
@@ -44,7 +44,7 @@ class DataProcessor:
                 df_copy[column] = df_copy[column].apply(
                     lambda x: x.lower().strip() if isinstance(x, str) and pd.notna(x) else x
                 )
-        
+
         self.logger.info(f"Converted text data to lowercase for {len(df_copy.columns)} columns")
         return df_copy
 
@@ -160,7 +160,7 @@ class DataProcessor:
             import os
             file_size = os.path.getsize(file_path)
             self.logger.info(f"File size: {file_size / (1024*1024):.2f} MB")
-            
+
             # For large files, use chunked reading - reduced threshold to handle 10K+ records better
             if file_size > 10 * 1024 * 1024:  # 10MB threshold (approximately 5000+ records)
                 self.logger.info(f"Large file detected ({file_size / (1024*1024):.2f} MB), using chunked processing")
@@ -188,7 +188,7 @@ class DataProcessor:
                     'error_type': 'parser_error'
                 }
 
-            if df.empty:
+            if len(df) == 0:
                 return {
                     'success': False, 
                     'error': 'CSV file contains no data rows',
@@ -284,7 +284,7 @@ class DataProcessor:
         """Validate CSV structure and content with detailed error reporting"""
         try:
             validation_errors = []
-            
+
             # Check if DataFrame has required columns
             missing_columns = []
             critical_columns = ['_time', 'sender', 'subject', 'recipients_email_domain']
@@ -293,7 +293,7 @@ class DataProcessor:
                 if col not in df.columns:
                     missing_columns.append(col)
 
-            if missing_columns:
+            if len(missing_columns) > 0:
                 return {
                     'valid': False,
                     'error': f'Missing critical columns: {", ".join(missing_columns)}',
@@ -317,7 +317,7 @@ class DataProcessor:
                                 'value': str(time_value)[:100],  # Limit value length
                                 'error': 'Invalid date/time format'
                             })
-                    
+
                     # Check sender field format (should contain email)
                     sender_value = row.get('sender')
                     if pd.notna(sender_value) and sender_value != '-':
@@ -328,7 +328,7 @@ class DataProcessor:
                                 'value': str(sender_value)[:100],
                                 'error': 'Sender field should contain email address'
                             })
-                    
+
                     # Check recipients_email_domain format
                     domain_value = row.get('recipients_email_domain')
                     if pd.notna(domain_value) and domain_value != '-':
@@ -340,7 +340,7 @@ class DataProcessor:
                                 'value': str(domain_value)[:100],
                                 'error': 'Should be domain only (e.g., "company.com"), not full email'
                             })
-                    
+
                     # Check for extremely long values that might cause issues
                     for col in df.columns:
                         cell_value = row.get(col)
@@ -353,7 +353,7 @@ class DataProcessor:
                                     'value': cell_str[:100] + '...',
                                     'error': f'Value is too long ({len(cell_str)} characters) - consider splitting large content'
                                 })
-                
+
                 except Exception as field_error:
                     validation_errors.append({
                         'row': row_idx + 2,
@@ -381,11 +381,11 @@ class DataProcessor:
                 error_summary = []
                 for err in limited_errors:
                     error_summary.append(f"Row {err['row']}, Field '{err['field']}': {err['error']} (Value: '{err['value']}')")
-                
+
                 more_errors = len(validation_errors) - len(limited_errors)
                 if more_errors > 0:
                     error_summary.append(f"... and {more_errors} more errors")
-                
+
                 return {
                     'valid': False,
                     'error': 'Data validation failed:\n' + '\n'.join(error_summary),
@@ -413,7 +413,7 @@ class DataProcessor:
 
             processing_errors = []
             processed_data = session_data.get('processed_data', [])
-            
+
             # Check for records with processing errors
             for idx, record in enumerate(processed_data):
                 if record and isinstance(record, dict):
@@ -426,7 +426,7 @@ class DataProcessor:
                             'field': 'general',
                             'value': 'N/A'
                         })
-                    
+
                     if 'domain_error' in record:
                         processing_errors.append({
                             'record_index': idx,
@@ -435,7 +435,7 @@ class DataProcessor:
                             'field': 'recipients_email_domain',
                             'value': record.get('recipients_email_domain', 'N/A')
                         })
-                    
+
                     if 'rule_error' in record:
                         processing_errors.append({
                             'record_index': idx,
@@ -444,7 +444,7 @@ class DataProcessor:
                             'field': 'rule_processing',
                             'value': 'N/A'
                         })
-                    
+
                     if 'attachment_error' in record:
                         processing_errors.append({
                             'record_index': idx,
@@ -478,13 +478,13 @@ class DataProcessor:
 
             for index, row in df.iterrows():
                 record = row.to_dict()
-                
+
                 # Check exclusion rules
                 if self.rule_engine.should_exclude_record(record):
                     exclusion_filtered += 1
                     self.logger.debug(f"Excluded record {index} based on exclusion rules")
                     continue
-                
+
                 filtered_by_exclusion.append(record)
 
             self.logger.info(f"Excluded {exclusion_filtered} records based on exclusion rules")
@@ -521,7 +521,7 @@ class DataProcessor:
 
             whitelist_count = original_count - len(filtered_df)
             total_filtered = exclusion_filtered + whitelist_count
-            
+
             self.logger.info(f"Filtered out {whitelist_count} whitelisted records, {total_filtered} total filtered")
 
             return filtered_df, total_filtered
@@ -673,7 +673,7 @@ class DataProcessor:
         except Exception as e:
             self.logger.error(f"Critical error processing email record {record_index}: {str(e)}")
             self.logger.error(f"Record keys: {list(record.keys()) if isinstance(record, dict) else 'Not a dict'}")
-            
+
             # Return a minimal safe record
             safe_record = self._clean_nan_values(record.copy()) if isinstance(record, dict) else {}
             safe_record = self._clean_record_data(safe_record)
@@ -692,16 +692,16 @@ class DataProcessor:
         try:
             from domain_manager import DomainManager
             domain_manager = DomainManager()
-            
+
             # Use the domain manager for classification
             classification = domain_manager.classify_domain(recipient_domain)
-            
+
             # Fall back to whitelist check if unknown
             if classification == 'Unknown':
                 whitelists = self.session_manager.get_whitelists()
                 if recipient_domain.lower() in whitelists.get('domains', []):
                     return 'Trusted'
-            
+
             return classification
 
         except Exception as e:
@@ -715,7 +715,7 @@ class DataProcessor:
             if processed_data is None:
                 processed_data = []
             processed_data = [record for record in processed_data if record is not None]
-            
+
             # Safely get ML results with proper type checking and handle all possible types
             anomaly_scores = ml_results.get('anomaly_scores', []) if ml_results else []
             risk_levels = ml_results.get('risk_levels', []) if ml_results else []
@@ -726,8 +726,7 @@ class DataProcessor:
             self.logger.info(f"Debug: Processing {len(processed_data)} records for ML merge")
             for i, record in enumerate(processed_data[:3] if len(processed_data) >= 3 else processed_data):  # Show first 3 records safely
                 if record is not None:
-                    attachments = record.get('attachments', '')
-                    self.logger.info(f"Debug: Record {i} - attachments field: '{attachments}' (type: {type(attachments)})")
+                    attachments = record.get('attachments', '')self.logger.info(f"Debug: Record {i} - attachments field: '{attachments}' (type: {type(attachments)})")
 
             # Ensure we have lists, not other types (including bool, dict, str, etc.)
             if not isinstance(anomaly_scores, (list, tuple)):
@@ -756,7 +755,7 @@ class DataProcessor:
             for i, record in enumerate(processed_data):
                 if i < len(anomaly_scores):
                     record['ml_anomaly_score'] = anomaly_scores[i]
-                
+
                 # Preserve Critical risk level for rule matches, otherwise use ML risk level
                 if i < len(risk_levels):
                     # If record has rule_priority flag (meaning it matched rules), keep Critical risk level
@@ -766,7 +765,7 @@ class DataProcessor:
                     else:
                         # Use ML-determined risk level for non-rule matches
                         record['ml_risk_level'] = risk_levels[i]
-                
+
                 if i < len(clusters):
                     record['ml_cluster'] = clusters[i]
                 if i < len(attachment_classifications):
@@ -850,47 +849,47 @@ class DataProcessor:
             all_processed_data = []
             total_records = 0
             whitelist_count = 0
-            
+
             # Read CSV headers first
             df_sample = pd.read_csv(file_path, nrows=1)
             csv_headers = df_sample.columns.tolist()
-            
+
             # Validate CSV structure
             validation_result = self._validate_csv(df_sample)
             if not validation_result['valid']:
                 return {'success': False, 'error': validation_result['error']}
-            
+
             # Create session
             session_result = self.session_manager.create_session(session_id, filename, csv_headers)
             if not session_result['success']:
                 return session_result
-            
+
             self.logger.info(f"Processing large CSV in chunks of {chunk_size}")
-            
+
             # Process file in chunks
             chunk_iter = pd.read_csv(file_path, chunksize=chunk_size)
-            
+
             for chunk_num, chunk_df in enumerate(chunk_iter):
                 self.logger.info(f"Processing chunk {chunk_num + 1}")
-                
+
                 # Convert chunk data to lowercase
                 chunk_df = self._convert_dataframe_to_lowercase(chunk_df)
-                
+
                 total_records += len(chunk_df)
-                
+
                 # STEP 1: Apply whitelist filtering
                 df_filtered, chunk_whitelist_count = self._apply_whitelist_filtering_with_stats(chunk_df)
                 whitelist_count += chunk_whitelist_count
-                
+
                 # STEP 2: Apply rules
                 escalated_data, remaining_data = self._apply_rules_with_escalation(df_filtered)
-                
+
                 # STEP 3 & 4: ML analysis and sorting (in smaller batches)
                 if remaining_data:
                     ml_results = self._run_ml_analysis(remaining_data)
                     case_management_data = self._prepare_case_management_data(remaining_data, ml_results)
                     all_processed_data.extend(escalated_data + case_management_data)
-            
+
             # Save processing results
             processing_stats = {
                 'total_records': total_records,
@@ -902,14 +901,14 @@ class DataProcessor:
                     f"Step 2-4: Processed {len(all_processed_data)} records in chunks"
                 ]
             }
-            
+
             # Save processed data to session with error handling
             self.logger.info(f"Saving {len(all_processed_data)} processed records to session {session_id}")
             save_result = self.session_manager.update_session_data(session_id, all_processed_data, processing_stats)
             if not save_result.get('success'):
                 self.logger.error(f"Failed to save large CSV processed data: {save_result.get('error')}")
                 return {'success': False, 'error': f'Failed to save processed data: {save_result.get("error", "Unknown error")}'}
-            
+
             # Extract sample data for preview (first 10 records)
             sample_data = []
             if all_processed_data:
@@ -928,7 +927,7 @@ class DataProcessor:
                 'processing_stats': processing_stats,
                 'sample_data': sample_data
             }
-            
+
         except Exception as e:
             self.logger.error(f"Error processing large CSV: {str(e)}")
             return {'success': False, 'error': str(e)}
@@ -972,3 +971,6 @@ class DataProcessor:
         except Exception as e:
             self.logger.error(f"Error getting processing summary: {str(e)}")
             return {}
+```
+
+Applying changes to fix array/DataFrame boolean context issues and DataFrame empty checks.

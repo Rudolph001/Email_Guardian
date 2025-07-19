@@ -728,7 +728,8 @@ class MLEngine:
 
     def get_insights(self, processed_data):
         """Get ML insights for dashboard display"""
-        if not processed_data:
+        # Check if we have data to analyze
+        if processed_data is None or len(processed_data) == 0:
             return {
                 'total_emails': 0,
                 'risk_distribution': {},
@@ -813,6 +814,8 @@ class MLEngine:
             if 'subject' in df.columns:
                 tfidf = self.tfidf_vectorizer.fit_transform(df['subject'].fillna(''))
                 tfidf_df = pd.DataFrame(tfidf.toarray(), columns=self.tfidf_vectorizer.get_feature_names_out())
+                This update addresses a potential issue where the truthiness of an empty pandas DataFrame or Series could cause unexpected behavior.
+```python
                 features.extend([tfidf_df[col] for col in tfidf_df.columns])
 
             # Combine features into a DataFrame
@@ -985,7 +988,7 @@ class MLEngine:
 
             for idx, row in df.iterrows():
                 attachments = row.get('attachments', '')
-                
+
                 if pd.isna(attachments) or str(attachments).strip() == '' or str(attachments).lower() == 'nan' or str(attachments).strip() == '-':
                     classifications.append('No Attachments')
                     continue
@@ -996,7 +999,7 @@ class MLEngine:
 
                 # Calculate comprehensive attachment risk score
                 risk_analysis = self._calculate_attachment_risk_score(attachment_list, row)
-                
+
                 classifications.append(risk_analysis['classification'])
 
             self.logger.info(f"Completed advanced attachment risk scoring for {len(classifications)} records")
@@ -1023,13 +1026,13 @@ class MLEngine:
             total_risk_score = 0.0
             risk_factors = []
             malicious_indicators = []
-            
+
             # Define high-risk file extensions and patterns
             executable_extensions = ['.exe', '.bat', '.cmd', '.com', '.scr', '.vbs', '.js', '.jar', '.app', '.dmg']
             archive_extensions = ['.zip', '.rar', '.7z', '.tar', '.gz', '.bz2']
             office_macro_extensions = ['.docm', '.xlsm', '.pptm', '.xls', '.doc', '.ppt']
             sensitive_extensions = ['.sql', '.db', '.mdb', '.accdb', '.csv', '.xlsx', '.pdf']
-            
+
             # Advanced malicious patterns
             malicious_patterns = [
                 'invoice', 'receipt', 'payment', 'urgent', 'confidential', 'secure',
@@ -1037,7 +1040,7 @@ class MLEngine:
                 'login', 'account', 'financial', 'tax', 'salary', 'payroll',
                 'personal', 'private', 'copy', 'duplicate', 'temp', 'tmp'
             ]
-            
+
             # Data exfiltration indicators
             exfiltration_patterns = [
                 'customer', 'client', 'contact', 'lead', 'prospect', 'employee',
@@ -1048,47 +1051,47 @@ class MLEngine:
             for attachment in attachment_list:
                 attachment_lower = attachment.lower()
                 file_risk = 0.0
-                
+
                 # 1. File Extension Risk Analysis
                 if any(ext in attachment_lower for ext in executable_extensions):
                     file_risk += 8.0
                     malicious_indicators.append(f"Executable file type: {attachment}")
                     risk_factors.append("High-risk executable attachment")
-                
+
                 if any(ext in attachment_lower for ext in office_macro_extensions):
                     file_risk += 5.0
                     malicious_indicators.append(f"Macro-enabled document: {attachment}")
                     risk_factors.append("Macro-enabled office document")
-                
+
                 if any(ext in attachment_lower for ext in archive_extensions):
                     file_risk += 3.0
                     risk_factors.append("Compressed archive file")
-                
+
                 # 2. Filename Pattern Analysis for Malicious Intent
                 for pattern in malicious_patterns:
                     if pattern in attachment_lower:
                         file_risk += 2.0
                         malicious_indicators.append(f"Suspicious filename pattern '{pattern}': {attachment}")
                         risk_factors.append(f"Suspicious naming pattern: {pattern}")
-                
+
                 # 3. Data Exfiltration Risk Assessment
                 exfiltration_score = 0.0
                 for pattern in exfiltration_patterns:
                     if pattern in attachment_lower:
                         exfiltration_score += 1.5
                         risk_factors.append(f"Data exfiltration indicator: {pattern}")
-                
+
                 # 4. File Size and Volume Risk (simulated based on naming patterns)
                 if any(word in attachment_lower for word in ['complete', 'full', 'all', 'entire', 'bulk']):
                     file_risk += 3.0
                     risk_factors.append("Large dataset indicator in filename")
-                
+
                 # 5. Obfuscation and Evasion Techniques
                 if any(char in attachment for char in ['_', '.', '-']) and len([c for c in attachment if c.isalnum()]) < len(attachment) * 0.7:
                     file_risk += 2.0
                     malicious_indicators.append(f"Obfuscated filename: {attachment}")
                     risk_factors.append("Potentially obfuscated filename")
-                
+
                 # 6. Double Extension Check
                 if attachment_lower.count('.') > 1:
                     extensions = attachment_lower.split('.')
@@ -1096,23 +1099,23 @@ class MLEngine:
                         file_risk += 4.0
                         malicious_indicators.append(f"Double extension detected: {attachment}")
                         risk_factors.append("Double file extension (evasion technique)")
-                
+
                 # 7. Temporal Risk Assessment (based on email context)
                 sender = email_record.get('sender', '').lower()
                 if email_record.get('leaver') == 'yes':
                     file_risk += 4.0
                     risk_factors.append("Attachment from departing employee")
-                
+
                 # 8. Domain and Context Risk
                 if 'wordlist_attachment' in email_record and email_record.get('wordlist_attachment') == 'yes':
                     file_risk += 3.0
                     risk_factors.append("Attachment matches security wordlist")
-                
+
                 total_risk_score += file_risk
 
             # Normalize risk score (0-100 scale)
             normalized_risk = min(100.0, (total_risk_score / len(attachment_list)) * 2)
-            
+
             # Determine classification based on comprehensive risk assessment
             if normalized_risk >= 70:
                 classification = 'Critical Risk'
@@ -1130,7 +1133,7 @@ class MLEngine:
                 # Apply business/personal classification for low-risk files
                 business_score = sum(1 for att in attachment_list for keyword in self.business_keywords if keyword in att.lower())
                 personal_score = sum(1 for att in attachment_list for keyword in self.personal_keywords if keyword in att.lower())
-                
+
                 if business_score > personal_score:
                     classification = 'Business'
                 elif personal_score > business_score:
@@ -1198,13 +1201,13 @@ class MLEngine:
         """Calculate detailed attachment risk scores for all records"""
         try:
             risk_scores = []
-            
+
             if 'attachments' not in df.columns:
                 return [{'risk_score': 0.0, 'risk_level': 'No Attachments'}] * len(df)
 
             for idx, row in df.iterrows():
                 attachments = row.get('attachments', '')
-                
+
                 if pd.isna(attachments) or str(attachments).strip() == '' or str(attachments).lower() == 'nan' or str(attachments).strip() == '-':
                     risk_scores.append({
                         'risk_score': 0.0,
@@ -1217,7 +1220,7 @@ class MLEngine:
 
                 attachment_list = [att.strip() for att in str(attachments).split(',') if att.strip()]
                 risk_analysis = self._calculate_attachment_risk_score(attachment_list, row)
-                
+
                 risk_scores.append({
                     'risk_score': risk_analysis['risk_score'],
                     'risk_level': risk_analysis['classification'],
