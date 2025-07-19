@@ -735,7 +735,7 @@ def generate_escalation_email(session_id, record_id):
     found_record = None
     record_index = None
     for i, record in enumerate(processed_data):
-        if (record.get('record_id') == record_id or 
+        if (record.get('record_id') == record_id or
             str(record.get('record_id')) == record_id or
             str(i) == record_id):
             found_record = record
@@ -750,7 +750,7 @@ def generate_escalation_email(session_id, record_id):
 
     if result['success']:
         return jsonify({
-            'success': True, 
+            'success': True,
             'draft': result['draft'],
             'message': 'Draft email generated successfully'
         })
@@ -786,9 +786,9 @@ def admin():
     app.logger.info(f"Final domain classifications structure: {domain_classifications}")
     app.logger.info(f"Trusted domains count: {len(domain_classifications.get('trusted', []))}")
 
-    return render_template('admin.html', 
-                         whitelists=whitelists, 
-                         attachment_keywords=attachment_keywords, 
+    return render_template('admin.html',
+                         whitelists=whitelists,
+                         attachment_keywords=attachment_keywords,
                          sessions=sessions,
                          domain_classifications=domain_classifications)
 
@@ -988,8 +988,8 @@ def whitelist_analysis(session_id):
         'domains': whitelists.get('domains', [])
     }
 
-    return render_template('whitelist_analysis.html', 
-                         session=session_data, 
+    return render_template('whitelist_analysis.html',
+                         session=session_data,
                          whitelist_stats=whitelist_stats)
 
 @app.route('/analytics/time/<session_id>')
@@ -1003,8 +1003,8 @@ def time_analysis(session_id):
 
     all_processed_data = session_manager.get_processed_data(session_id)
 
-    return render_template('time_analysis.html', 
-                         session=session_data, 
+    return render_template('time_analysis.html',
+                         session=session_data,
                          processed_data=all_processed_data)
 
 @app.route('/analytics/senders/<session_id>')
@@ -1018,8 +1018,8 @@ def sender_analysis(session_id):
 
     all_processed_data = session_manager.get_processed_data(session_id)
 
-    return render_template('sender_analysis.html', 
-                         session=session_data, 
+    return render_template('sender_analysis.html',
+                         session=session_data,
                          processed_data=all_processed_data)
 
 @app.route('/admin/attachment-keywords', methods=['POST'])
@@ -1199,6 +1199,40 @@ def bau_analysis(session_id):
 
 
 
+        # Convert to DataFrame for BAU analysis
+        df = pd.DataFrame(processed_data)
+        app.logger.info(f"DataFrame shape: {df.shape}")
+        app.logger.info(f"DataFrame columns: {list(df.columns)}")
+
+        ml_engine = MLEngine()
+        bau_results = ml_engine.detect_bau_emails(df)
+
+        # Add debug information
+        bau_results['debug_info'] = {
+            'total_records': len(processed_data),
+            'dataframe_shape': df.shape,
+            'has_sender_column': 'sender' in df.columns,
+            'has_recipients_column': 'recipients' in df.columns,
+            'session_id': session_id
+        }
+
+        app.logger.info(f"BAU Results: {bau_results.get('bau_percentage', 0)}% BAU, {len(bau_results.get('bau_candidates', []))} candidates")
+
+        return jsonify(bau_results)
+
+    except Exception as e:
+        app.logger.error(f"Error getting BAU analysis for session {session_id}: {str(e)}")
+        import traceback
+        app.logger.error(f"BAU analysis traceback: {traceback.format_exc()}")
+        return jsonify({
+            'error': str(e),
+            'bau_candidates': [],
+            'bau_percentage': 0,
+            'high_volume_pairs': [],
+            'unique_domains': 0,
+            'recommendations': [f'Error in BAU analysis: {str(e)}']
+        }), 500
+
 @app.route('/api/attachment_risk_analytics/<session_id>')
 def attachment_risk_analytics(session_id):
     """API endpoint for detailed attachment risk analytics"""
@@ -1283,20 +1317,20 @@ def attachment_risk_analytics(session_id):
 
         # Sort and limit results
         risk_analytics['top_risk_factors'] = dict(sorted(
-            risk_analytics['top_risk_factors'].items(), 
-            key=lambda x: x[1], 
+            risk_analytics['top_risk_factors'].items(),
+            key=lambda x: x[1],
             reverse=True
         )[:10])
 
         risk_analytics['high_risk_emails'] = sorted(
-            risk_analytics['high_risk_emails'], 
-            key=lambda x: x['risk_score'], 
+            risk_analytics['high_risk_emails'],
+            key=lambda x: x['risk_score'],
             reverse=True
         )[:20]
 
         risk_analytics['exfiltration_threats'] = sorted(
-            risk_analytics['exfiltration_threats'], 
-            key=lambda x: x['risk_score'], 
+            risk_analytics['exfiltration_threats'],
+            key=lambda x: x['risk_score'],
             reverse=True
         )[:10]
 
@@ -1316,41 +1350,6 @@ def attachment_risk_analytics(session_id):
             'top_risk_factors': [],
             'malicious_indicators': [],
             'exfiltration_threats': []
-        }), 500
-
-
-        # Convert to DataFrame for BAU analysis
-        df = pd.DataFrame(processed_data)
-        app.logger.info(f"DataFrame shape: {df.shape}")
-        app.logger.info(f"DataFrame columns: {list(df.columns)}")
-
-        ml_engine = MLEngine()
-        bau_results = ml_engine.detect_bau_emails(df)
-
-        # Add debug information
-        bau_results['debug_info'] = {
-            'total_records': len(processed_data),
-            'dataframe_shape': df.shape,
-            'has_sender_column': 'sender' in df.columns,
-            'has_recipients_column': 'recipients' in df.columns,
-            'session_id': session_id
-        }
-
-        app.logger.info(f"BAU Results: {bau_results.get('bau_percentage', 0)}% BAU, {len(bau_results.get('bau_candidates', []))} candidates")
-
-        return jsonify(bau_results)
-
-    except Exception as e:
-        app.logger.error(f"Error getting BAU analysis for session {session_id}: {str(e)}")
-        import traceback
-        app.logger.error(f"BAU analysis traceback: {traceback.format_exc()}")
-        return jsonify({
-            'error': str(e),
-            'bau_candidates': [],
-            'bau_percentage': 0,
-            'high_volume_pairs': [],
-            'unique_domains': 0,
-            'recommendations': [f'Error in BAU analysis: {str(e)}']
         }), 500
 
 @app.route('/api/processing_status/<session_id>')
