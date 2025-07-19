@@ -115,7 +115,7 @@ def main():
     print("\nTo start the application, run:")
     print("  python run.py")
     print("\nThe application will be available at:")
-    print("  http://localhost:5000")
+    print("  http://localhost:8080")
     print("=" * 40)
 
     return 0

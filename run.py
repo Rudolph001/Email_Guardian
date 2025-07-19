@@ -89,11 +89,11 @@ def start_application():
         print("Loading application modules...")
         from app import app
         print("✓ Application modules loaded successfully")
-        print("\n🚀 Starting server on http://localhost:5000")
+        print("\n🚀 Starting server on http://localhost:8080")
         print("Press Ctrl+C to stop the server")
         print("-" * 50)
 
-        app.run(host='0.0.0.0', port=5000, debug=True)
+        app.run(host='0.0.0.0', port=8080, debug=True)
 
     except ImportError as e:
         print(f"❌ Import error: {e}")

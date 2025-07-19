@@ -46,7 +46,7 @@ python run.py --dev
 - Auto-reloads on code changes
 - Debug mode enabled
 - Opens browser automatically
-- Runs on http://localhost:5000
+- Runs on http://localhost:8080
 
 ### Production Mode
 ```bash
@@ -119,7 +119,7 @@ email-guardian/
 ## Next Steps
 
 1. Start the application: `python run.py`
-2. Open http://localhost:5000 in your browser
+2. Open http://localhost:8080 in your browser
 3. Upload a Tessian CSV file to begin analysis
 4. Use the dashboard to review and manage email security cases
 

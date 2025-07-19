@@ -226,7 +226,7 @@ def main():
     print("\nOr for development mode:")
     print("  python run.py --dev")
     print("\nThe application will be available at:")
-    print("  http://localhost:5000")
+    print("  http://localhost:8080")
     print("\n" + "=" * 60)
     print("    DATA PROTECTION INFO")
     print("=" * 60)
