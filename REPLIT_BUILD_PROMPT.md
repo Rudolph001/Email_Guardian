@@ -193,6 +193,12 @@ GET  /api/time_analysis/<session_id>     # Temporal pattern analysis
 GET  /api/whitelist_analysis/<session_id> # Domain whitelist recommendations
 GET  /api/processing_errors/<session_id> # Processing error details
 
+# Email & Escalation Management
+GET  /api/escalation/<session_id>/<record_id>/generate-email # Generate escalation email
+POST /api/escalation/<session_id>/<record_id>/send          # Send escalation email
+GET  /api/escalation/<session_id>/<record_id>/template      # Get email template
+PUT  /api/escalation/<session_id>/<record_id>/template      # Update email template
+
 # Administration
 GET  /admin                              # Admin panel
 GET  /rules                              # Rules management
@@ -226,6 +232,10 @@ class Rule(db.Model)             # Security rules configuration
 - filterCases(filters)
 - loadBAUAnalysis(sessionId)
 - updateCaseStatus(sessionId, recordId, status)
+- generateEscalationEmail(sessionId, recordId)
+- sendEscalationEmail(sessionId, recordId, emailData)
+- openOutlookDraft(emailContent)
+- formatEmailTemplate(caseData, templateType)
 ```
 
 ## Advanced Features to Implement
@@ -255,6 +265,16 @@ class Rule(db.Model)             # Security rules configuration
 - Case assignment and tracking
 - Escalation workflow automation
 - Email draft generation for escalations
+
+### 5. Email Integration & Outlook Connectivity
+- **Draft Email Generation**: Automatic email creation for escalated cases
+- **Outlook Integration**: mailto: links and Outlook Web App compatibility
+- **Email Templates**: Customizable templates for different escalation types
+- **Case Context Embedding**: Rich email content with case details, risk factors, and ML insights
+- **Attachment Intelligence**: Email alerts include attachment risk summaries
+- **Email Formatting**: Professional HTML emails with case metadata and recommendations
+- **Multi-recipient Support**: CC/BCC functionality for team notifications
+- **Email Audit Trail**: Track sent escalation emails and responses
 
 ## Styling and UX Requirements
 - **Professional Business Theme**: Clean, corporate design
