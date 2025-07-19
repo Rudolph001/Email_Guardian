@@ -97,12 +97,26 @@ email-guardian/
 - Resolution tracking and case closure
 - Priority-based sorting
 
+#### D. Advanced Analytics Dashboards
+- **Sender Analysis** (`/sender_analysis/<session_id>`): User behavior patterns and risk profiling
+- **Time Analysis** (`/time_analysis/<session_id>`): Temporal anomaly detection and business hours analysis
+- **Whitelist Analysis** (`/whitelist_analysis/<session_id>`): Domain trust recommendations and BAU patterns
+- **Advanced ML Dashboard** (`/advanced_ml_dashboard/<session_id>`): Deep learning insights and pattern recognition
+
 ### 5. Advanced Analytics Features
 - **BAU Analysis**: Identify routine business communications for whitelisting
 - **Attachment Intelligence**: Comprehensive malware and exfiltration risk scoring
 - **Temporal Patterns**: Detect off-hours and unusual timing activities
 - **Domain Classification**: Categorize domains (Corporate/Personal/Public/Suspicious)
 - **Communication Networks**: Graph analysis of sender-recipient relationships
+- **Sender Profiling**: Individual user behavior analysis and risk scoring
+- **Time-based Analytics**: Business hours detection, weekend/holiday anomalies
+
+### 6. Domain Classification & Management System
+- **Automatic Domain Categorization**: Corporate/Personal/Public/Suspicious classification
+- **Domain Reputation Scoring**: Real-time risk assessment based on communication patterns
+- **Whitelist Recommendations**: AI-powered suggestions for trusted domain additions
+- **Dynamic Updates**: Automatic reclassification based on new data patterns
 
 ### 6. Administration Panel (`/admin`)
 - **Whitelist Management**: Domain whitelist with auto-reprocessing
@@ -118,6 +132,13 @@ email-guardian/
 - **Supported Conditions**: Contains, equals, starts_with, ends_with, regex
 - **Actions**: Escalate, flag, score_modifier, tag
 
+### 8. Error Handling & Validation System
+- **Comprehensive CSV Validation**: Column detection, format validation, data type checking
+- **Processing Error Recovery**: Graceful handling of malformed data with detailed error logs
+- **Session Recovery**: Resume interrupted processing from last checkpoint
+- **User Feedback**: Real-time error reporting with technical details and suggested fixes
+- **Data Integrity**: Validation of email addresses, timestamps, and required fields
+
 ## Technical Implementation Details
 
 ### Data Flow Architecture
@@ -128,11 +149,13 @@ email-guardian/
 5. **Export** → JSON export with all processed data
 
 ### Performance Optimizations
-- Chunked processing for large files (10MB+ threshold)
-- Lazy loading with pagination (50 records/page)
-- Compressed data storage for large sessions
-- Efficient filtering at data layer
-- Background processing indicators
+- **Chunked Processing**: 2500 records per chunk for memory efficiency
+- **Automatic Compression**: Sessions >5MB automatically compressed
+- **Lazy Loading**: Pagination (50 records/page) with server-side filtering
+- **Progress Tracking**: Real-time upload and processing indicators
+- **Session Recovery**: Resume interrupted processing from checkpoints
+- **Memory Management**: Efficient data structures for large datasets
+- **Background Processing**: Non-blocking operations with status updates
 
 ### Security Features
 - Input validation and sanitization
@@ -163,6 +186,12 @@ GET  /api/exclusion-rules/<rule_id>     # Get specific exclusion rule
 PUT  /api/exclusion-rules/<rule_id>     # Update exclusion rule
 DELETE /api/exclusion-rules/<rule_id>   # Delete exclusion rule
 POST /api/exclusion-rules/<rule_id>/toggle # Toggle rule active status
+
+# Advanced Analytics APIs
+GET  /api/sender_analysis/<session_id>   # Sender behavior analysis
+GET  /api/time_analysis/<session_id>     # Temporal pattern analysis  
+GET  /api/whitelist_analysis/<session_id> # Domain whitelist recommendations
+GET  /api/processing_errors/<session_id> # Processing error details
 
 # Administration
 GET  /admin                              # Admin panel
