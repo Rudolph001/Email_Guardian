@@ -370,14 +370,14 @@
 
         <!-- Domain Classifier Tab -->
         <div class="tab-pane fade" id="domains" role="tabpanel">
-            <!-- Debug info -->
-            <div class="alert alert-warning mb-3">
-                <strong>Debug:</strong> Domain classifications data: {{ domain_classifications|length if domain_classifications else 'None' }} categories
-                {% if domain_classifications %}
-                <br>Trusted: {{ domain_classifications.get('trusted', [])|length }}, 
-                Corporate: {{ domain_classifications.get('corporate', [])|length }}, 
-                Personal: {{ domain_classifications.get('personal', [])|length }}
-                {% endif %}
+            <h4>Domain Classification Management</h4>
+            <p>Organize domains into categories for better email analysis.</p>
+            
+            <div class="alert alert-success">
+                <strong>Data Status:</strong> 
+                Trusted: {{ domain_classifications.trusted|length if domain_classifications and domain_classifications.trusted else 0 }} domains, 
+                Corporate: {{ domain_classifications.corporate|length if domain_classifications and domain_classifications.corporate else 0 }} domains, 
+                Personal: {{ domain_classifications.personal|length if domain_classifications and domain_classifications.personal else 0 }} domains
             </div>
             
             <div class="row">
@@ -385,13 +385,13 @@
                     <div class="card shadow-sm">
                         <div class="card-header bg-primary text-white">
                             <h5 class="card-title mb-0">
-                                <i class="fas fa-globe me-2"></i>Domain Classification Management
+                                <i class="fas fa-globe me-2"></i>Domain Categories
                             </h5>
                         </div>
                         <div class="card-body">
                             <div class="alert alert-info mb-3">
                                 <i class="fas fa-info-circle me-2"></i>
-                                <strong>Domain Classification:</strong> Organize domains into categories for better email analysis. Changes will automatically reprocess existing sessions.
+                                <strong>Domain Classification:</strong> Organize domains into categories for better email analysis.
                             </div>
 
                             <!-- Domain Categories -->
