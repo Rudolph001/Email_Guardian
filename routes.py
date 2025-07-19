@@ -161,8 +161,9 @@ def dashboard(session_id):
         flash('Session not found', 'error')
         return redirect(url_for('index'))
 
-    # Get basic statistics without loading all data for better performance
-    result = session_manager.get_processed_data(session_id, page=1, per_page=1)
+    # Get all processed data to calculate accurate statistics
+    result = session_manager.get_processed_data(session_id, page=1, per_page=999999)
+    processed_data = result.get('data', [])
     total_records = result.get('total', 0)
     app.logger.info(f"Session {session_id} has {total_records} processed records")
 
@@ -171,45 +172,66 @@ def dashboard(session_id):
     case_management_data = []
     session_cases = session_data.get('cases', {}) if session_data else {}
 
-    # Count escalated cases from session data efficiently
-    escalated_count = 0
-    case_management_count = 0
-    session_cases = session_data.get('cases', {})
-    
-    for case_info in session_cases.values():
-        if case_info.get('status', '').lower() == 'escalate':
-            escalated_count += 1
+    # Process all records to separate escalated vs case management
+    for i, record in enumerate(processed_data):
+        if record is None:
+            continue
+        
+        record_id = record.get('record_id', i)
+        case_info = session_cases.get(str(record_id), {})
+        case_status = case_info.get('status', '').lower()
+        
+        if case_status == 'escalate':
+            record['status'] = 'Escalated'
+            escalated_data.append(record)
         else:
-            case_management_count += 1
-    
-    # If no cases in session data, all records are in case management
-    if not session_cases:
-        case_management_count = total_records
+            case_management_data.append(record)
+
+    # Count escalated cases
+    escalated_count = len(escalated_data)
+    case_management_count = len(case_management_data)
 
     # Get processing statistics
     processing_stats = session_data.get('processing_stats', {})
     processing_steps = processing_stats.get('processing_steps', [])
 
-    # Get ML insights from processing stats if available (faster than recalculating)
-    ml_insights = processing_stats.get('ml_insights', {
-        'total_emails': case_management_count,
-        'risk_distribution': {},
+    # Calculate risk level distributions from actual data
+    risk_distribution = {}
+    rule_matches_count = 0
+    
+    all_data = escalated_data + case_management_data
+    for record in all_data:
+        if record and isinstance(record, dict):
+            # Count risk levels
+            risk_level = record.get('ml_risk_level', 'Low')
+            risk_distribution[risk_level] = risk_distribution.get(risk_level, 0) + 1
+            
+            # Count rule matches
+            rule_results = record.get('rule_results', {})
+            if rule_results.get('matched_rules'):
+                rule_matches_count += 1
+
+    # Get ML insights with actual data
+    ml_insights = {
+        'total_emails': len(all_data),
+        'risk_distribution': risk_distribution,
+        'rule_matches_count': rule_matches_count,
         'anomaly_summary': {
-            'high_anomaly_count': 0,
-            'anomaly_percentage': 0
+            'high_anomaly_count': len([r for r in all_data if r.get('ml_anomaly_score', 0) > 0.7]),
+            'anomaly_percentage': (len([r for r in all_data if r.get('ml_anomaly_score', 0) > 0.7]) / len(all_data) * 100) if all_data else 0
         },
         'pattern_summary': {
-            'total_patterns': 0,
-            'critical_patterns': 0,
-            'high_patterns': 0
+            'total_patterns': len(set([r.get('ml_cluster', -1) for r in all_data if r.get('ml_cluster', -1) >= 0])),
+            'critical_patterns': risk_distribution.get('Critical', 0),
+            'high_patterns': risk_distribution.get('High', 0)
         },
         'recommendations': []
-    })
+    }
 
     return render_template('dashboard.html',
                          session=session_data,
-                         escalated_data=[],  # Empty arrays for dashboard performance
-                         case_management_data=[],  # Data loaded on demand via pagination
+                         escalated_data=escalated_data,
+                         case_management_data=case_management_data,
                          processing_steps=processing_steps,
                          ml_insights=ml_insights,
                          escalated_count=escalated_count,

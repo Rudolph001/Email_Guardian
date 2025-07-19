@@ -75,7 +75,7 @@
                         </div>
                         <div class="ms-3">
                             <h5 class="card-title mb-0">
-                                {{ (case_management_data|selectattr('ml_risk_level', 'equalto', 'Critical')|list|length) + (escalated_data|selectattr('ml_risk_level', 'equalto', 'Critical')|list|length) }}
+                                {{ ml_insights.risk_distribution.get('Critical', 0) }}
                             </h5>
                             <p class="card-text text-muted">Critical Risk</p>
                         </div>
@@ -136,7 +136,7 @@
                         </div>
                         <div class="ms-3">
                             <h5 class="card-title mb-0">
-                                {{ (case_management_data|selectattr('ml_risk_level', 'equalto', 'High')|list|length) + (escalated_data|selectattr('ml_risk_level', 'equalto', 'High')|list|length) }}
+                                {{ ml_insights.risk_distribution.get('High', 0) }}
                             </h5>
                             <p class="card-text text-muted">High Risk</p>
                         </div>
@@ -156,7 +156,7 @@
                         </div>
                         <div class="ms-3">
                             <h5 class="card-title mb-0">
-                                {{ (case_management_data|selectattr('ml_risk_level', 'equalto', 'Medium')|list|length) + (escalated_data|selectattr('ml_risk_level', 'equalto', 'Medium')|list|length) }}
+                                {{ ml_insights.risk_distribution.get('Medium', 0) }}
                             </h5>
                             <p class="card-text text-muted">Medium Risk</p>
                         </div>
@@ -176,7 +176,7 @@
                         </div>
                         <div class="ms-3">
                             <h5 class="card-title mb-0">
-                                {{ (case_management_data|selectattr('ml_risk_level', 'equalto', 'Low')|list|length) + (escalated_data|selectattr('ml_risk_level', 'equalto', 'Low')|list|length) }}
+                                {{ ml_insights.risk_distribution.get('Low', 0) }}
                             </h5>
                             <p class="card-text text-muted">Low Risk</p>
                         </div>
@@ -810,7 +810,7 @@ new Chart(sendersCtx, {
 <script>
     function reprocessRules() {
         if (confirm('This will reprocess all rules and update escalations. Continue?')) {
-            const sessionId = '{{ session.session_id }}';
+            const sessionId = '{{ session.session_session_id }}';
 
             fetch(`/api/reprocess_rules/${sessionId}`, {
                 method: 'POST',
