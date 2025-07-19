@@ -308,7 +308,7 @@ function setupExclusionRuleModal(isEdit, rule = null, conditions = null, fieldNa
     // Clear the form
     document.getElementById('exclusionRuleName').value = isEdit && rule ? rule.name : '';
     document.getElementById('exclusionRuleDescription').value = isEdit && rule ? (rule.description || '') : '';
-    document.getElementById('exclusionCaseSensitive').checked = isEdit && rule ? rule.case_sensitive : false;
+    document.getElementById('exclusionRuleCaseSensitive').checked = isEdit && rule ? rule.case_sensitive : false;
     
     // Update modal title and button
     const modalTitle = document.querySelector('#exclusionRuleModal .modal-title');
@@ -532,7 +532,7 @@ function saveExclusionRule() {
 function updateExclusionRule(ruleId) {
     const name = document.getElementById('exclusionRuleName').value.trim();
     const description = document.getElementById('exclusionRuleDescription').value.trim();
-    const caseSensitive = document.getElementById('exclusionCaseSensitive').checked;
+    const caseSensitive = document.getElementById('exclusionRuleCaseSensitive').checked;
     
     if (!name) {
         showAlert('Rule name is required', 'error');
@@ -836,60 +836,6 @@ function showAlert(message, type) {
     }, 5000);
 }
 </script>
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Create Exclusion Rule</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="exclusionRuleForm">
-                    <div class="mb-3">
-                        <label for="exclusionRuleName" class="form-label">Rule Name</label>
-                        <input type="text" class="form-control" id="exclusionRuleName" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="exclusionRuleDescription" class="form-label">Description</label>
-                        <textarea class="form-control" id="exclusionRuleDescription" rows="2"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="exclusionRuleField" class="form-label">Field Name</label>
-                        <select class="form-select" id="exclusionRuleField" required>
-                            <option value="">Select field...</option>
-                        </select>
-                        <small class="form-text text-muted">Choose the field to check for exclusion</small>
-                    </div>
-                    <div class="mb-3">
-                        <label for="exclusionRuleOperator" class="form-label">Operator</label>
-                        <select class="form-select" id="exclusionRuleOperator" required>
-                            <option value="">Select operator...</option>
-                            <option value="equals">Equals</option>
-                            <option value="contains">Contains</option>
-                            <option value="not_equals">Not Equals</option>
-                            <option value="starts_with">Starts With</option>
-                            <option value="ends_with">Ends With</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="exclusionRuleValue" class="form-label">Value</label>
-                        <input type="text" class="form-control" id="exclusionRuleValue" required>
-                        <small class="form-text text-muted">Records matching this condition will be excluded</small>
-                    </div>
-                    <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="exclusionRuleCaseSensitive">
-                        <label class="form-check-label" for="exclusionRuleCaseSensitive">
-                            Case Sensitive
-                        </label>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="saveExclusionRule()">Create Rule</button>
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Rule Creation Modal -->
 <div class="modal fade" id="createRuleModal" tabindex="-1">
