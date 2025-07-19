@@ -229,7 +229,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Top Risk Factors -->
             <div>
                 <h6 class="mb-2">Top Risk Factors:</h6>
@@ -963,7 +963,11 @@ function scrollToSection(sectionId) {
         }, 30000);
 
         function refreshBAUAnalysis() {
-            const sessionId = '{{ session.session_id if session else "" }}';
+        const sessionId = '{{ session.session_id }}';
+        if (!sessionId || sessionId === '') {
+            console.error('Session ID not found.');
+            return;
+        }
             const bauContent = document.getElementById('bau-content');
             const bauLoading = document.getElementById('bau-loading');
 
@@ -1146,12 +1150,12 @@ function scrollToSection(sectionId) {
         }
 
         function whitelistSelected() {
+        const sessionId = '{{ session.session_id }}';
             if (selectedBauCandidates.length === 0) {
                 alert('Please select at least one domain pair to whitelist.');
                 return;
             }
 
-            const sessionId = '{{ session.session_id }}';
             const whitelistBtn = document.getElementById('whitelistSelectedBtn');
 
             whitelistBtn.disabled = true;
@@ -1193,6 +1197,97 @@ function scrollToSection(sectionId) {
         document.addEventListener('DOMContentLoaded', function() {
             refreshBAUAnalysis();
         });
+    </script>
+    <script>
+function loadAttachmentRiskIntelligence() {
+        console.log('Initializing attachment risk intelligence...');
+
+        // Get session ID from template variable
+        const sessionId = '{{ session.session_id }}';
+
+        if (!sessionId || sessionId === '') {
+            console.error('Session ID not found.');
+            return;
+        }
+
+        // Fetch attachment risk intelligence data
+        fetch(`/api/attachment_risk/${sessionId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    console.error('Error fetching attachment risk data:', data.error);
+                    document.getElementById('topRiskFactors').innerHTML = '<div class="text-muted small">Error loading data.</div>';
+                    return;
+                }
+
+                // Update risk metrics
+                document.getElementById('criticalAttachments').textContent = data.critical_attachments || '0';
+                document.getElementById('highRiskAttachments').textContent = data.high_risk_attachments || '0';
+                document.getElementById('avgRiskScore').textContent = (data.average_risk_score || 0).toFixed(1);
+
+                // Update top risk factors
+                const topRiskFactorsContainer = document.getElementById('topRiskFactors');
+                if (data.top_risk_factors && data.top_risk_factors.length > 0) {
+                    topRiskFactorsContainer.innerHTML = data.top_risk_factors.map(factor => `
+                        <span class="badge bg-danger me-1 mb-1">${factor}</span>
+                    `).join('');
+                } else {
+                    topRiskFactorsContainer.innerHTML = '<div class="text-muted small">No significant risk factors identified.</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                document.getElementById('topRiskFactors').innerHTML = '<div class="text-muted small">Failed to load risk analysis.</div>';
+            });
+    }
+
+    // Call function on page load
+    document.addEventListener('DOMContentLoaded', loadAttachmentRiskIntelligence);
+</script>
+<script>
+        function loadBAUAnalysis() {
+        const sessionId = '{{ session.session_id }}';
+        if (!sessionId || sessionId === '') {
+            console.error('Session ID not found.');
+            return;
+        }
+            fetch(`/api/bau_analysis/${sessionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error loading BAU analysis:', data.error);
+                        return;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+        function whitelistBAUDomains(domainPairs) {
+        const sessionId = '{{ session.session_id }}';
+
+        fetch(`/api/whitelist_bau/${sessionId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    domain_pairs: domainPairs
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Successfully whitelisted domains:', data.new_domains);
+                } else {
+                    console.error('Error whitelisting domains:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
     </script>
 {% endblock %}
 </body>
