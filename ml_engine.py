@@ -523,55 +523,71 @@ class MLEngine:
         Returns analysis of regular communication patterns that should be whitelisted
         """
         try:
-            if len(df) == 0:
+            # Ensure we have a valid DataFrame
+            if df is None or len(df) == 0:
                 return {
                     'bau_candidates': [],
                     'bau_percentage': 0,
                     'high_volume_pairs': [],
                     'unique_domains': 0,
-                    'recommendations': ['No data available for BAU analysis']
+                    'recommendations': ['No data available for BAU analysis'],
+                    'total_communications': 0,
+                    'unique_patterns': 0,
+                    'bau_stats': {
+                        'bau_candidates_count': 0,
+                        'bau_percentage': 0,
+                        'high_volume_pairs': []
+                    }
                 }
 
             # Extract sender and recipient domains
             def extract_domain(email):
-                if pd.isna(email) or not isinstance(email, str):
+                try:
+                    if pd.isna(email) or not isinstance(email, str):
+                        return None
+                    email = str(email).strip()
+                    if '@' in email:
+                        domain = email.split('@')[-1].lower().strip()
+                        return domain if domain else None
                     return None
-                email = str(email).strip()
-                if '@' in email:
-                    return email.split('@')[-1].lower().strip()
-                return None
+                except Exception:
+                    return None
 
             # Create domain pairs for analysis
             domain_pairs = []
             sender_recipient_pairs = []
 
             for _, row in df.iterrows():
-                sender = str(row.get('sender', '')).strip()
-                sender_domain = extract_domain(sender)
-                recipients = str(row.get('recipients', ''))
+                try:
+                    sender = str(row.get('sender', '')).strip()
+                    sender_domain = extract_domain(sender)
+                    recipients = str(row.get('recipients', ''))
 
-                if sender_domain and recipients and recipients != 'nan':
-                    # Handle multiple recipients
-                    recipient_list = []
-                    if ',' in recipients:
-                        recipient_list = [r.strip() for r in recipients.split(',') if r.strip()]
-                    elif ';' in recipients:
-                        recipient_list = [r.strip() for r in recipients.split(';') if r.strip()]
-                    else:
-                        recipient_list = [recipients.strip()]
+                    if sender_domain and recipients and recipients not in ['nan', 'None', '', 'null']:
+                        # Handle multiple recipients
+                        recipient_list = []
+                        if ',' in recipients:
+                            recipient_list = [r.strip() for r in recipients.split(',') if r.strip()]
+                        elif ';' in recipients:
+                            recipient_list = [r.strip() for r in recipients.split(';') if r.strip()]
+                        else:
+                            recipient_list = [recipients.strip()]
 
-                    for recipient in recipient_list:
-                        recipient_domain = extract_domain(recipient)
-                        if recipient_domain and sender_domain != recipient_domain:
-                            pair = f"{sender_domain} -> {recipient_domain}"
-                            domain_pairs.append(pair)
-                            sender_recipient_pairs.append({
-                                'sender': sender,
-                                'recipient': recipient,
-                                'sender_domain': sender_domain,
-                                'recipient_domain': recipient_domain,
-                                'pair': pair
-                            })
+                        for recipient in recipient_list:
+                            recipient_domain = extract_domain(recipient)
+                            if recipient_domain and sender_domain != recipient_domain:
+                                pair = f"{sender_domain} -> {recipient_domain}"
+                                domain_pairs.append(pair)
+                                sender_recipient_pairs.append({
+                                    'sender': sender,
+                                    'recipient': recipient,
+                                    'sender_domain': sender_domain,
+                                    'recipient_domain': recipient_domain,
+                                    'pair': pair
+                                })
+                except Exception as e:
+                    self.logger.debug(f"Error processing row in BAU analysis: {str(e)}")
+                    continue
 
             if not domain_pairs:
                 return {
@@ -579,7 +595,14 @@ class MLEngine:
                     'bau_percentage': 0,
                     'high_volume_pairs': [],
                     'unique_domains': 0,
-                    'recommendations': ['No valid domain pairs found for BAU analysis']
+                    'recommendations': ['No valid domain pairs found for BAU analysis'],
+                    'total_communications': 0,
+                    'unique_patterns': 0,
+                    'bau_stats': {
+                        'bau_candidates_count': 0,
+                        'bau_percentage': 0,
+                        'high_volume_pairs': []
+                    }
                 }
 
             # Count frequency of domain pairs
@@ -603,7 +626,7 @@ class MLEngine:
             bau_candidates = []
 
             for pair, count in pair_counts.items():
-                percentage = (count / total_pairs) * 100
+                percentage = (count / total_pairs) * 100 if total_pairs > 0 else 0
                 high_volume_pairs.append({
                     'pair': pair,
                     'count': count,
@@ -621,8 +644,14 @@ class MLEngine:
             bau_email_count = sum(pair_counts[pair] for pair in bau_candidates)
             bau_percentage = (bau_email_count / total_pairs) * 100 if total_pairs > 0 else 0
 
-            # Get unique domains involved in BAU
-            unique_domains = len(set([pair.split(' -> ')[1] for pair in bau_candidates]))
+            # Get unique domains involved in BAU - ensure we have candidates first
+            unique_domains = 0
+            if bau_candidates:
+                try:
+                    unique_domains = len(set([pair.split(' -> ')[1] for pair in bau_candidates if ' -> ' in pair]))
+                except Exception as e:
+                    self.logger.debug(f"Error calculating unique domains: {str(e)}")
+                    unique_domains = 0
 
             # Generate detailed recommendations
             recommendations = []
@@ -647,20 +676,24 @@ class MLEngine:
                 recommendations.append("All communications appear to be unique or low-volume")
                 recommendations.append("Manual review recommended for establishing whitelist rules")
 
-            return {
-                'bau_candidates': bau_candidates,
-                'bau_percentage': round(bau_percentage, 1),
-                'high_volume_pairs': high_volume_pairs[:15],  # Top 15 for better visibility
-                'unique_domains': unique_domains,
-                'recommendations': recommendations,
-                'total_communications': total_pairs,
-                'unique_patterns': total_unique_pairs,
+            # Ensure we return valid data structure
+            result = {
+                'bau_candidates': bau_candidates if bau_candidates else [],
+                'bau_percentage': round(bau_percentage, 1) if bau_percentage is not None else 0,
+                'high_volume_pairs': high_volume_pairs[:15] if high_volume_pairs else [],  # Top 15 for better visibility
+                'unique_domains': unique_domains if unique_domains is not None else 0,
+                'recommendations': recommendations if recommendations else ['No analysis available'],
+                'total_communications': total_pairs if total_pairs is not None else 0,
+                'unique_patterns': total_unique_pairs if total_unique_pairs is not None else 0,
                 'bau_stats': {
-                    'bau_candidates_count': len(bau_candidates),
-                    'bau_percentage': round(bau_percentage, 1),
-                    'high_volume_pairs': high_volume_pairs[:10]
+                    'bau_candidates_count': len(bau_candidates) if bau_candidates else 0,
+                    'bau_percentage': round(bau_percentage, 1) if bau_percentage is not None else 0,
+                    'high_volume_pairs': high_volume_pairs[:10] if high_volume_pairs else []
                 }
             }
+
+            self.logger.info(f"BAU analysis completed successfully: {result['bau_percentage']}% BAU, {result['unique_domains']} unique domains")
+            return result
 
         except Exception as e:
             self.logger.error(f"Error in BAU detection: {str(e)}")
@@ -673,7 +706,12 @@ class MLEngine:
                 'unique_domains': 0,
                 'recommendations': [f"Error in BAU analysis: {str(e)}"],
                 'total_communications': 0,
-                'unique_patterns': 0
+                'unique_patterns': 0,
+                'bau_stats': {
+                    'bau_candidates_count': 0,
+                    'bau_percentage': 0,
+                    'high_volume_pairs': []
+                }
             }
 
     def _calculate_bau_score(self, data):

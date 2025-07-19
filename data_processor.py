@@ -731,14 +731,41 @@ class DataProcessor:
             attachment_classifications = ml_results.get('attachment_classifications', []) if ml_results else []
 
             # Convert NumPy arrays to Python lists immediately to avoid boolean ambiguity
-            if hasattr(anomaly_scores, 'tolist'):
-                anomaly_scores = anomaly_scores.tolist()
-            if hasattr(risk_levels, 'tolist'):
-                risk_levels = risk_levels.tolist()
-            if hasattr(clusters, 'tolist'):
-                clusters = clusters.tolist()
-            if hasattr(attachment_classifications, 'tolist'):
-                attachment_classifications = attachment_classifications.tolist()
+            def safe_convert_to_list(data, name="unknown"):
+                """Safely convert data to list, handling NumPy arrays and edge cases"""
+                try:
+                    if data is None:
+                        return []
+                    if hasattr(data, 'tolist'):
+                        return data.tolist()
+                    if isinstance(data, (list, tuple)):
+                        return list(data)
+                    if hasattr(data, 'size'):  # NumPy array
+                        # Use len() check instead of size > 0 to avoid boolean ambiguity
+                        try:
+                            if len(data) > 0:
+                                return data.tolist()
+                            else:
+                                return []
+                        except (TypeError, ValueError):
+                            # If len() fails, try alternative approach
+                            if hasattr(data, 'shape') and data.shape[0] > 0:
+                                return data.tolist()
+                            else:
+                                return []
+                    if isinstance(data, (int, float, str, bool)):
+                        return [data]
+                    else:
+                        self.logger.warning(f"{name} is unexpected type {type(data)}: {data}")
+                        return []
+                except Exception as e:
+                    self.logger.error(f"Error converting {name} to list: {str(e)}")
+                    return []
+
+            anomaly_scores = safe_convert_to_list(anomaly_scores, "anomaly_scores")
+            risk_levels = safe_convert_to_list(risk_levels, "risk_levels")
+            clusters = safe_convert_to_list(clusters, "clusters")
+            attachment_classifications = safe_convert_to_list(attachment_classifications, "attachment_classifications")
 
             # Debug logging for attachment data
             self.logger.info(f"Debug: Processing {len(processed_data)} records for ML merge")
@@ -746,45 +773,6 @@ class DataProcessor:
                 if record is not None:
                     attachments = record.get('attachments', '')
                     self.logger.info(f"Debug: Record {i} - attachments field: '{attachments}' (type: {type(attachments)})")
-
-            # Ensure we have lists, not other types (including bool, dict, str, etc.)
-            # Handle NumPy arrays properly to avoid boolean ambiguity
-            if not isinstance(anomaly_scores, (list, tuple)):
-                if hasattr(anomaly_scores, 'size'):  # NumPy array
-                    if anomaly_scores.size > 0:
-                        anomaly_scores = anomaly_scores.tolist()
-                    else:
-                        anomaly_scores = []
-                else:
-                    self.logger.warning(f"anomaly_scores is not a list/tuple, got {type(anomaly_scores)}: {anomaly_scores}")
-                    anomaly_scores = []
-            if not isinstance(risk_levels, (list, tuple)):
-                if hasattr(risk_levels, 'size'):  # NumPy array
-                    if risk_levels.size > 0:
-                        risk_levels = risk_levels.tolist()
-                    else:
-                        risk_levels = []
-                else:
-                    self.logger.warning(f"risk_levels is not a list/tuple, got {type(risk_levels)}: {risk_levels}")
-                    risk_levels = []
-            if not isinstance(clusters, (list, tuple)):
-                if hasattr(clusters, 'size'):  # NumPy array
-                    if clusters.size > 0:
-                        clusters = clusters.tolist()
-                    else:
-                        clusters = []
-                else:
-                    self.logger.warning(f"clusters is not a list/tuple, got {type(clusters)}: {clusters}")
-                    clusters = []
-            if not isinstance(attachment_classifications, (list, tuple)):
-                if hasattr(attachment_classifications, 'size'):  # NumPy array
-                    if attachment_classifications.size > 0:
-                        attachment_classifications = attachment_classifications.tolist()
-                    else:
-                        attachment_classifications = []
-                else:
-                    self.logger.warning(f"attachment_classifications is not a list/tuple, got {type(attachment_classifications)}: {attachment_classifications}")
-                    attachment_classifications = []
 
             # Convert to lists if they are tuples
             anomaly_scores = list(anomaly_scores) if isinstance(anomaly_scores, tuple) else anomaly_scores
