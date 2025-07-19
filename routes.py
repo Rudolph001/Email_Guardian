@@ -915,6 +915,16 @@ def admin():
         domain_manager.initialize_domains_file()
         domain_classifications = domain_manager.get_domains()
     
+    # Ensure all required keys exist with proper structure
+    required_keys = ['trusted', 'corporate', 'personal', 'public', 'suspicious']
+    for key in required_keys:
+        if key not in domain_classifications or not isinstance(domain_classifications[key], list):
+            domain_classifications[key] = []
+    
+    # Additional debug logging
+    app.logger.info(f"Final domain classifications structure: {domain_classifications}")
+    app.logger.info(f"Trusted domains count: {len(domain_classifications.get('trusted', []))}")
+    
     return render_template('admin.html', 
                          whitelists=whitelists, 
                          attachment_keywords=attachment_keywords, 
