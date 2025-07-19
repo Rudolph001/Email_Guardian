@@ -1129,21 +1129,62 @@ def bau_analysis(session_id):
     """API endpoint for BAU (Business As Usual) analysis"""
     try:
         session_manager = SessionManager()
-        processed_data = session_manager.get_processed_data(session_id)
+        result = session_manager.get_processed_data(session_id, page=1, per_page=999999)
+        processed_data = result.get('data', [])
 
         if not processed_data:
-            return jsonify({'error': 'No data found'}), 404
+            return jsonify({
+                'error': 'No data found',
+                'bau_candidates': [],
+                'bau_percentage': 0,
+                'high_volume_pairs': [],
+                'unique_domains': 0,
+                'recommendations': ['No processed data available for this session']
+            }), 404
+
+        # Debug logging
+        app.logger.info(f"BAU Analysis for session {session_id}: {len(processed_data)} records")
+        
+        # Sample a few records for debugging
+        if len(processed_data) > 0:
+            sample_record = processed_data[0]
+            app.logger.info(f"Sample record keys: {list(sample_record.keys()) if isinstance(sample_record, dict) else 'Not a dict'}")
+            app.logger.info(f"Sample sender: {sample_record.get('sender', 'N/A') if isinstance(sample_record, dict) else 'N/A'}")
+            app.logger.info(f"Sample recipients: {sample_record.get('recipients', 'N/A') if isinstance(sample_record, dict) else 'N/A'}")
 
         # Convert to DataFrame for BAU analysis
         df = pd.DataFrame(processed_data)
+        app.logger.info(f"DataFrame shape: {df.shape}")
+        app.logger.info(f"DataFrame columns: {list(df.columns)}")
+        
         ml_engine = MLEngine()
         bau_results = ml_engine.detect_bau_emails(df)
+        
+        # Add debug information
+        bau_results['debug_info'] = {
+            'total_records': len(processed_data),
+            'dataframe_shape': df.shape,
+            'has_sender_column': 'sender' in df.columns,
+            'has_recipients_column': 'recipients' in df.columns,
+            'session_id': session_id
+        }
+
+        app.logger.info(f"BAU Results: {bau_results.get('bau_percentage', 0)}% BAU, {len(bau_results.get('bau_candidates', []))} candidates")
 
         return jsonify(bau_results)
 
     except Exception as e:
-        app.logger.error(f"Error getting BAU analysis: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f"Error getting BAU analysis for session {session_id}: {str(e)}")
+        import traceback
+        app.logger.error(f"BAU analysis traceback: {traceback.format_exc()}")
+        return jsonify({
+            'error': str(e),
+            'bau_candidates': [],
+            'bau_percentage': 0,
+            'high_volume_pairs': [],
+            'unique_domains': 0,
+            'recommendations': [f'Error in BAU analysis: {str(e)}']
+        }), 500
 
 @app.route('/api/processing_status/<session_id>')
 def get_processing_status(session_id):

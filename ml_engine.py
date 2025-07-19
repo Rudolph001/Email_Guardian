@@ -512,114 +512,157 @@ class MLEngine:
         return insights
 
     def detect_bau_emails(self, df):
-        """Detect BAU (Business As Usual) emails - high volume business communications"""
+        """
+        Detect Business As Usual (BAU) emails based on communication patterns
+        Returns analysis of regular communication patterns that should be whitelisted
+        """
         try:
-            bau_analysis = {
-                'sender_domain_patterns': {},
-                'recipient_domain_patterns': {},
-                'high_volume_pairs': [],
-                'business_communication_clusters': [],
-                'bau_candidates': [],
-                'bau_stats': {}
+            if df.empty:
+                return {
+                    'bau_candidates': [],
+                    'bau_percentage': 0,
+                    'high_volume_pairs': [],
+                    'unique_domains': 0,
+                    'recommendations': ['No data available for BAU analysis']
+                }
+
+            # Extract sender and recipient domains
+            def extract_domain(email):
+                if pd.isna(email) or not isinstance(email, str):
+                    return None
+                email = str(email).strip()
+                if '@' in email:
+                    return email.split('@')[-1].lower().strip()
+                return None
+
+            # Create domain pairs for analysis
+            domain_pairs = []
+            sender_recipient_pairs = []
+
+            for _, row in df.iterrows():
+                sender = str(row.get('sender', '')).strip()
+                sender_domain = extract_domain(sender)
+                recipients = str(row.get('recipients', ''))
+
+                if sender_domain and recipients and recipients != 'nan':
+                    # Handle multiple recipients
+                    recipient_list = []
+                    if ',' in recipients:
+                        recipient_list = [r.strip() for r in recipients.split(',') if r.strip()]
+                    elif ';' in recipients:
+                        recipient_list = [r.strip() for r in recipients.split(';') if r.strip()]
+                    else:
+                        recipient_list = [recipients.strip()]
+
+                    for recipient in recipient_list:
+                        recipient_domain = extract_domain(recipient)
+                        if recipient_domain and sender_domain != recipient_domain:
+                            pair = f"{sender_domain} -> {recipient_domain}"
+                            domain_pairs.append(pair)
+                            sender_recipient_pairs.append({
+                                'sender': sender,
+                                'recipient': recipient,
+                                'sender_domain': sender_domain,
+                                'recipient_domain': recipient_domain,
+                                'pair': pair
+                            })
+
+            if not domain_pairs:
+                return {
+                    'bau_candidates': [],
+                    'bau_percentage': 0,
+                    'high_volume_pairs': [],
+                    'unique_domains': 0,
+                    'recommendations': ['No valid domain pairs found for BAU analysis']
+                }
+
+            # Count frequency of domain pairs
+            pair_counts = {}
+            for pair in domain_pairs:
+                pair_counts[pair] = pair_counts.get(pair, 0) + 1
+
+            # Calculate statistics
+            total_pairs = len(domain_pairs)
+            total_unique_pairs = len(pair_counts)
+
+            # Adjust threshold based on data size
+            if total_pairs < 10:
+                high_volume_threshold = 2  # At least 2 emails for small datasets
+            elif total_pairs < 50:
+                high_volume_threshold = max(2, int(total_pairs * 0.15))  # 15% for medium datasets
+            else:
+                high_volume_threshold = max(3, int(total_pairs * 0.1))   # 10% for large datasets
+
+            high_volume_pairs = []
+            bau_candidates = []
+
+            for pair, count in pair_counts.items():
+                percentage = (count / total_pairs) * 100
+                high_volume_pairs.append({
+                    'pair': pair,
+                    'count': count,
+                    'percentage': round(percentage, 1)
+                })
+
+                # More flexible BAU criteria
+                if count >= high_volume_threshold or percentage >= 5.0:
+                    bau_candidates.append(pair)
+
+            # Sort by count descending
+            high_volume_pairs.sort(key=lambda x: x['count'], reverse=True)
+
+            # Calculate BAU percentage more accurately
+            bau_email_count = sum(pair_counts[pair] for pair in bau_candidates)
+            bau_percentage = (bau_email_count / total_pairs) * 100 if total_pairs > 0 else 0
+
+            # Get unique domains involved in BAU
+            unique_domains = len(set([pair.split(' -> ')[1] for pair in bau_candidates]))
+
+            # Generate detailed recommendations
+            recommendations = []
+            if len(bau_candidates) > 0:
+                recommendations.append(f"Found {len(bau_candidates)} potential BAU communication patterns")
+                recommendations.append(f"These patterns represent {bau_percentage:.1f}% of all email communications")
+
+                if bau_percentage > 70:
+                    recommendations.append("High BAU percentage - mostly routine business communications")
+                    recommendations.append("Consider whitelisting top patterns to reduce false positives")
+                elif bau_percentage > 30:
+                    recommendations.append("Moderate BAU percentage - mixed communication patterns")
+                    recommendations.append("Review patterns manually before implementing whitelist rules")
+                else:
+                    recommendations.append("Low BAU percentage - communications are diverse")
+                    recommendations.append("Focus on highest volume patterns for potential whitelisting")
+
+                if unique_domains > 5:
+                    recommendations.append(f"Communications span {unique_domains} domains - indicates diverse business relationships")
+            else:
+                recommendations.append("No clear BAU patterns detected")
+                recommendations.append("All communications appear to be unique or low-volume")
+                recommendations.append("Manual review recommended for establishing whitelist rules")
+
+            return {
+                'bau_candidates': bau_candidates,
+                'bau_percentage': round(bau_percentage, 1),
+                'high_volume_pairs': high_volume_pairs[:15],  # Top 15 for better visibility
+                'unique_domains': unique_domains,
+                'recommendations': recommendations,
+                'total_communications': total_pairs,
+                'unique_patterns': total_unique_pairs
             }
-
-            # Analyze sender to recipient domain patterns
-            domain_pairs = {}
-            sender_volumes = {}
-            recipient_volumes = {}
-
-            for index, row in df.iterrows():
-                sender = row.get('sender', '')
-                recipient_domain = row.get('recipients_email_domain', '')
-
-                # Extract sender domain
-                sender_domain = sender.split('@')[-1] if '@' in sender else sender
-
-                # Count volumes
-                sender_volumes[sender] = sender_volumes.get(sender, 0) + 1
-                recipient_volumes[recipient_domain] = recipient_volumes.get(recipient_domain, 0) + 1
-
-                # Track domain pairs
-                pair_key = f"{sender_domain} -> {recipient_domain}"
-                if pair_key not in domain_pairs:
-                    domain_pairs[pair_key] = {
-                        'count': 0,
-                        'senders': set(),
-                        'subjects': set(),
-                        'has_attachments': 0,
-                        'business_keywords': 0
-                    }
-
-                domain_pairs[pair_key]['count'] += 1
-                domain_pairs[pair_key]['senders'].add(sender)
-                domain_pairs[pair_key]['subjects'].add(row.get('subject', ''))
-
-                if row.get('has_attachments'):
-                    domain_pairs[pair_key]['has_attachments'] += 1
-
-                # Check for business keywords in subject
-                subject = str(row.get('subject', '')).lower()
-                if any(keyword in subject for keyword in ['report', 'invoice', 'contract', 'meeting', 'proposal']):
-                    domain_pairs[pair_key]['business_keywords'] += 1
-
-            # Identify high-volume BAU patterns (threshold: >5 emails)
-            bau_threshold = 5
-            for pair_key, data in domain_pairs.items():
-                if data['count'] >= bau_threshold:
-                    bau_score = self._calculate_bau_score(data)
-
-                    bau_analysis['high_volume_pairs'].append({
-                        'pair': pair_key,
-                        'volume': data['count'],
-                        'unique_senders': len(data['senders']),
-                        'unique_subjects': len(data['subjects']),
-                        'attachment_ratio': data['has_attachments'] / data['count'],
-                        'business_keyword_ratio': data['business_keywords'] / data['count'],
-                        'bau_score': bau_score,
-                        'bau_likelihood': self._get_bau_likelihood(bau_score)
-                    })
-
-            # Sort by BAU score (highest first)
-            bau_analysis['high_volume_pairs'].sort(key=lambda x: x['bau_score'], reverse=True)
-
-            # Generate BAU candidates for whitelisting
-            for pair_data in bau_analysis['high_volume_pairs']:
-                if pair_data['bau_likelihood'] in ['High', 'Very High']:
-                    bau_analysis['bau_candidates'].append({
-                        'domain_pair': pair_data['pair'],
-                        'volume': pair_data['volume'],
-                        'confidence': pair_data['bau_likelihood'],
-                        'recommendation': self._get_bau_recommendation(pair_data)
-                    })
-
-            # Calculate BAU statistics
-            total_emails = len(df)
-            high_volume_emails = sum(pair['volume'] for pair in bau_analysis['high_volume_pairs'])
-
-            bau_analysis['bau_stats'] = {
-                'total_emails': total_emails,
-                'high_volume_emails': high_volume_emails,
-                'bau_percentage': (high_volume_emails / total_emails * 100) if total_emails > 0 else 0,
-                'unique_domain_pairs': len(domain_pairs),
-                'bau_candidates_count': len(bau_analysis['bau_candidates']),
-                'top_sender_domains': dict(sorted(
-                    {sender.split('@')[-1]: count for sender, count in sender_volumes.items()}.items(),
-                    key=lambda x: x[1], reverse=True
-                )[:10]),
-                'top_recipient_domains': dict(sorted(recipient_volumes.items(), key=lambda x: x[1], reverse=True)[:10])
-            }
-
-            return bau_analysis
 
         except Exception as e:
             self.logger.error(f"Error in BAU detection: {str(e)}")
+            import traceback
+            self.logger.error(f"BAU detection traceback: {traceback.format_exc()}")
             return {
-                'sender_domain_patterns': {},
-                'recipient_domain_patterns': {},
-                'high_volume_pairs': [],
-                'business_communication_clusters': [],
                 'bau_candidates': [],
-                'bau_stats': {}
+                'bau_percentage': 0,
+                'high_volume_pairs': [],
+                'unique_domains': 0,
+                'recommendations': [f"Error in BAU analysis: {str(e)}"],
+                'total_communications': 0,
+                'unique_patterns': 0
             }
 
     def _calculate_bau_score(self, data):
