@@ -1381,6 +1381,20 @@ def reprocess_rules(session_id):
         app.logger.error(f"Error reprocessing session {session_id}: {str(e)}")
         return jsonify({'error': f'Reprocessing failed: {str(e)}'}), 500
 
+@app.route('/api/whitelist_status')
+def get_whitelist_status():
+    """API endpoint to check when whitelist was last updated"""
+    try:
+        session_manager = SessionManager()
+        whitelists = session_manager.get_whitelists()
+        return jsonify({
+            'updated_at': whitelists.get('updated_at', ''),
+            'domain_count': len(whitelists.get('domains', []))
+        })
+    except Exception as e:
+        app.logger.error(f"Error getting whitelist status: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
 # Domain Management API Routes
 @app.route('/admin/domains/add', methods=['POST'])
 def add_domain():
