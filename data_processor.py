@@ -726,7 +726,8 @@ class DataProcessor:
             self.logger.info(f"Debug: Processing {len(processed_data)} records for ML merge")
             for i, record in enumerate(processed_data[:3] if len(processed_data) >= 3 else processed_data):  # Show first 3 records safely
                 if record is not None:
-                    attachments = record.get('attachments', '')self.logger.info(f"Debug: Record {i} - attachments field: '{attachments}' (type: {type(attachments)})")
+                    attachments = record.get('attachments', '')
+                    self.logger.info(f"Debug: Record {i} - attachments field: '{attachments}' (type: {type(attachments)})")
 
             # Ensure we have lists, not other types (including bool, dict, str, etc.)
             if not isinstance(anomaly_scores, (list, tuple)):
