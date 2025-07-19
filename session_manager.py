@@ -119,7 +119,7 @@ class SessionManager:
                     metadata_sessions[session_id] = metadata
 
                     # Save processed_data separately if it exists
-                    if 'processed_data' in session_data and session_data['processed_data']:
+                    if 'processed_data' in session_data and session_data['processed_data'] is not None and len(session_data['processed_data']) > 0:
                         data_file = os.path.join(data_dir, f"{session_id}_data.json.gz")
                         try:
                             with gzip.open(data_file, 'wt', encoding='utf-8') as f:
@@ -260,7 +260,7 @@ class SessionManager:
             data_dir = 'data/session_data'
             os.makedirs(data_dir, exist_ok=True)
 
-            if 'processed_data' in session_data and session_data['processed_data']:
+            if 'processed_data' in session_data and session_data['processed_data'] is not None and len(session_data['processed_data']) > 0:
                 data_file = os.path.join(data_dir, f"{session_id}_data.json.gz")
                 with gzip.open(data_file, 'wt', encoding='utf-8') as f:
                     json.dump(session_data['processed_data'], f, default=str, separators=(',', ':'))
