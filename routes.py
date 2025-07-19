@@ -1241,17 +1241,9 @@ def attachment_risk_analytics(session_id):
         result = session_manager.get_processed_data(session_id, page=1, per_page=999999)
         processed_data = result.get('data', [])
 
-        if not processed_data:
-            return jsonify({
-                'error': 'No data found',
-                'total_attachments': 0,
-                'risk_distribution': {},
-                'top_risk_factors': [],
-                'malicious_indicators': [],
-                'exfiltration_threats': []
-            }), 404
+        app.logger.info(f"Processing attachment risk analytics for session {session_id} with {len(processed_data) if processed_data else 0} records")
 
-        # Analyze attachment risks
+        # Initialize analytics structure
         risk_analytics = {
             'total_attachments': 0,
             'total_emails_with_attachments': 0,
@@ -1261,51 +1253,88 @@ def attachment_risk_analytics(session_id):
             'exfiltration_threats': [],
             'high_risk_emails': [],
             'average_risk_score': 0.0,
-            'risk_trends': {}
+            'critical_risk_count': 0,
+            'high_risk_count': 0,
+            'medium_risk_count': 0,
+            'low_risk_count': 0
         }
+
+        if not processed_data:
+            app.logger.warning(f"No processed data found for session {session_id}")
+            return jsonify(risk_analytics)
 
         total_risk_score = 0
         risk_score_count = 0
 
         for record in processed_data:
-            if record.get('has_attachments'):
+            if record is None:
+                continue
+                
+            # Check if email has attachments
+            has_attachments = record.get('has_attachments', False)
+            if has_attachments:
                 risk_analytics['total_emails_with_attachments'] += 1
-                risk_analytics['total_attachments'] += record.get('attachment_count', 1)
+                
+                # Count total attachments
+                attachment_count = record.get('attachment_count', 1)
+                if isinstance(attachment_count, (int, float)) and attachment_count > 0:
+                    risk_analytics['total_attachments'] += int(attachment_count)
+                else:
+                    risk_analytics['total_attachments'] += 1
 
                 # Risk level distribution
-                risk_level = record.get('attachment_risk_level', 'Unknown')
-                risk_analytics['risk_distribution'][risk_level] = risk_analytics['risk_distribution'].get(risk_level, 0) + 1
+                risk_level = record.get('attachment_risk_level', 'Low Risk')
+                if risk_level:
+                    risk_analytics['risk_distribution'][risk_level] = risk_analytics['risk_distribution'].get(risk_level, 0) + 1
+                    
+                    # Count by simplified categories
+                    if 'Critical' in risk_level:
+                        risk_analytics['critical_risk_count'] += 1
+                    elif 'High' in risk_level:
+                        risk_analytics['high_risk_count'] += 1
+                    elif 'Medium' in risk_level:
+                        risk_analytics['medium_risk_count'] += 1
+                    else:
+                        risk_analytics['low_risk_count'] += 1
 
                 # Aggregate risk factors
                 risk_factors = record.get('attachment_risk_factors', [])
-                for factor in risk_factors:
-                    risk_analytics['top_risk_factors'][factor] = risk_analytics['top_risk_factors'].get(factor, 0) + 1
+                if isinstance(risk_factors, list):
+                    for factor in risk_factors:
+                        if factor and isinstance(factor, str):
+                            risk_analytics['top_risk_factors'][factor] = risk_analytics['top_risk_factors'].get(factor, 0) + 1
 
                 # Collect malicious indicators
                 malicious_indicators = record.get('attachment_malicious_indicators', [])
-                risk_analytics['malicious_indicators'].extend(malicious_indicators)
+                if isinstance(malicious_indicators, list):
+                    risk_analytics['malicious_indicators'].extend([ind for ind in malicious_indicators if ind])
 
-                # Track high-risk emails
+                # Track risk scores
                 risk_score = record.get('attachment_risk_score', 0)
-                if risk_score > 0:
+                if isinstance(risk_score, (int, float)) and risk_score > 0:
                     total_risk_score += risk_score
                     risk_score_count += 1
 
-                if risk_score >= 50:  # High risk threshold
-                    risk_analytics['high_risk_emails'].append({
-                        'record_id': record.get('record_id'),
-                        'sender': record.get('sender'),
-                        'subject': record.get('subject', '')[:50] + '...',
-                        'risk_score': risk_score,
-                        'risk_level': risk_level,
-                        'exfiltration_risk': record.get('attachment_exfiltration_risk', 'Unknown')
-                    })
+                    # Track high-risk emails (score >= 50)
+                    if risk_score >= 50:
+                        subject = record.get('subject', '')
+                        if len(subject) > 50:
+                            subject = subject[:47] + '...'
+                            
+                        risk_analytics['high_risk_emails'].append({
+                            'record_id': record.get('record_id', ''),
+                            'sender': record.get('sender', ''),
+                            'subject': subject,
+                            'risk_score': risk_score,
+                            'risk_level': risk_level,
+                            'exfiltration_risk': record.get('attachment_exfiltration_risk', 'Unknown')
+                        })
 
                 # Track exfiltration threats
                 exfiltration_risk = record.get('attachment_exfiltration_risk', 'None')
                 if exfiltration_risk in ['High', 'Medium']:
                     risk_analytics['exfiltration_threats'].append({
-                        'sender': record.get('sender'),
+                        'sender': record.get('sender', ''),
                         'risk_level': exfiltration_risk,
                         'risk_score': risk_score,
                         'attachments': record.get('attachments', '')
@@ -1324,33 +1353,44 @@ def attachment_risk_analytics(session_id):
 
         risk_analytics['high_risk_emails'] = sorted(
             risk_analytics['high_risk_emails'],
-            key=lambda x: x['risk_score'],
+            key=lambda x: x.get('risk_score', 0),
             reverse=True
         )[:20]
 
         risk_analytics['exfiltration_threats'] = sorted(
             risk_analytics['exfiltration_threats'],
-            key=lambda x: x['risk_score'],
+            key=lambda x: x.get('risk_score', 0),
             reverse=True
         )[:10]
 
-        # Unique malicious indicators
+        # Remove duplicates from malicious indicators
         risk_analytics['malicious_indicators'] = list(set(risk_analytics['malicious_indicators']))[:15]
 
-        app.logger.info(f"Attachment risk analytics for session {session_id}: {risk_analytics['total_emails_with_attachments']} emails with attachments")
+        app.logger.info(f"Attachment risk analytics completed: {risk_analytics['total_emails_with_attachments']} emails with attachments, {risk_analytics['critical_risk_count']} critical, {risk_analytics['high_risk_count']} high risk")
 
         return jsonify(risk_analytics)
 
     except Exception as e:
         app.logger.error(f"Error getting attachment risk analytics for session {session_id}: {str(e)}")
+        import traceback
+        app.logger.error(f"Traceback: {traceback.format_exc()}")
+        
+        # Return empty structure on error
         return jsonify({
-            'error': str(e),
             'total_attachments': 0,
+            'total_emails_with_attachments': 0,
             'risk_distribution': {},
-            'top_risk_factors': [],
+            'top_risk_factors': {},
             'malicious_indicators': [],
-            'exfiltration_threats': []
-        }), 500
+            'exfiltration_threats': [],
+            'high_risk_emails': [],
+            'average_risk_score': 0.0,
+            'critical_risk_count': 0,
+            'high_risk_count': 0,
+            'medium_risk_count': 0,
+            'low_risk_count': 0,
+            'error': str(e)
+        })
 
 @app.route('/api/processing_status/<session_id>')
 def get_processing_status(session_id):
