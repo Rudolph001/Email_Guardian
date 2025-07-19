@@ -1372,12 +1372,21 @@ def add_exclusion_rule():
         data = request.json
         rule_engine = RuleEngine()
         
+        # Handle both single condition (backward compatibility) and multiple conditions
+        conditions = data.get('conditions', [])
+        if not conditions and 'field' in data:
+            # Single condition format for backward compatibility
+            conditions = [{
+                'field': data.get('field'),
+                'operator': data.get('operator'),
+                'value': data.get('value'),
+                'logic': 'AND'
+            }]
+        
         result = rule_engine.add_exclusion_rule(
             name=data.get('name'),
             description=data.get('description'),
-            field=data.get('field'),
-            operator=data.get('operator'),
-            value=data.get('value'),
+            conditions=conditions,
             case_sensitive=data.get('case_sensitive', False)
         )
         

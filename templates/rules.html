@@ -216,7 +216,7 @@
 
 <!-- Exclusion Rule Modal -->
 <div class="modal fade" id="exclusionRuleModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Create Exclusion Rule</h5>
@@ -230,30 +230,22 @@
                     </div>
                     <div class="mb-3">
                         <label for="exclusionRuleDescription" class="form-label">Description</label>
-                        <textarea class="form-control" id="exclusionRuleDescription" rows="3"></textarea>
+                        <textarea class="form-control" id="exclusionRuleDescription" rows="2"></textarea>
                     </div>
+                    
+                    <!-- Conditions Section -->
                     <div class="mb-3">
-                        <label for="exclusionRuleField" class="form-label">Field</label>
-                        <select class="form-select" id="exclusionRuleField" required>
-                            <option value="">Select field...</option>
-                        </select>
+                        <label class="form-label d-flex justify-content-between align-items-center">
+                            <span>Conditions</span>
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="addExclusionCondition()">
+                                <i class="fas fa-plus me-1"></i>Add Condition
+                            </button>
+                        </label>
+                        <div id="exclusionConditionsContainer">
+                            <!-- Conditions will be added here -->
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="exclusionRuleOperator" class="form-label">Operator</label>
-                        <select class="form-select" id="exclusionRuleOperator" required>
-                            <option value="">Select operator...</option>
-                            <option value="equals">Equals</option>
-                            <option value="contains">Contains</option>
-                            <option value="not_equals">Not Equals</option>
-                            <option value="starts_with">Starts With</option>
-                            <option value="ends_with">Ends With</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label for="exclusionRuleValue" class="form-label">Value</label>
-                        <input type="text" class="form-control" id="exclusionRuleValue" required>
-                        <small class="form-text text-muted">Records matching this condition will be excluded</small>
-                    </div>
+                    
                     <div class="mb-3 form-check">
                         <input type="checkbox" class="form-check-input" id="exclusionRuleCaseSensitive">
                         <label class="form-check-label" for="exclusionRuleCaseSensitive">
@@ -264,7 +256,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="submitExclusionRule()">Create Rule</button>
+                <button type="button" class="btn btn-primary" onclick="saveExclusionRule()">Create Rule</button>
             </div>
         </div>
     </div>
@@ -273,6 +265,8 @@
 <script>
 // Global variables for exclusion rules
 let exclusionRulesData = [];
+let fieldNames = {};
+let conditionCounter = 0;
 
 // Load exclusion rules on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -286,16 +280,15 @@ function createExclusionRule() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Populate field names dropdown
-                const fieldSelect = document.getElementById('exclusionRuleField');
-                fieldSelect.innerHTML = '<option value="">Select field...</option>';
+                // Store field names globally
+                fieldNames = data.field_names;
                 
-                data.field_names.forEach(field => {
-                    const option = document.createElement('option');
-                    option.value = field;
-                    option.textContent = field;
-                    fieldSelect.appendChild(option);
-                });
+                // Reset condition counter and clear conditions
+                conditionCounter = 0;
+                document.getElementById('exclusionConditionsContainer').innerHTML = '';
+                
+                // Add first condition
+                addExclusionCondition();
                 
                 // Show the modal
                 const modal = new bootstrap.Modal(document.getElementById('exclusionRuleModal'));
@@ -310,22 +303,156 @@ function createExclusionRule() {
         });
 }
 
-// Function to submit exclusion rule
-function submitExclusionRule() {
-    const formData = {
-        name: document.getElementById('exclusionRuleName').value,
-        description: document.getElementById('exclusionRuleDescription').value,
-        field: document.getElementById('exclusionRuleField').value,
-        operator: document.getElementById('exclusionRuleOperator').value,
-        value: document.getElementById('exclusionRuleValue').value,
-        case_sensitive: document.getElementById('exclusionRuleCaseSensitive').checked
-    };
+// Function to add exclusion condition
+function addExclusionCondition() {
+    conditionCounter++;
+    const container = document.getElementById('exclusionConditionsContainer');
     
-    // Validate required fields
-    if (!formData.name || !formData.field || !formData.operator || !formData.value) {
-        showAlert('Please fill in all required fields', 'error');
+    const conditionDiv = document.createElement('div');
+    conditionDiv.className = 'condition-row border rounded p-3 mb-2';
+    conditionDiv.setAttribute('data-condition-id', conditionCounter);
+    
+    // Create field options with categories
+    let fieldOptions = '<option value="">Select field...</option>';
+    
+    // Add categorized field options
+    if (fieldNames.imported_fields) {
+        fieldOptions += '<optgroup label="Imported Fields">';
+        fieldNames.imported_fields.forEach(field => {
+            fieldOptions += `<option value="${field}">${field}</option>`;
+        });
+        fieldOptions += '</optgroup>';
+    }
+    
+    if (fieldNames.ml_fields) {
+        fieldOptions += '<optgroup label="ML Analysis Fields">';
+        fieldNames.ml_fields.forEach(field => {
+            fieldOptions += `<option value="${field}">${field}</option>`;
+        });
+        fieldOptions += '</optgroup>';
+    }
+    
+    if (fieldNames.risk_fields) {
+        fieldOptions += '<optgroup label="Risk Assessment Fields">';
+        fieldNames.risk_fields.forEach(field => {
+            fieldOptions += `<option value="${field}">${field}</option>`;
+        });
+        fieldOptions += '</optgroup>';
+    }
+    
+    // Logic selector for subsequent conditions
+    const logicSelector = conditionCounter > 1 ? `
+        <div class="col-md-2">
+            <label class="form-label">Logic</label>
+            <select class="form-select condition-logic">
+                <option value="AND">AND</option>
+                <option value="OR">OR</option>
+            </select>
+        </div>
+    ` : '<div class="col-md-2"></div>';
+    
+    conditionDiv.innerHTML = `
+        <div class="row g-2">
+            ${logicSelector}
+            <div class="col-md-3">
+                <label class="form-label">Field</label>
+                <select class="form-select condition-field" required>
+                    ${fieldOptions}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Operator</label>
+                <select class="form-select condition-operator" required>
+                    <option value="">Select operator...</option>
+                    <option value="equals">Equals</option>
+                    <option value="contains">Contains</option>
+                    <option value="not_equals">Not Equals</option>
+                    <option value="starts_with">Starts With</option>
+                    <option value="ends_with">Ends With</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Value</label>
+                <input type="text" class="form-control condition-value" placeholder="Enter value..." required>
+            </div>
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeExclusionCondition(${conditionCounter})" title="Remove condition">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(conditionDiv);
+}
+
+// Function to remove exclusion condition
+function removeExclusionCondition(conditionId) {
+    const conditionRow = document.querySelector(`[data-condition-id="${conditionId}"]`);
+    if (conditionRow) {
+        conditionRow.remove();
+        
+        // If this was the first condition and there are others, remove logic selector from new first condition
+        const remainingConditions = document.querySelectorAll('.condition-row');
+        if (remainingConditions.length > 0) {
+            const firstCondition = remainingConditions[0];
+            const logicColumn = firstCondition.querySelector('.col-md-2');
+            if (logicColumn && logicColumn.querySelector('.condition-logic')) {
+                logicColumn.innerHTML = '';
+            }
+        }
+    }
+    
+    // Ensure at least one condition exists
+    if (document.querySelectorAll('.condition-row').length === 0) {
+        addExclusionCondition();
+    }
+}
+
+// Function to save exclusion rule
+function saveExclusionRule() {
+    const name = document.getElementById('exclusionRuleName').value;
+    const description = document.getElementById('exclusionRuleDescription').value;
+    const caseSensitive = document.getElementById('exclusionRuleCaseSensitive').checked;
+    
+    // Collect all conditions
+    const conditions = [];
+    const conditionRows = document.querySelectorAll('.condition-row');
+    
+    conditionRows.forEach((row, index) => {
+        const conditionId = row.getAttribute('data-condition-id');
+        const logic = index === 0 ? 'AND' : (row.querySelector('.condition-logic')?.value || 'AND');
+        const field = row.querySelector('.condition-field').value;
+        const operator = row.querySelector('.condition-operator').value;
+        const value = row.querySelector('.condition-value').value;
+        
+        if (field && operator && value) {
+            conditions.push({
+                field: field,
+                operator: operator,
+                value: value,
+                logic: logic
+            });
+        }
+    });
+    
+    // Validate
+    if (!name) {
+        showAlert('Please enter a rule name', 'error');
         return;
     }
+    
+    if (conditions.length === 0) {
+        showAlert('Please add at least one valid condition', 'error');
+        return;
+    }
+    
+    const formData = {
+        name: name,
+        description: description,
+        conditions: conditions,
+        case_sensitive: caseSensitive
+    };
     
     fetch('/api/exclusion-rules', {
         method: 'POST',
@@ -343,6 +470,7 @@ function submitExclusionRule() {
             const modal = bootstrap.Modal.getInstance(document.getElementById('exclusionRuleModal'));
             modal.hide();
             document.getElementById('exclusionRuleForm').reset();
+            document.getElementById('exclusionConditionsContainer').innerHTML = '';
             
             // Reload exclusion rules
             loadExclusionRules();

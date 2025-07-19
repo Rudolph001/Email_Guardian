@@ -31,19 +31,28 @@ class RuleEngine:
     @staticmethod
     def get_field_names():
         """Get all available field names from CSV imports for rule creation"""
-        # Common email export field names from Tessian and similar systems
-        return [
-            '_time', 'sent_timestamp', 'sender', 'recipient', 'recipients', 'subject',
-            'attachments', 'attachment_classification', 'wordlist_subject', 'wordlist_attachment',
-            'leaver', 'status', 'blocked', 'direction', 'message_id', 'thread_id',
-            'cc', 'bcc', 'reply_to', 'importance', 'sensitivity', 'size', 'has_attachments',
-            'domain_classification', 'sender_domain', 'recipient_domain', 'external_recipients',
-            'internal_recipients', 'attachment_count', 'attachment_types', 'attachment_names',
-            'content_type', 'encryption_status', 'dlp_policy', 'compliance_status',
-            'risk_score', 'threat_classification', 'quarantine_status', 'delivery_status',
-            'spam_score', 'phishing_score', 'malware_detected', 'safe_links_status',
-            'department', 'job_title', 'manager', 'location', 'employee_id', 'cost_center'
-        ]
+        # Return categorized field names for better organization
+        return {
+            'imported_fields': [
+                '_time', 'sent_timestamp', 'sender', 'recipient', 'recipients', 'subject',
+                'attachments', 'attachment_count', 'attachment_types', 'attachment_names',
+                'leaver', 'status', 'blocked', 'direction', 'message_id', 'thread_id',
+                'cc', 'bcc', 'reply_to', 'importance', 'sensitivity', 'size', 'has_attachments',
+                'sender_domain', 'recipient_domain', 'external_recipients', 'internal_recipients',
+                'content_type', 'encryption_status', 'dlp_policy', 'compliance_status',
+                'quarantine_status', 'delivery_status', 'safe_links_status',
+                'department', 'job_title', 'manager', 'location', 'employee_id', 'cost_center',
+                'wordlist_subject', 'wordlist_attachment'
+            ],
+            'ml_fields': [
+                'ml_anomaly_score', 'ml_risk_level', 'ml_cluster',
+                'anomaly_score', 'risk_score', 'threat_classification'
+            ],
+            'risk_fields': [
+                'ml_risk_level', 'risk_score', 'spam_score', 'phishing_score', 
+                'malware_detected', 'attachment_classification', 'domain_classification'
+            ]
+        }
 
     @staticmethod
     def initialize_rules_file():
@@ -388,8 +397,8 @@ class RuleEngine:
             self.logger.error(f"Error saving exclusion rules: {str(e)}")
             return False
 
-    def add_exclusion_rule(self, name: str, description: str, field: str, operator: str, value: str, case_sensitive: bool = False) -> Dict:
-        """Add a new exclusion rule"""
+    def add_exclusion_rule(self, name: str, description: str, conditions: List[Dict], case_sensitive: bool = False) -> Dict:
+        """Add a new exclusion rule with multiple conditions"""
         try:
             rules = self.get_all_exclusion_rules()
             
@@ -399,9 +408,7 @@ class RuleEngine:
                 'id': new_id,
                 'name': name.strip(),
                 'description': description.strip(),
-                'field': field,
-                'operator': operator,
-                'value': value,
+                'conditions': conditions,
                 'case_sensitive': case_sensitive,
                 'active': True,
                 'created_at': datetime.now().isoformat(),
@@ -476,39 +483,20 @@ class RuleEngine:
             exclusion_rules = self.get_exclusion_rules()
             
             for rule in exclusion_rules:
-                field = rule.get('field')
-                operator = rule.get('operator')
-                value = rule.get('value')
-                case_sensitive = rule.get('case_sensitive', False)
+                # Support both old single-condition rules and new multi-condition rules
+                conditions = rule.get('conditions', [])
                 
-                if not field or not operator or value is None:
-                    continue
+                # Handle backward compatibility for old format
+                if not conditions and 'field' in rule:
+                    conditions = [{
+                        'field': rule.get('field'),
+                        'operator': rule.get('operator', 'equals'),
+                        'value': rule.get('value'),
+                        'logic': 'AND'
+                    }]
                 
-                record_value = record.get(field)
-                if record_value is None:
-                    continue
-                
-                record_value = str(record_value)
-                rule_value = str(value)
-                
-                if not case_sensitive:
-                    record_value = record_value.lower()
-                    rule_value = rule_value.lower()
-                
-                if operator == 'equals' and record_value == rule_value:
-                    self.logger.info(f"Excluding record: {rule['name']} matched ({field}={record_value})")
-                    return True
-                elif operator == 'contains' and rule_value in record_value:
-                    self.logger.info(f"Excluding record: {rule['name']} matched ({field} contains {rule_value})")
-                    return True
-                elif operator == 'not_equals' and record_value != rule_value:
-                    self.logger.info(f"Excluding record: {rule['name']} matched ({field}!={rule_value})")
-                    return True
-                elif operator == 'starts_with' and record_value.startswith(rule_value):
-                    self.logger.info(f"Excluding record: {rule['name']} matched ({field} starts with {rule_value})")
-                    return True
-                elif operator == 'ends_with' and record_value.endswith(rule_value):
-                    self.logger.info(f"Excluding record: {rule['name']} matched ({field} ends with {rule_value})")
+                if self._evaluate_exclusion_conditions(record, conditions, rule.get('case_sensitive', False)):
+                    self.logger.info(f"Excluding record: {rule['name']} matched conditions")
                     return True
             
             return False
@@ -516,3 +504,56 @@ class RuleEngine:
         except Exception as e:
             self.logger.error(f"Error checking exclusion rules: {str(e)}")
             return False
+
+    def _evaluate_exclusion_conditions(self, record: Dict, conditions: List[Dict], case_sensitive: bool = False) -> bool:
+        """Evaluate multiple conditions for exclusion rules"""
+        if not conditions:
+            return False
+        
+        result = None
+        
+        for i, condition in enumerate(conditions):
+            field = condition.get('field', '')
+            operator = condition.get('operator', 'equals')
+            rule_value = condition.get('value', '')
+            logic = condition.get('logic', 'AND')
+            
+            if not field or rule_value is None:
+                continue
+                
+            # Get field value from record
+            record_value = record.get(field)
+            if record_value is None:
+                record_value = ''
+            
+            record_value = str(record_value)
+            rule_value = str(rule_value)
+            
+            # Apply case sensitivity
+            if not case_sensitive:
+                record_value = record_value.lower()
+                rule_value = rule_value.lower()
+            
+            # Evaluate current condition
+            condition_result = False
+            if operator == 'equals':
+                condition_result = record_value == rule_value
+            elif operator == 'contains':
+                condition_result = rule_value in record_value
+            elif operator == 'not_equals':
+                condition_result = record_value != rule_value
+            elif operator == 'starts_with':
+                condition_result = record_value.startswith(rule_value)
+            elif operator == 'ends_with':
+                condition_result = record_value.endswith(rule_value)
+            
+            # Combine with previous results
+            if i == 0:
+                result = condition_result
+            else:
+                if logic == 'AND':
+                    result = result and condition_result
+                elif logic == 'OR':
+                    result = result or condition_result
+        
+        return result if result is not None else False
