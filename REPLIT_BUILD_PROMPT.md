@@ -48,7 +48,20 @@ email-guardian/
   - Data validation and error reporting
   - Automatic lowercase conversion for consistency
 
-### 2. 4-Step Processing Workflow
+### 2. Policy Build & Exclusion Rules Engine
+- **Pre-Upload Filtering**: Comprehensive exclusion rules applied before processing
+- **Multi-Condition Logic**: Complex AND/OR combinations with field-level operators
+- **Supported Operators**: 
+  - `equals`, `contains`, `not_equals`, `starts_with`, `ends_with`
+  - `in_list`, `greater_than`, `less_than`, `matches_pattern` (regex)
+- **Advanced Features**:
+  - Case-sensitive/insensitive matching per rule
+  - Value parsing for quoted phrases and comma-separated lists
+  - Dynamic field mapping for any CSV structure
+  - Rule testing and impact preview
+- **Management Interface**: Visual rule builder with drag-and-drop conditions
+
+### 3. 4-Step Processing Workflow
 1. **Exclusion Rules**: Filter records based on configurable exclusion criteria
 2. **Whitelist Filtering**: Remove trusted domain communications
 3. **Rule Engine**: Apply security rules, mark rule matches as Critical risk
@@ -143,6 +156,14 @@ GET  /api/bau_analysis/<session_id>      # BAU recommendations
 GET  /api/attachment_risk_analytics/<session_id>  # Attachment intelligence
 GET  /api/case/<session_id>/<record_id>  # Individual case details
 
+# Exclusion Rules & Policy Management
+GET  /api/exclusion-rules               # Get all exclusion rules
+POST /api/exclusion-rules               # Create new exclusion rule
+GET  /api/exclusion-rules/<rule_id>     # Get specific exclusion rule
+PUT  /api/exclusion-rules/<rule_id>     # Update exclusion rule
+DELETE /api/exclusion-rules/<rule_id>   # Delete exclusion rule
+POST /api/exclusion-rules/<rule_id>/toggle # Toggle rule active status
+
 # Administration
 GET  /admin                              # Admin panel
 GET  /rules                              # Rules management
@@ -160,9 +181,11 @@ class Rule(db.Model)             # Security rules configuration
 
 ### Frontend Components
 - **Chart.js Integration**: Risk distribution, trends, BAU analysis charts
-- **Bootstrap Modals**: Case details, escalation forms, rule creation
+- **Bootstrap Modals**: Case details, escalation forms, rule creation, exclusion rule builder
 - **DataTables**: Advanced sorting/filtering for case management
 - **Progress Indicators**: File upload and processing status
+- **Policy Builder Interface**: Visual exclusion rule creation with dynamic condition management
+- **Real-time Validation**: Field existence checking and rule testing
 - **Responsive Design**: Mobile-friendly interface
 
 ### Key JavaScript Functions
