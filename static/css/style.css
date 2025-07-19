@@ -295,28 +295,33 @@ a.text-decoration-none:hover .clickable-card p {
 }
 
 .badge.bg-primary {
-    background-color: var(--primary-color) !important;
+    background-color: #4a5568 !important;
+    color: white !important;
 }
 
 .badge.bg-secondary {
-    background-color: #8a7f6e !important;
+    background-color: #718096 !important;
+    color: white !important;
 }
 
 .badge.bg-success {
-    background-color: var(--success-color) !important;
+    background-color: #38a169 !important;
+    color: white !important;
 }
 
 .badge.bg-warning {
-    background-color: var(--warning-color) !important;
-    color: #4a4539 !important;
+    background-color: #d69e2e !important;
+    color: white !important;
 }
 
 .badge.bg-danger {
-    background-color: var(--danger-color) !important;
+    background-color: #e53e3e !important;
+    color: white !important;
 }
 
 .badge.bg-info {
-    background-color: var(--info-color) !important;
+    background-color: #3182ce !important;
+    color: white !important;
 }
 
 /* Forms */
@@ -423,6 +428,72 @@ a.text-decoration-none:hover .clickable-card p {
     padding: 1rem 1.5rem;
     background-color: var(--light-color);
     border-radius: 0 0 12px 12px;
+}
+
+/* Case Modal Professional Styling */
+.case-modal .modal-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.case-section {
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.case-section-header {
+    background: linear-gradient(135deg, #edf2f7 0%, #e2e8f0 100%);
+    border-bottom: 1px solid #cbd5e0;
+    padding: 0.75rem 1rem;
+    border-radius: 8px 8px 0 0;
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 0.9rem;
+}
+
+.case-section-body {
+    padding: 1rem;
+}
+
+/* Professional Badge Colors for Case Details */
+.case-modal .badge.bg-primary {
+    background-color: #4a5568 !important;
+    color: white !important;
+}
+
+.case-modal .badge.bg-success {
+    background-color: #38a169 !important;
+    color: white !important;
+}
+
+.case-modal .badge.bg-warning {
+    background-color: #d69e2e !important;
+    color: white !important;
+}
+
+.case-modal .badge.bg-danger {
+    background-color: #e53e3e !important;
+    color: white !important;
+}
+
+.case-modal .badge.bg-info {
+    background-color: #3182ce !important;
+    color: white !important;
+}
+
+/* Muted Alert Styling */
+.alert.alert-warning {
+    background-color: #fef5e7;
+    border: 1px solid #f6e05e;
+    color: #744210;
+}
+
+.alert.alert-info {
+    background-color: #ebf8ff;
+    border: 1px solid #90cdf4;
+    color: #2a4365;
 }
 
 /* Progress Bars */
