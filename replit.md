@@ -11,6 +11,26 @@ Upload limit preference: High capacity (500MB) for large email data files.
 
 ## Recent Changes
 
+- **Comprehensive Process Flow Diagram Dashboard** (July 19, 2025):
+  - Added new Process Flow Diagram tab to admin panel showing complete system operations
+  - Created detailed SVG-based process flow visualization similar to professional PFDs
+  - Includes all backend operations: file upload, validation, 4-step processing pipeline, data storage
+  - Shows performance bottlenecks, optimizations, and current system state
+  - Added detailed breakdown of all frontend interactions and their backend impacts
+  - Includes metrics for upload processing, data storage, and dashboard operations
+  - Visual representation helps identify optimization opportunities and system behavior analysis
+  - Professional diagram shows: User actions → File processing → Session creation → Processing pipeline → Storage → Dashboard operations
+  - Highlights current bottlenecks (large file processing) and implemented optimizations (chunked processing, compression)
+- **Fixed "Create Rule" Button Functionality** (July 19, 2025):
+  - Resolved issue where processing rule creation button wasn't submitting forms properly
+  - Enhanced buildRuleData() function with proper form validation
+  - Added validation to ensure at least one condition and action before rule creation
+  - Fixed form submission flow to properly populate hidden JSON fields before sending to backend
+- **Enhanced Exclusion Rules with Advanced Input Support** (July 19, 2025):
+  - Added support for multi-word phrases in quotes (e.g., "bank branch", "urgent payment")
+  - Implemented comma-separated value input for multiple keywords in single field
+  - Enhanced exclusion rule creation interface with better user experience
+  - Improved rule processing to handle complex exclusion scenarios more effectively
 - **Automatic Lowercase Data Conversion During Import** (July 19, 2025):
   - Implemented automatic conversion of all imported data values to lowercase during CSV processing
   - Added `_convert_dataframe_to_lowercase()` function to process both regular and large CSV files

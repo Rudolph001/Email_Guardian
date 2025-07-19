@@ -74,6 +74,11 @@
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="process-flow-tab" data-bs-toggle="tab" data-bs-target="#process-flow" type="button" role="tab">
+                        <i class="fas fa-project-diagram me-2"></i>Process Flow Diagram
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
                     <button class="nav-link" id="domains-tab" data-bs-toggle="tab" data-bs-target="#domains" type="button" role="tab">
                         <i class="fas fa-globe me-2"></i>Domain Classifier
                     </button>
@@ -738,7 +743,276 @@
                     </div>
                 </div>
             </div>
+
+        <!-- Process Flow Diagram Tab -->
+        <div class="tab-pane fade" id="process-flow" role="tabpanel">
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-project-diagram me-2"></i>Email Guardian - Complete Process Flow Diagram
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info mb-4">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>System Overview:</strong> This diagram shows all backend operations, data processing steps, and performance points in Email Guardian. Use this to identify optimization opportunities and understand system behavior.
+                            </div>
+
+                            <!-- Process Flow Diagram Container -->
+                            <div id="processFlowContainer" style="width: 100%; height: 800px; border: 1px solid #ddd; border-radius: 8px; background: #f8f9fa;">
+                                <svg id="processFlowDiagram" width="100%" height="100%">
+                                    <!-- Definitions for patterns, gradients, and markers -->
+                                    <defs>
+                                        <linearGradient id="blueGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" style="stop-color:#007bff;stop-opacity:1" />
+                                            <stop offset="100%" style="stop-color:#0056b3;stop-opacity:1" />
+                                        </linearGradient>
+                                        <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" style="stop-color:#28a745;stop-opacity:1" />
+                                            <stop offset="100%" style="stop-color:#155724;stop-opacity:1" />
+                                        </linearGradient>
+                                        <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" style="stop-color:#fd7e14;stop-opacity:1" />
+                                            <stop offset="100%" style="stop-color:#e55100;stop-opacity:1" />
+                                        </linearGradient>
+                                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                            <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+                                        </marker>
+                                    </defs>
+
+                                    <!-- Title -->
+                                    <text x="400" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#333">
+                                        Email Guardian - Complete Process Flow
+                                    </text>
+
+                                    <!-- Start Node -->
+                                    <ellipse cx="100" cy="80" rx="60" ry="25" fill="url(#greenGradient)" stroke="#155724" stroke-width="2"/>
+                                    <text x="100" y="85" text-anchor="middle" font-size="12" fill="white" font-weight="bold">User Action</text>
+
+                                    <!-- File Upload Process -->
+                                    <rect x="40" y="130" width="120" height="40" rx="5" fill="#e9ecef" stroke="#adb5bd" stroke-width="2"/>
+                                    <text x="100" y="155" text-anchor="middle" font-size="11" fill="#333">File Upload (CSV)</text>
+
+                                    <!-- Validation Diamond -->
+                                    <polygon points="70,200 130,180 190,200 130,220" fill="#ffc107" stroke="#e0a800" stroke-width="2"/>
+                                    <text x="130" y="205" text-anchor="middle" font-size="10" fill="#333">Valid?</text>
+
+                                    <!-- Session Creation -->
+                                    <rect x="240" y="130" width="120" height="40" rx="5" fill="url(#blueGradient)" stroke="#0056b3" stroke-width="2"/>
+                                    <text x="300" y="150" text-anchor="middle" font-size="11" fill="white">Session Creation</text>
+                                    <text x="300" y="165" text-anchor="middle" font-size="9" fill="white">Generate UUID</text>
+
+                                    <!-- 4-Step Processing Pipeline -->
+                                    <text x="500" y="160" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">
+                                        4-Step Processing Pipeline
+                                    </text>
+
+                                    <!-- Step 0: Exclusion Rules -->
+                                    <rect x="440" y="180" width="120" height="45" rx="5" fill="#dc3545" stroke="#721c24" stroke-width="2"/>
+                                    <text x="500" y="198" text-anchor="middle" font-size="10" fill="white" font-weight="bold">Step 0: Exclusion</text>
+                                    <text x="500" y="212" text-anchor="middle" font-size="9" fill="white">Filter unwanted records</text>
+                                    <text x="500" y="222" text-anchor="middle" font-size="8" fill="white">Before processing</text>
+
+                                    <!-- Step 1: Whitelist -->
+                                    <rect x="440" y="250" width="120" height="45" rx="5" fill="#6f42c1" stroke="#4e2e8a" stroke-width="2"/>
+                                    <text x="500" y="268" text-anchor="middle" font-size="10" fill="white" font-weight="bold">Step 1: Whitelist</text>
+                                    <text x="500" y="282" text-anchor="middle" font-size="9" fill="white">Trusted domains</text>
+
+                                    <!-- Step 2: Rule Matching -->
+                                    <rect x="440" y="320" width="120" height="45" rx="5" fill="url(#orangeGradient)" stroke="#e55100" stroke-width="2"/>
+                                    <text x="500" y="338" text-anchor="middle" font-size="10" fill="white" font-weight="bold">Step 2: Rules</text>
+                                    <text x="500" y="352" text-anchor="middle" font-size="9" fill="white">Business logic</text>
+
+                                    <!-- Step 3: ML Analysis -->
+                                    <rect x="440" y="390" width="120" height="45" rx="5" fill="#17a2b8" stroke="#0c5460" stroke-width="2"/>
+                                    <text x="500" y="408" text-anchor="middle" font-size="10" fill="white" font-weight="bold">Step 3: ML Engine</text>
+                                    <text x="500" y="422" text-anchor="middle" font-size="9" fill="white">AI Analysis</text>
+
+                                    <!-- Data Storage -->
+                                    <rect x="640" y="280" width="120" height="60" rx="5" fill="#495057" stroke="#212529" stroke-width="2"/>
+                                    <text x="700" y="305" text-anchor="middle" font-size="11" fill="white" font-weight="bold">Data Storage</text>
+                                    <text x="700" y="320" text-anchor="middle" font-size="9" fill="white">JSON + Database</text>
+                                    <text x="700" y="332" text-anchor="middle" font-size="9" fill="white">Compression >5MB</text>
+
+                                    <!-- Dashboard Operations -->
+                                    <rect x="240" y="480" width="120" height="45" rx="5" fill="url(#greenGradient)" stroke="#155724" stroke-width="2"/>
+                                    <text x="300" y="498" text-anchor="middle" font-size="10" fill="white" font-weight="bold">Case Management</text>
+                                    <text x="300" y="512" text-anchor="middle" font-size="9" fill="white">Review & Actions</text>
+
+                                    <rect x="440" y="480" width="120" height="45" rx="5" fill="#fd7e14" stroke="#e55100" stroke-width="2"/>
+                                    <text x="500" y="498" text-anchor="middle" font-size="10" fill="white" font-weight="bold">Escalation</text>
+                                    <text x="500" y="512" text-anchor="middle" font-size="9" fill="white">Critical Cases</text>
+
+                                    <!-- Admin Operations -->
+                                    <rect x="40" y="580" width="100" height="35" rx="5" fill="#6c757d" stroke="#495057" stroke-width="2"/>
+                                    <text x="90" y="600" text-anchor="middle" font-size="10" fill="white">Rules CRUD</text>
+
+                                    <rect x="160" y="580" width="100" height="35" rx="5" fill="#6c757d" stroke="#495057" stroke-width="2"/>
+                                    <text x="210" y="600" text-anchor="middle" font-size="10" fill="white">Domain Mgmt</text>
+
+                                    <rect x="280" y="580" width="100" height="35" rx="5" fill="#6c757d" stroke="#495057" stroke-width="2"/>
+                                    <text x="330" y="600" text-anchor="middle" font-size="10" fill="white">Whitelist Mgmt</text>
+
+                                    <rect x="400" y="580" width="100" height="35" rx="5" fill="#6c757d" stroke="#495057" stroke-width="2"/>
+                                    <text x="450" y="600" text-anchor="middle" font-size="10" fill="white">Session Mgmt</text>
+
+                                    <!-- Performance Bottlenecks -->
+                                    <circle cx="650" cy="150" r="8" fill="#dc3545"/>
+                                    <text x="670" y="155" font-size="10" fill="#dc3545" font-weight="bold">Bottleneck: Large File Processing</text>
+
+                                    <circle cx="650" cy="170" r="8" fill="#ffc107"/>
+                                    <text x="670" y="175" font-size="10" fill="#856404" font-weight="bold">Optimization: Chunked Processing</text>
+
+                                    <circle cx="650" cy="190" r="8" fill="#28a745"/>
+                                    <text x="670" y="195" font-size="10" fill="#155724" font-weight="bold">Optimized: JSON Compression</text>
+
+                                    <!-- Arrows showing flow -->
+                                    <line x1="100" y1="105" x2="100" y2="125" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+                                    <line x1="100" y1="170" x2="130" y2="185" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+                                    <line x1="170" y1="190" x2="240" y2="155" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+                                    <line x1="360" y1="150" x2="440" y2="202" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+                                    <line x1="500" y1="225" x2="500" y2="245" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+                                    <line x1="500" y1="295" x2="500" y2="315" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+                                    <line x1="500" y1="365" x2="500" y2="385" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+                                    <line x1="560" y1="320" x2="640" y2="310" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+                                    <line x1="500" y1="435" x2="500" y2="475" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+                                    <line x1="440" y1="502" x2="360" y2="502" stroke="#666" stroke-width="2" marker-end="url(#arrowhead)"/>
+
+                                    <!-- Database icon -->
+                                    <rect x="680" y="380" width="40" height="30" rx="3" fill="#6c757d" stroke="#495057"/>
+                                    <text x="700" y="400" text-anchor="middle" font-size="9" fill="white">DB</text>
+
+                                    <!-- ML icons -->
+                                    <circle cx="590" cy="412" r="12" fill="#17a2b8" stroke="#0c5460"/>
+                                    <text x="590" y="417" text-anchor="middle" font-size="8" fill="white">AI</text>
+
+                                    <!-- Error paths -->
+                                    <text x="130" y="240" text-anchor="middle" font-size="9" fill="#dc3545">Error: Return to upload</text>
+                                    <line x1="110" y1="220" x2="70" y2="250" stroke="#dc3545" stroke-width="2" stroke-dasharray="5,5"/>
+
+                                </svg>
+                            </div>
+
+                            <!-- Performance Metrics Dashboard -->
+                            <div class="row mt-4">
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-upload fa-2x text-primary mb-2"></i>
+                                            <h6>Upload Processing</h6>
+                                            <p class="text-muted small">File validation → CSV parsing → Session creation</p>
+                                            <span class="badge bg-warning">Bottleneck: Large files >10MB</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-filter fa-2x text-success mb-2"></i>
+                                            <h6>4-Step Processing</h6>
+                                            <p class="text-muted small">Exclusion → Whitelist → Rules → ML analysis</p>
+                                            <span class="badge bg-success">Optimized: Chunked processing</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-database fa-2x text-warning mb-2"></i>
+                                            <h6>Data Storage</h6>
+                                            <p class="text-muted small">JSON persistence → Compression → Database</p>
+                                            <span class="badge bg-info">Feature: Auto-compression >5MB</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-light">
+                                        <div class="card-body text-center">
+                                            <i class="fas fa-chart-line fa-2x text-info mb-2"></i>
+                                            <h6>Dashboard Operations</h6>
+                                            <p class="text-muted small">Case management → Escalations → Analytics</p>
+                                            <span class="badge bg-primary">Real-time updates</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Detailed Process Breakdown -->
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header bg-secondary text-white">
+                                            <h6 class="mb-0"><i class="fas fa-cogs me-2"></i>Backend Operations Detail</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <h6 class="text-primary">File Upload Operations:</h6>
+                                            <ul class="list-unstyled small">
+                                                <li><i class="fas fa-chevron-right text-muted me-2"></i>File validation (size, type, format)</li>
+                                                <li><i class="fas fa-chevron-right text-muted me-2"></i>CSV header detection & validation</li>
+                                                <li><i class="fas fa-chevron-right text-muted me-2"></i>Session UUID generation</li>
+                                                <li><i class="fas fa-chevron-right text-muted me-2"></i>Memory allocation for processing</li>
+                                            </ul>
+
+                                            <h6 class="text-success mt-3">Data Processing Steps:</h6>
+                                            <ul class="list-unstyled small">
+                                                <li><i class="fas fa-chevron-right text-muted me-2"></i><strong>Step 0:</strong> Exclusion rules filtering</li>
+                                                <li><i class="fas fa-chevron-right text-muted me-2"></i><strong>Step 1:</strong> Whitelist domain filtering</li>
+                                                <li><i class="fas fa-chevron-right text-muted me-2"></i><strong>Step 2:</strong> Business rule matching</li>
+                                                <li><i class="fas fa-chevron-right text-muted me-2"></i><strong>Step 3:</strong> ML anomaly detection</li>
+                                                <li><i class="fas fa-chevron-right text-muted me-2"></i><strong>Final:</strong> Risk score calculation</li>
+                                            </ul>
+
+                                            <h6 class="text-warning mt-3">Storage Operations:</h6>
+                                            <ul class="list-unstyled small">
+                                                <li><i class="fas fa-chevron-right text-muted me-2"></i>JSON serialization</li>
+                                                <li><i class="fas fa-chevron-right text-muted me-2"></i>Automatic compression (>5MB)</li>
+                                                <li><i class="fas fa-chevron-right text-muted me-2"></i>Database record creation</li>
+                                                <li><i class="fas fa-chevron-right text-muted me-2"></i>Session metadata storage</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="card">
+                                        <div class="card-header bg-info text-white">
+                                            <h6 class="mb-0"><i class="fas fa-tachometer-alt me-2"></i>Performance & Optimization</h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <h6 class="text-danger">Current Bottlenecks:</h6>
+                                            <ul class="list-unstyled small">
+                                                <li><i class="fas fa-exclamation-triangle text-danger me-2"></i>Large file processing (>10MB)</li>
+                                                <li><i class="fas fa-exclamation-triangle text-danger me-2"></i>Memory usage during ML analysis</li>
+                                                <li><i class="fas fa-exclamation-triangle text-danger me-2"></i>Full dataset loading for dashboard</li>
+                                            </ul>
+
+                                            <h6 class="text-success mt-3">Implemented Optimizations:</h6>
+                                            <ul class="list-unstyled small">
+                                                <li><i class="fas fa-check text-success me-2"></i>Chunked processing (2500 records/chunk)</li>
+                                                <li><i class="fas fa-check text-success me-2"></i>Paginated data loading (50 records/page)</li>
+                                                <li><i class="fas fa-check text-success me-2"></i>Automatic compression</li>
+                                                <li><i class="fas fa-check text-success me-2"></i>Server-side filtering</li>
+                                            </ul>
+
+                                            <h6 class="text-primary mt-3">Frontend Interactions:</h6>
+                                            <ul class="list-unstyled small">
+                                                <li><i class="fas fa-mouse-pointer text-primary me-2"></i>Dashboard navigation triggers data queries</li>
+                                                <li><i class="fas fa-mouse-pointer text-primary me-2"></i>Filter changes reload processed data</li>
+                                                <li><i class="fas fa-mouse-pointer text-primary me-2"></i>Case actions update database & session</li>
+                                                <li><i class="fas fa-mouse-pointer text-primary me-2"></i>Admin changes trigger reprocessing</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+
     </div>
 </div>
 {% endblock %}
