@@ -371,108 +371,199 @@
         <!-- Domain Classifier Tab -->
         <div class="tab-pane fade" id="domains" role="tabpanel">
             <div class="container-fluid">
-                <h3>Domain Classification Management</h3>
-                <p>Organize domains into categories for better email analysis.</p>
-                
-                <!-- Simple test content -->
-                <div class="card">
-                    <div class="card-header">
-                        <h5>Domain Categories</h5>
+                <!-- Header -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h3 class="mb-2">
+                            <i class="fas fa-globe me-2 text-primary"></i>Domain Classification Management
+                        </h3>
+                        <p class="text-muted">Organize domains into categories for better email analysis and automated processing.</p>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6>Trusted Domains</h6>
-                                <ul class="list-group">
-                                    {% if domain_classifications and domain_classifications.trusted %}
-                                        {% for domain in domain_classifications.trusted %}
-                                        <li class="list-group-item">{{ domain }}</li>
-                                        {% endfor %}
-                                    {% else %}
-                                        <li class="list-group-item">No domains configured</li>
-                                    {% endif %}
-                                </ul>
+                </div>
+
+                <!-- Status Overview -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Current Status:</strong> 
+                            Trusted: <span class="badge bg-success">{{ domain_classifications.trusted|length if domain_classifications and domain_classifications.trusted else 0 }}</span>
+                            Corporate: <span class="badge bg-primary">{{ domain_classifications.corporate|length if domain_classifications and domain_classifications.corporate else 0 }}</span>
+                            Personal: <span class="badge bg-warning">{{ domain_classifications.personal|length if domain_classifications and domain_classifications.personal else 0 }}</span>
+                            Public: <span class="badge bg-info">{{ domain_classifications.public|length if domain_classifications and domain_classifications.public else 0 }}</span>
+                            Suspicious: <span class="badge bg-danger">{{ domain_classifications.suspicious|length if domain_classifications and domain_classifications.suspicious else 0 }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Domain Management -->
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-list me-2"></i>Domain Categories
+                                </h5>
                             </div>
-                            <div class="col-md-6">
-                                <h6>Corporate Domains</h6>
-                                <ul class="list-group">
-                                    {% if domain_classifications and domain_classifications.corporate %}
-                                        {% for domain in domain_classifications.corporate %}
-                                        <li class="list-group-item">{{ domain }}</li>
-                                        {% endfor %}
-                                    {% else %}
-                                        <li class="list-group-item">No domains configured</li>
-                                    {% endif %}
-                                </ul>
+                            <div class="card-body">
+                                <!-- Trusted Domains -->
+                                <div class="mb-4">
+                                    <h6 class="text-success">
+                                        <i class="fas fa-shield-alt me-2"></i>Trusted Domains 
+                                        <span class="badge bg-success ms-2">{{ domain_classifications.trusted|length if domain_classifications and domain_classifications.trusted else 0 }}</span>
+                                    </h6>
+                                    <div class="mb-2">
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" class="form-control" id="newTrustedDomain" placeholder="Enter trusted domain (e.g., company.com)">
+                                            <button class="btn btn-success" onclick="addDomain('trusted')">
+                                                <i class="fas fa-plus"></i> Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                        {% if domain_classifications and domain_classifications.trusted %}
+                                            {% for domain in domain_classifications.trusted %}
+                                            <div class="d-flex justify-content-between align-items-center py-1 px-2 mb-1 bg-light rounded">
+                                                <span class="small">
+                                                    <i class="fas fa-shield-alt me-2 text-success"></i>{{ domain }}
+                                                </span>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="removeDomain('trusted', '{{ domain }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <div class="text-muted text-center py-2">No trusted domains configured</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Corporate Domains -->
+                                <div class="mb-4">
+                                    <h6 class="text-primary">
+                                        <i class="fas fa-building me-2"></i>Corporate Domains 
+                                        <span class="badge bg-primary ms-2">{{ domain_classifications.corporate|length if domain_classifications and domain_classifications.corporate else 0 }}</span>
+                                    </h6>
+                                    <div class="mb-2">
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" class="form-control" id="newCorporateDomain" placeholder="Enter corporate domain (e.g., microsoft.com)">
+                                            <button class="btn btn-primary" onclick="addDomain('corporate')">
+                                                <i class="fas fa-plus"></i> Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                        {% if domain_classifications and domain_classifications.corporate %}
+                                            {% for domain in domain_classifications.corporate %}
+                                            <div class="d-flex justify-content-between align-items-center py-1 px-2 mb-1 bg-light rounded">
+                                                <span class="small">
+                                                    <i class="fas fa-building me-2 text-primary"></i>{{ domain }}
+                                                </span>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="removeDomain('corporate', '{{ domain }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <div class="text-muted text-center py-2">No corporate domains configured</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Personal Domains -->
+                                <div class="mb-4">
+                                    <h6 class="text-warning">
+                                        <i class="fas fa-user me-2"></i>Personal Domains 
+                                        <span class="badge bg-warning ms-2">{{ domain_classifications.personal|length if domain_classifications and domain_classifications.personal else 0 }}</span>
+                                    </h6>
+                                    <div class="mb-2">
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" class="form-control" id="newPersonalDomain" placeholder="Enter personal domain (e.g., gmail.com)">
+                                            <button class="btn btn-warning" onclick="addDomain('personal')">
+                                                <i class="fas fa-plus"></i> Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                        {% if domain_classifications and domain_classifications.personal %}
+                                            {% for domain in domain_classifications.personal %}
+                                            <div class="d-flex justify-content-between align-items-center py-1 px-2 mb-1 bg-light rounded">
+                                                <span class="small">
+                                                    <i class="fas fa-user me-2 text-warning"></i>{{ domain }}
+                                                </span>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="removeDomain('personal', '{{ domain }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <div class="text-muted text-center py-2">No personal domains configured</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statistics Panel -->
+                    <div class="col-lg-4">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-chart-pie me-2"></i>Classification Statistics
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <small class="text-success"><i class="fas fa-shield-alt me-1"></i>Trusted</small>
+                                    <div class="progress mb-1" style="height: 8px;">
+                                        <div class="progress-bar bg-success" style="width: {{ ((domain_classifications.trusted|length / ((domain_classifications.trusted|length + domain_classifications.corporate|length + domain_classifications.personal|length + domain_classifications.public|length + domain_classifications.suspicious|length) or 1)) * 100) if domain_classifications else 0 }}%"></div>
+                                    </div>
+                                    <span class="badge bg-success">{{ domain_classifications.trusted|length if domain_classifications and domain_classifications.trusted else 0 }}</span>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <small class="text-primary"><i class="fas fa-building me-1"></i>Corporate</small>
+                                    <div class="progress mb-1" style="height: 8px;">
+                                        <div class="progress-bar bg-primary" style="width: {{ ((domain_classifications.corporate|length / ((domain_classifications.trusted|length + domain_classifications.corporate|length + domain_classifications.personal|length + domain_classifications.public|length + domain_classifications.suspicious|length) or 1)) * 100) if domain_classifications else 0 }}%"></div>
+                                    </div>
+                                    <span class="badge bg-primary">{{ domain_classifications.corporate|length if domain_classifications and domain_classifications.corporate else 0 }}</span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <small class="text-warning"><i class="fas fa-user me-1"></i>Personal</small>
+                                    <div class="progress mb-1" style="height: 8px;">
+                                        <div class="progress-bar bg-warning" style="width: {{ ((domain_classifications.personal|length / ((domain_classifications.trusted|length + domain_classifications.corporate|length + domain_classifications.personal|length + domain_classifications.public|length + domain_classifications.suspicious|length) or 1)) * 100) if domain_classifications else 0 }}%"></div>
+                                    </div>
+                                    <span class="badge bg-warning">{{ domain_classifications.personal|length if domain_classifications and domain_classifications.personal else 0 }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="card shadow-sm mt-3">
+                            <div class="card-header bg-secondary text-white">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-tools me-2"></i>Quick Actions
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-outline-primary btn-sm" onclick="exportDomainConfig()">
+                                        <i class="fas fa-download me-2"></i>Export Configuration
+                                    </button>
+                                    <button class="btn btn-outline-success btn-sm" onclick="reprocessAllSessions()">
+                                        <i class="fas fa-sync-alt me-2"></i>Reprocess Sessions
+                                    </button>
+                                    <button class="btn btn-outline-warning btn-sm" onclick="resetToDefaults()">
+                                        <i class="fas fa-undo me-2"></i>Reset to Defaults
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-            
-            <div class="row">
-                <div class="col-lg-8">
-                    <div class="card shadow-sm">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="card-title mb-0">
-                                <i class="fas fa-globe me-2"></i>Domain Categories
-                            </h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="alert alert-info mb-3">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <strong>Domain Classification:</strong> Organize domains into categories for better email analysis.
-                            </div>
-
-                            <!-- Domain Categories -->
-                            <div class="accordion" id="domainAccordion">
-                                <!-- Trusted Domains -->
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="trustedHeader">
-                                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#trustedDomains">
-                                            <i class="fas fa-shield-alt me-2 text-success"></i>
-                                            <strong>Trusted Domains</strong>
-                                            <span class="badge bg-success ms-2" id="trustedCount">{{ domain_classifications.trusted|length if domain_classifications else 0 }}</span>
-                                        </button>
-                                    </h2>
-                                    <div id="trustedDomains" class="accordion-collapse collapse show" data-bs-parent="#domainAccordion">
-                                        <div class="accordion-body">
-                                            <div class="mb-3">
-                                                <div class="input-group">
-                                                    <input type="text" class="form-control" id="newTrustedDomain" placeholder="Enter trusted domain (e.g., company.com)">
-                                                    <button class="btn btn-success" onclick="addDomain('trusted')">
-                                                        <i class="fas fa-plus me-1"></i>Add
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <div id="trustedDomainsList" class="domain-list">
-                                                {% if domain_classifications and domain_classifications.get('trusted') %}
-                                                {% for domain in domain_classifications.trusted %}
-                                                <div class="domain-item d-flex justify-content-between align-items-center p-2 mb-1 bg-light rounded">
-                                                    <span><i class="fas fa-shield-alt me-2 text-success"></i>{{ domain }}</span>
-                                                    <button class="btn btn-sm btn-outline-danger" onclick="removeDomain('trusted', '{{ domain }}')">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                                {% endfor %}
-                                                {% else %}
-                                                <div class="text-muted small">No trusted domains configured</div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- Corporate Domains -->
-                                <div class="accordion-item">
-                                    <h2 class="accordion-header" id="corporateHeader">
-                                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#corporateDomains">
-                                            <i class="fas fa-building me-2 text-primary"></i>
-                                            <strong>Corporate Domains</strong>
-                                            <span class="badge bg-primary ms-2" id="corporateCount">{{ domain_classifications.corporate|length if domain_classifications else 0 }}</span>
-                                        </button>
-                                    </h2>
                                     <div id="corporateDomains" class="accordion-collapse collapse" data-bs-parent="#domainAccordion">
                                         <div class="accordion-body">
                                             <div class="mb-3">
