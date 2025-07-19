@@ -309,12 +309,12 @@ class DataProcessor:
                         cell_value = row.get(col)
                         if pd.notna(cell_value):
                             cell_str = str(cell_value)
-                            if len(cell_str) > 1000:  # Flag very long values
+                            if len(cell_str) > 10000:  # Increased limit to 10,000 characters
                                 validation_errors.append({
                                     'row': row_idx + 2,
                                     'field': col,
                                     'value': cell_str[:100] + '...',
-                                    'error': f'Value is too long ({len(cell_str)} characters)'
+                                    'error': f'Value is too long ({len(cell_str)} characters) - consider splitting large content'
                                 })
                 
                 except Exception as field_error:
