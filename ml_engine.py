@@ -883,7 +883,7 @@ class MLEngine:
             # Convert to numeric features for ML analysis
             features = self._extract_features(df)
 
-            if features.empty:
+            if features.shape[0] == 0 or features.shape[1] == 0:
                 return {
                     'anomaly_scores': [0.0] * len(df),
                     'risk_levels': ['Low'] * len(df),
