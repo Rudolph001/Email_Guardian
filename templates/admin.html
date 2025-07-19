@@ -4,14 +4,31 @@
 
 {% block content %}
 <style>
-/* Ensure tab content is visible */
+/* Force tab content to be visible */
+.tab-content {
+    margin-top: 20px;
+}
 .tab-content > .tab-pane {
     display: block !important;
     visibility: visible !important;
     opacity: 1 !important;
+    min-height: 200px;
+    padding: 20px;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
 }
 .tab-content > .tab-pane:not(.active) {
     display: none !important;
+}
+.tab-content > .tab-pane.active {
+    display: block !important;
+}
+/* Ensure Bootstrap tabs work */
+.nav-tabs .nav-link.active {
+    background-color: #fff;
+    border-color: #dee2e6 #dee2e6 #fff;
+    color: #495057;
 }
 </style>
 <div class="container-fluid">
@@ -959,24 +976,45 @@ function resetToDefaults() {
 
 // Allow Enter key to add domains
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Bootstrap tabs
-    const triggerTabList = document.querySelectorAll('#adminTabs button[data-bs-toggle="tab"]');
-    triggerTabList.forEach(triggerEl => {
-        const tabTrigger = new bootstrap.Tab(triggerEl);
-        
-        triggerEl.addEventListener('click', event => {
-            event.preventDefault();
-            tabTrigger.show();
+    // Initialize Bootstrap tabs with explicit setup
+    console.log('Initializing admin tabs...');
+    
+    // Force first tab to be active
+    const firstTab = document.querySelector('#whitelist-tab');
+    const firstPane = document.querySelector('#whitelist');
+    if (firstTab && firstPane) {
+        firstTab.classList.add('active');
+        firstPane.classList.add('show', 'active');
+        console.log('First tab activated');
+    }
+    
+    // Set up all tab click handlers
+    const tabButtons = document.querySelectorAll('#adminTabs button[data-bs-toggle="tab"]');
+    tabButtons.forEach((button, index) => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Tab clicked:', this.id);
+            
+            // Remove active from all tabs and panes
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(pane => {
+                pane.classList.remove('show', 'active');
+            });
+            
+            // Add active to clicked tab
+            this.classList.add('active');
+            
+            // Show corresponding pane
+            const target = this.getAttribute('data-bs-target');
+            const pane = document.querySelector(target);
+            if (pane) {
+                pane.classList.add('show', 'active');
+                console.log('Pane shown:', target);
+            }
         });
     });
     
-    // Ensure first tab is active and visible
-    const firstTab = document.querySelector('#adminTabs button[data-bs-toggle="tab"]');
-    const firstTabPane = document.querySelector('#whitelist');
-    if (firstTab && firstTabPane) {
-        firstTab.classList.add('active');
-        firstTabPane.classList.add('show', 'active');
-    }
+    console.log('Admin tabs initialized');
     
     ['trusted', 'corporate', 'personal', 'public', 'suspicious'].forEach(category => {
         const inputId = `new${category.charAt(0).toUpperCase() + category.slice(1)}Domain`;
