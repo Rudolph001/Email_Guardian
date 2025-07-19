@@ -9,8 +9,8 @@ The application will be designed to run locally on both Windows and Mac systems.
 ## Core Architecture Requirements
 
 ### Technology Stack
-- **Backend**: Python Flask web framework
-- **Frontend**: Bootstrap 5 + vanilla JavaScript with Chart.js
+- **Backend**: Python Streamlit
+- **Frontend**: Streamlit
 - **Database**: SQLite with SQLAlchemy ORM
 - **ML/Analytics**: pandas, numpy, scikit-learn, NetworkX
 - **File Processing**: CSV parsing with chunked processing for large files
