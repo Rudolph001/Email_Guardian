@@ -4,6 +4,8 @@
 ## Project Overview
 Build a comprehensive **Email Security Analysis Platform** called "Email Guardian" - a full-stack web application for analyzing Tessian email export data to detect security threats, data exfiltration attempts, and policy violations.
 
+The application will be designed to run locally on both Windows and Mac systems. As such, all required installation files, dependencies.
+
 ## Core Architecture Requirements
 
 ### Technology Stack
