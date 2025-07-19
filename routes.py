@@ -516,26 +516,61 @@ def generate_ml_explanations(case_data):
     else:
         explanations['anomaly_factors'].append("Email follows typical communication patterns with no significant anomalies.")
 
-    # Attachment Analysis
+    # Advanced Attachment Risk Analysis
     attachment_type = case_data.get('attachment_classification', 'Unknown')
     has_attachments = case_data.get('has_attachments', False)
-
-    # Debug logging
-    app.logger.info(f"Attachment classification debug: {attachment_type}, has_attachments: {has_attachments}")
+    attachment_risk_score = case_data.get('attachment_risk_score', 0.0)
+    attachment_risk_level = case_data.get('attachment_risk_level', 'Unknown')
+    attachment_risk_factors = case_data.get('attachment_risk_factors', [])
+    malicious_indicators = case_data.get('attachment_malicious_indicators', [])
+    exfiltration_risk = case_data.get('attachment_exfiltration_risk', 'None')
 
     if has_attachments:
-        if attachment_type == 'Personal':
-            explanations['attachment_analysis'].append("⚠️ Personal attachments detected - may indicate data exfiltration risk.")
-            explanations['attachment_analysis'].append("File names suggest personal documents (family photos, personal files, etc.)")
-        elif attachment_type == 'Business':
-            explanations['attachment_analysis'].append("✅ Business-related attachments detected - appropriate for corporate communication.")
-            explanations['attachment_analysis'].append("File names suggest business documents (contracts, reports, invoices, etc.)")
-        elif attachment_type == 'Mixed':
-            explanations['attachment_analysis'].append("⚠️ Mixed attachment types - combination of business and personal files.")
-            explanations['attachment_analysis'].append("Review individual files to ensure appropriate business use.")
+        # Primary risk assessment
+        if attachment_risk_level == 'Critical Risk':
+            explanations['attachment_analysis'].append("🔴 CRITICAL ATTACHMENT RISK - Immediate investigation required!")
+            explanations['attachment_analysis'].append(f"Risk Score: {attachment_risk_score}/100 - Very high probability of malicious intent")
+        elif attachment_risk_level == 'High Risk':
+            explanations['attachment_analysis'].append("🟠 HIGH ATTACHMENT RISK - Priority investigation recommended")
+            explanations['attachment_analysis'].append(f"Risk Score: {attachment_risk_score}/100 - Significant security concerns detected")
+        elif attachment_risk_level == 'Medium Risk':
+            explanations['attachment_analysis'].append("🟡 MEDIUM ATTACHMENT RISK - Review recommended")
+            explanations['attachment_analysis'].append(f"Risk Score: {attachment_risk_score}/100 - Some concerning patterns identified")
+        elif attachment_risk_level == 'Low Risk':
+            explanations['attachment_analysis'].append("🟢 LOW ATTACHMENT RISK - Minimal security concerns")
+            explanations['attachment_analysis'].append(f"Risk Score: {attachment_risk_score}/100 - Generally safe but monitor")
         else:
-            explanations['attachment_analysis'].append("❓ Unclassified attachments - file names don't match known patterns.")
-            explanations['attachment_analysis'].append("Manual review recommended to determine file content and purpose.")
+            # Legacy classification for low-risk files
+            if attachment_type == 'Personal':
+                explanations['attachment_analysis'].append("⚠️ Personal attachments detected - may indicate data exfiltration risk.")
+                explanations['attachment_analysis'].append("File names suggest personal documents (family photos, personal files, etc.)")
+            elif attachment_type == 'Business':
+                explanations['attachment_analysis'].append("✅ Business-related attachments detected - appropriate for corporate communication.")
+                explanations['attachment_analysis'].append("File names suggest business documents (contracts, reports, invoices, etc.)")
+            elif attachment_type == 'Mixed':
+                explanations['attachment_analysis'].append("⚠️ Mixed attachment types - combination of business and personal files.")
+                explanations['attachment_analysis'].append("Review individual files to ensure appropriate business use.")
+
+        # Data exfiltration risk assessment
+        if exfiltration_risk == 'High':
+            explanations['attachment_analysis'].append("💀 HIGH DATA EXFILTRATION RISK - Contains patterns indicative of data theft")
+        elif exfiltration_risk == 'Medium':
+            explanations['attachment_analysis'].append("⚠️ MEDIUM DATA EXFILTRATION RISK - Monitor for unauthorized data transfer")
+        elif exfiltration_risk == 'Low':
+            explanations['attachment_analysis'].append("⚡ LOW DATA EXFILTRATION RISK - Some data transfer indicators present")
+
+        # Specific risk factors
+        if attachment_risk_factors:
+            explanations['attachment_analysis'].append("📋 Risk Factors Identified:")
+            for factor in attachment_risk_factors[:5]:  # Show top 5 risk factors
+                explanations['attachment_analysis'].append(f"  • {factor}")
+
+        # Malicious indicators
+        if malicious_indicators:
+            explanations['attachment_analysis'].append("🚨 Malicious Indicators:")
+            for indicator in malicious_indicators[:3]:  # Show top 3 indicators
+                explanations['attachment_analysis'].append(f"  • {indicator}")
+
     else:
         explanations['attachment_analysis'].append("📧 No attachments detected - text-only communication.")
 
@@ -1161,6 +1196,128 @@ def bau_analysis(session_id):
             app.logger.info(f"Sample record keys: {list(sample_record.keys()) if isinstance(sample_record, dict) else 'Not a dict'}")
             app.logger.info(f"Sample sender: {sample_record.get('sender', 'N/A') if isinstance(sample_record, dict) else 'N/A'}")
             app.logger.info(f"Sample recipients: {sample_record.get('recipients', 'N/A') if isinstance(sample_record, dict) else 'N/A'}")
+
+
+
+@app.route('/api/attachment_risk_analytics/<session_id>')
+def attachment_risk_analytics(session_id):
+    """API endpoint for detailed attachment risk analytics"""
+    try:
+        session_manager = SessionManager()
+        result = session_manager.get_processed_data(session_id, page=1, per_page=999999)
+        processed_data = result.get('data', [])
+
+        if not processed_data:
+            return jsonify({
+                'error': 'No data found',
+                'total_attachments': 0,
+                'risk_distribution': {},
+                'top_risk_factors': [],
+                'malicious_indicators': [],
+                'exfiltration_threats': []
+            }), 404
+
+        # Analyze attachment risks
+        risk_analytics = {
+            'total_attachments': 0,
+            'total_emails_with_attachments': 0,
+            'risk_distribution': {},
+            'top_risk_factors': {},
+            'malicious_indicators': [],
+            'exfiltration_threats': [],
+            'high_risk_emails': [],
+            'average_risk_score': 0.0,
+            'risk_trends': {}
+        }
+
+        total_risk_score = 0
+        risk_score_count = 0
+
+        for record in processed_data:
+            if record.get('has_attachments'):
+                risk_analytics['total_emails_with_attachments'] += 1
+                risk_analytics['total_attachments'] += record.get('attachment_count', 1)
+
+                # Risk level distribution
+                risk_level = record.get('attachment_risk_level', 'Unknown')
+                risk_analytics['risk_distribution'][risk_level] = risk_analytics['risk_distribution'].get(risk_level, 0) + 1
+
+                # Aggregate risk factors
+                risk_factors = record.get('attachment_risk_factors', [])
+                for factor in risk_factors:
+                    risk_analytics['top_risk_factors'][factor] = risk_analytics['top_risk_factors'].get(factor, 0) + 1
+
+                # Collect malicious indicators
+                malicious_indicators = record.get('attachment_malicious_indicators', [])
+                risk_analytics['malicious_indicators'].extend(malicious_indicators)
+
+                # Track high-risk emails
+                risk_score = record.get('attachment_risk_score', 0)
+                if risk_score > 0:
+                    total_risk_score += risk_score
+                    risk_score_count += 1
+
+                if risk_score >= 50:  # High risk threshold
+                    risk_analytics['high_risk_emails'].append({
+                        'record_id': record.get('record_id'),
+                        'sender': record.get('sender'),
+                        'subject': record.get('subject', '')[:50] + '...',
+                        'risk_score': risk_score,
+                        'risk_level': risk_level,
+                        'exfiltration_risk': record.get('attachment_exfiltration_risk', 'Unknown')
+                    })
+
+                # Track exfiltration threats
+                exfiltration_risk = record.get('attachment_exfiltration_risk', 'None')
+                if exfiltration_risk in ['High', 'Medium']:
+                    risk_analytics['exfiltration_threats'].append({
+                        'sender': record.get('sender'),
+                        'risk_level': exfiltration_risk,
+                        'risk_score': risk_score,
+                        'attachments': record.get('attachments', '')
+                    })
+
+        # Calculate average risk score
+        if risk_score_count > 0:
+            risk_analytics['average_risk_score'] = round(total_risk_score / risk_score_count, 2)
+
+        # Sort and limit results
+        risk_analytics['top_risk_factors'] = dict(sorted(
+            risk_analytics['top_risk_factors'].items(), 
+            key=lambda x: x[1], 
+            reverse=True
+        )[:10])
+
+        risk_analytics['high_risk_emails'] = sorted(
+            risk_analytics['high_risk_emails'], 
+            key=lambda x: x['risk_score'], 
+            reverse=True
+        )[:20]
+
+        risk_analytics['exfiltration_threats'] = sorted(
+            risk_analytics['exfiltration_threats'], 
+            key=lambda x: x['risk_score'], 
+            reverse=True
+        )[:10]
+
+        # Unique malicious indicators
+        risk_analytics['malicious_indicators'] = list(set(risk_analytics['malicious_indicators']))[:15]
+
+        app.logger.info(f"Attachment risk analytics for session {session_id}: {risk_analytics['total_emails_with_attachments']} emails with attachments")
+
+        return jsonify(risk_analytics)
+
+    except Exception as e:
+        app.logger.error(f"Error getting attachment risk analytics for session {session_id}: {str(e)}")
+        return jsonify({
+            'error': str(e),
+            'total_attachments': 0,
+            'risk_distribution': {},
+            'top_risk_factors': [],
+            'malicious_indicators': [],
+            'exfiltration_threats': []
+        }), 500
+
 
         # Convert to DataFrame for BAU analysis
         df = pd.DataFrame(processed_data)

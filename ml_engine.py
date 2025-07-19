@@ -939,12 +939,16 @@ class MLEngine:
             if len(clusters_list) != target_length:
                 clusters_list = (clusters_list * target_length)[:target_length] if clusters_list else [-1] * target_length
 
+            # Calculate detailed attachment risk scores
+            attachment_risk_scores = self._calculate_attachment_risk_scores(df)
+
             return {
                 'anomaly_scores': anomaly_scores_list,
                 'risk_levels': risk_levels_list,
                 'interesting_patterns': patterns if isinstance(patterns, list) else [],
                 'clusters': clusters_list,
                 'attachment_classifications': attachment_classifications,
+                'attachment_risk_scores': attachment_risk_scores,
                 'insights': self._generate_insights(df, anomaly_scores_list, risk_levels_list, patterns)
             }
 
@@ -962,20 +966,20 @@ class MLEngine:
             }
 
     def _classify_attachments(self, df):
-        """Classify attachments as business, personal, or unknown based on filename analysis"""
+        """Classify attachments with advanced risk scoring for malicious intent and data exfiltration"""
         try:
             classifications = []
+            risk_scores = []
 
             if 'attachments' not in df.columns:
                 self.logger.info("No 'attachments' column found in DataFrame")
                 return ['No Attachments'] * len(df)
 
-            self.logger.info(f"Processing {len(df)} records for attachment classification")
+            self.logger.info(f"Processing {len(df)} records for advanced attachment risk scoring")
 
             for idx, row in df.iterrows():
                 attachments = row.get('attachments', '')
-                self.logger.info(f"Row {idx}: attachments = '{attachments}' (type: {type(attachments)})")
-
+                
                 if pd.isna(attachments) or str(attachments).strip() == '' or str(attachments).lower() == 'nan' or str(attachments).strip() == '-':
                     classifications.append('No Attachments')
                     continue
@@ -984,77 +988,170 @@ class MLEngine:
                 attachment_str = str(attachments).strip()
                 attachment_list = [att.strip() for att in attachment_str.split(',') if att.strip()]
 
-                self.logger.info(f"Processing attachment list: {attachment_list}")
+                # Calculate comprehensive attachment risk score
+                risk_analysis = self._calculate_attachment_risk_score(attachment_list, row)
+                
+                classifications.append(risk_analysis['classification'])
 
-                business_score = 0
-                personal_score = 0
-                suspicious_score = 0
-
-                for attachment in attachment_list:
-                    attachment_lower = attachment.lower()
-                    self.logger.info(f"Analyzing attachment: '{attachment}' -> '{attachment_lower}'")
-
-                    # Check for business keywords
-                    for keyword in self.business_keywords:
-                        if keyword in attachment_lower:
-                            business_score += 1
-                            self.logger.info(f"Business keyword '{keyword}' found in '{attachment}'")
-                            break
-
-                    # Check for personal keywords
-                    for keyword in self.personal_keywords:
-                        if keyword in attachment_lower:
-                            personal_score += 1
-                            self.logger.info(f"Personal keyword '{keyword}' found in '{attachment}'")
-                            break
-
-                    # Check for suspicious keywords
-                    for keyword in self.suspicious_keywords:
-                        if keyword in attachment_lower:
-                            suspicious_score += 1
-                            self.logger.info(f"Suspicious keyword '{keyword}' found in '{attachment}'")
-                            break
-
-                    # Check file extensions for business patterns
-                    if any(ext in attachment_lower for ext in ['.xlsx', '.pptx', '.docx', '.pdf']):
-                        if any(word in attachment_lower for word in ['report', 'proposal', 'contract', 'invoice']):
-                            business_score += 0.5
-                            self.logger.info(f"Business file pattern detected in '{attachment}'")
-
-                    # Check file extensions for personal patterns
-                    if any(ext in attachment_lower for ext in ['.jpg', '.jpeg', '.png', '.mp4', '.mp3']):
-                        if any(word in attachment_lower for word in ['photo', 'pic', 'image', 'video']):
-                            personal_score += 0.5
-                            self.logger.info(f"Personal file pattern detected in '{attachment}'")
-
-                # Determine classification
-                classification_result = 'Unknown'
-                if suspicious_score > 0:
-                    classification_result = 'Suspicious'
-                elif business_score > personal_score:
-                    classification_result = 'Business'
-                elif personal_score > business_score:
-                    classification_result = 'Personal'
-                elif business_score == personal_score and business_score > 0:
-                    classification_result = 'Mixed'
-                else:
-                    # For report.pdf, let's check if it matches business patterns
-                    if any(word in attachment_str.lower() for word in ['report', 'document', 'file']):
-                        classification_result = 'Business'
-                    else:
-                        classification_result = 'Unknown'
-
-                self.logger.info(f"Final classification for '{attachment_str}': {classification_result} (business: {business_score}, personal: {personal_score}, suspicious: {suspicious_score})")
-                classifications.append(classification_result)
-
-            self.logger.info(f"Classified {len(classifications)} attachment records: {classifications}")
+            self.logger.info(f"Completed advanced attachment risk scoring for {len(classifications)} records")
             return classifications
 
         except Exception as e:
-            self.logger.error(f"Error classifying attachments: {str(e)}")
+            self.logger.error(f"Error in advanced attachment classification: {str(e)}")
             import traceback
             self.logger.error(f"Traceback: {traceback.format_exc()}")
             return ['Unknown'] * len(df)
+
+    def _calculate_attachment_risk_score(self, attachment_list, email_record):
+        """Calculate comprehensive attachment risk score for malicious intent and data exfiltration"""
+        try:
+            if not attachment_list:
+                return {
+                    'classification': 'No Attachments',
+                    'risk_score': 0.0,
+                    'risk_factors': [],
+                    'malicious_indicators': [],
+                    'exfiltration_risk': 'None'
+                }
+
+            total_risk_score = 0.0
+            risk_factors = []
+            malicious_indicators = []
+            
+            # Define high-risk file extensions and patterns
+            executable_extensions = ['.exe', '.bat', '.cmd', '.com', '.scr', '.vbs', '.js', '.jar', '.app', '.dmg']
+            archive_extensions = ['.zip', '.rar', '.7z', '.tar', '.gz', '.bz2']
+            office_macro_extensions = ['.docm', '.xlsm', '.pptm', '.xls', '.doc', '.ppt']
+            sensitive_extensions = ['.sql', '.db', '.mdb', '.accdb', '.csv', '.xlsx', '.pdf']
+            
+            # Advanced malicious patterns
+            malicious_patterns = [
+                'invoice', 'receipt', 'payment', 'urgent', 'confidential', 'secure',
+                'backup', 'dump', 'export', 'database', 'credentials', 'password',
+                'login', 'account', 'financial', 'tax', 'salary', 'payroll',
+                'personal', 'private', 'copy', 'duplicate', 'temp', 'tmp'
+            ]
+            
+            # Data exfiltration indicators
+            exfiltration_patterns = [
+                'customer', 'client', 'contact', 'lead', 'prospect', 'employee',
+                'staff', 'directory', 'list', 'database', 'backup', 'export',
+                'dump', 'extract', 'report', 'summary', 'analysis', 'complete'
+            ]
+
+            for attachment in attachment_list:
+                attachment_lower = attachment.lower()
+                file_risk = 0.0
+                
+                # 1. File Extension Risk Analysis
+                if any(ext in attachment_lower for ext in executable_extensions):
+                    file_risk += 8.0
+                    malicious_indicators.append(f"Executable file type: {attachment}")
+                    risk_factors.append("High-risk executable attachment")
+                
+                if any(ext in attachment_lower for ext in office_macro_extensions):
+                    file_risk += 5.0
+                    malicious_indicators.append(f"Macro-enabled document: {attachment}")
+                    risk_factors.append("Macro-enabled office document")
+                
+                if any(ext in attachment_lower for ext in archive_extensions):
+                    file_risk += 3.0
+                    risk_factors.append("Compressed archive file")
+                
+                # 2. Filename Pattern Analysis for Malicious Intent
+                for pattern in malicious_patterns:
+                    if pattern in attachment_lower:
+                        file_risk += 2.0
+                        malicious_indicators.append(f"Suspicious filename pattern '{pattern}': {attachment}")
+                        risk_factors.append(f"Suspicious naming pattern: {pattern}")
+                
+                # 3. Data Exfiltration Risk Assessment
+                exfiltration_score = 0.0
+                for pattern in exfiltration_patterns:
+                    if pattern in attachment_lower:
+                        exfiltration_score += 1.5
+                        risk_factors.append(f"Data exfiltration indicator: {pattern}")
+                
+                # 4. File Size and Volume Risk (simulated based on naming patterns)
+                if any(word in attachment_lower for word in ['complete', 'full', 'all', 'entire', 'bulk']):
+                    file_risk += 3.0
+                    risk_factors.append("Large dataset indicator in filename")
+                
+                # 5. Obfuscation and Evasion Techniques
+                if any(char in attachment for char in ['_', '.', '-']) and len([c for c in attachment if c.isalnum()]) < len(attachment) * 0.7:
+                    file_risk += 2.0
+                    malicious_indicators.append(f"Obfuscated filename: {attachment}")
+                    risk_factors.append("Potentially obfuscated filename")
+                
+                # 6. Double Extension Check
+                if attachment_lower.count('.') > 1:
+                    extensions = attachment_lower.split('.')
+                    if len(extensions) > 2 and extensions[-2] in ['pdf', 'doc', 'jpg', 'png']:
+                        file_risk += 4.0
+                        malicious_indicators.append(f"Double extension detected: {attachment}")
+                        risk_factors.append("Double file extension (evasion technique)")
+                
+                # 7. Temporal Risk Assessment (based on email context)
+                sender = email_record.get('sender', '').lower()
+                if email_record.get('leaver') == 'yes':
+                    file_risk += 4.0
+                    risk_factors.append("Attachment from departing employee")
+                
+                # 8. Domain and Context Risk
+                if 'wordlist_attachment' in email_record and email_record.get('wordlist_attachment') == 'yes':
+                    file_risk += 3.0
+                    risk_factors.append("Attachment matches security wordlist")
+                
+                total_risk_score += file_risk
+
+            # Normalize risk score (0-100 scale)
+            normalized_risk = min(100.0, (total_risk_score / len(attachment_list)) * 2)
+            
+            # Determine classification based on comprehensive risk assessment
+            if normalized_risk >= 70:
+                classification = 'Critical Risk'
+                exfiltration_risk = 'High'
+            elif normalized_risk >= 50:
+                classification = 'High Risk'
+                exfiltration_risk = 'Medium'
+            elif normalized_risk >= 30:
+                classification = 'Medium Risk'
+                exfiltration_risk = 'Low'
+            elif normalized_risk >= 15:
+                classification = 'Low Risk'
+                exfiltration_risk = 'Very Low'
+            else:
+                # Apply business/personal classification for low-risk files
+                business_score = sum(1 for att in attachment_list for keyword in self.business_keywords if keyword in att.lower())
+                personal_score = sum(1 for att in attachment_list for keyword in self.personal_keywords if keyword in att.lower())
+                
+                if business_score > personal_score:
+                    classification = 'Business'
+                elif personal_score > business_score:
+                    classification = 'Personal'
+                else:
+                    classification = 'Normal'
+                exfiltration_risk = 'None'
+
+            return {
+                'classification': classification,
+                'risk_score': round(normalized_risk, 2),
+                'risk_factors': list(set(risk_factors)),
+                'malicious_indicators': malicious_indicators,
+                'exfiltration_risk': exfiltration_risk,
+                'attachment_count': len(attachment_list),
+                'attachment_details': attachment_list
+            }
+
+        except Exception as e:
+            self.logger.error(f"Error calculating attachment risk score: {str(e)}")
+            return {
+                'classification': 'Unknown',
+                'risk_score': 0.0,
+                'risk_factors': [],
+                'malicious_indicators': [],
+                'exfiltration_risk': 'Unknown'
+            }
 
     def _process_batch(self, batch_df):
         """Process a batch of emails for large datasets"""
@@ -1091,54 +1188,81 @@ class MLEngine:
                 'attachment_classifications': ['Unknown'] * batch_size
             }
 
+    def _calculate_attachment_risk_scores(self, df):
+        """Calculate detailed attachment risk scores for all records"""
+        try:
+            risk_scores = []
+            
+            if 'attachments' not in df.columns:
+                return [{'risk_score': 0.0, 'risk_level': 'No Attachments'}] * len(df)
+
+            for idx, row in df.iterrows():
+                attachments = row.get('attachments', '')
+                
+                if pd.isna(attachments) or str(attachments).strip() == '' or str(attachments).lower() == 'nan' or str(attachments).strip() == '-':
+                    risk_scores.append({
+                        'risk_score': 0.0,
+                        'risk_level': 'No Attachments',
+                        'risk_factors': [],
+                        'malicious_indicators': [],
+                        'exfiltration_risk': 'None'
+                    })
+                    continue
+
+                attachment_list = [att.strip() for att in str(attachments).split(',') if att.strip()]
+                risk_analysis = self._calculate_attachment_risk_score(attachment_list, row)
+                
+                risk_scores.append({
+                    'risk_score': risk_analysis['risk_score'],
+                    'risk_level': risk_analysis['classification'],
+                    'risk_factors': risk_analysis['risk_factors'],
+                    'malicious_indicators': risk_analysis['malicious_indicators'],
+                    'exfiltration_risk': risk_analysis['exfiltration_risk'],
+                    'attachment_count': risk_analysis['attachment_count']
+                })
+
+            self.logger.info(f"Calculated detailed risk scores for {len(risk_scores)} attachment records")
+            return risk_scores
+
+        except Exception as e:
+            self.logger.error(f"Error calculating attachment risk scores: {str(e)}")
+            return [{'risk_score': 0.0, 'risk_level': 'Unknown'}] * len(df)
+
     def _classify_single_attachment_list(self, attachment_list):
         """Classify attachments as Business, Personal, or Mixed"""
         try:
             if not attachment_list:
                 return 'Unknown'
 
-            # Debug logging
-            self.logger.info(f"Debug: Processing attachments: {attachment_list}")
-            self.logger.info(f"Debug: Business keywords: {self.business_keywords[:10]}")  # Show first 10
-            self.logger.info(f"Debug: Personal keywords: {self.personal_keywords[:10]}")    # Show first 10
-
             business_score = 0
             personal_score = 0
             suspicious_score = 0
 
             for attachment in attachment_list:
-                original_attachment = attachment
                 attachment = attachment.strip().lower()
-                self.logger.info(f"Debug: Processing attachment: '{original_attachment}' -> '{attachment}'")
 
                 # Check for business keywords
                 for keyword in self.business_keywords:
                     if keyword in attachment:
                         business_score += 1
-                        self.logger.info(f"Debug: Business keyword match: '{keyword}' in '{attachment}'")
                         break
 
                 # Check for personal keywords
                 for keyword in self.personal_keywords:
                     if keyword in attachment:
                         personal_score += 1
-                        self.logger.info(f"Debug: Personal keyword match: '{keyword}' in '{attachment}'")
                         break
 
                 # Check for suspicious keywords
                 for keyword in self.suspicious_keywords:
                     if keyword in attachment:
                         suspicious_score += 1
-                        self.logger.info(f"Debug: Suspicious keyword match: '{keyword}' in '{attachment}'")
                         break
 
                 # Check file extensions for business patterns
                 if any(ext in attachment for ext in ['.xlsx', '.pptx', '.docx', '.pdf']):
                     if any(word in attachment for word in ['report', 'proposal', 'contract', 'invoice']):
                         business_score += 0.5
-                        self.logger.info(f"Debug: File extension + business word match for '{attachment}'")
-
-            self.logger.info(f"Debug: Final scores - Business: {business_score}, Personal: {personal_score}, Suspicious: {suspicious_score}")
 
             # Determine classification
             if suspicious_score > 0:
@@ -1152,7 +1276,6 @@ class MLEngine:
             else:
                 classification = 'Unknown'
 
-            self.logger.info(f"Debug: Final classification: {classification}")
             return classification
 
         except Exception as e:

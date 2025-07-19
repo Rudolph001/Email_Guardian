@@ -760,6 +760,16 @@ class DataProcessor:
                     record['attachment_classification'] = attachment_classifications[i]
                     self.logger.info(f"Debug: Record {i} got attachment classification: {attachment_classifications[i]}")
 
+                # Add detailed attachment risk scoring
+                if 'attachment_risk_scores' in ml_results and i < len(ml_results['attachment_risk_scores']):
+                    risk_data = ml_results['attachment_risk_scores'][i]
+                    record['attachment_risk_score'] = risk_data.get('risk_score', 0.0)
+                    record['attachment_risk_level'] = risk_data.get('risk_level', 'Unknown')
+                    record['attachment_risk_factors'] = risk_data.get('risk_factors', [])
+                    record['attachment_malicious_indicators'] = risk_data.get('malicious_indicators', [])
+                    record['attachment_exfiltration_risk'] = risk_data.get('exfiltration_risk', 'None')
+                    record['attachment_count'] = risk_data.get('attachment_count', 0)
+
                 # Ensure we have a domain classification
                 if 'domain_classification' not in record:
                     record['domain_classification'] = self._classify_domain(record.get('recipients_email_domain', ''))
