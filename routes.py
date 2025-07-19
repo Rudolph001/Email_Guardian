@@ -905,6 +905,16 @@ def admin():
     attachment_keywords = session_manager.get_attachment_keywords()
     sessions = session_manager.get_all_sessions()
     domain_classifications = domain_manager.get_domains()
+    
+    # Debug logging to check domain classifications
+    app.logger.info(f"Domain classifications loaded: {domain_classifications}")
+    
+    # Ensure we have default structure if data is missing
+    if not domain_classifications or not isinstance(domain_classifications, dict):
+        app.logger.warning("Domain classifications empty or invalid, initializing defaults")
+        domain_manager.initialize_domains_file()
+        domain_classifications = domain_manager.get_domains()
+    
     return render_template('admin.html', 
                          whitelists=whitelists, 
                          attachment_keywords=attachment_keywords, 

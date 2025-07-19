@@ -14,12 +14,85 @@ class DomainManager:
 
     def initialize_domains_file(self):
         """Initialize domain classifications file if it doesn't exist"""
-        if not os.path.exists(self.domains_file):
-            os.makedirs('data', exist_ok=True)
-            default_domains = {
+        os.makedirs('data', exist_ok=True)
+        default_domains = {
+            "trusted": [
+                "company.com",
+                "corporate.com",
+                "business.com",
+                "rdcomputers.co.za"
+            ],
+            "corporate": [
+                "microsoft.com",
+                "apple.com",
+                "google.com",
+                "amazon.com",
+                "salesforce.com",
+                "linkedin.com",
+                "office365.com"
+            ],
+            "personal": [
+                "gmail.com",
+                "yahoo.com",
+                "hotmail.com",
+                "outlook.com",
+                "icloud.com",
+                "aol.com",
+                "protonmail.com"
+            ],
+            "public": [
+                "gov.uk",
+                "gov.us",
+                "edu.com",
+                "edu.uk",
+                "ac.uk",
+                "org.uk",
+                "mil.us",
+                "state.gov"
+            ],
+            "suspicious": [
+                "tempmail.com",
+                "10minutemail.com",
+                "guerrillamail.com",
+                "throwaway.email",
+                "mailinator.com",
+                "yopmail.com"
+            ],
+            "updated_at": datetime.now().isoformat()
+        }
+        self.save_domains(default_domains)
+        self.logger.info("Initialized domain classifications with default data")
+
+    def get_domains(self) -> Dict:
+        """Get all domain classifications"""
+        try:
+            if not os.path.exists(self.domains_file):
+                self.logger.info("Domain classifications file not found, initializing...")
+                self.initialize_domains_file()
+            
+            with open(self.domains_file, 'r') as f:
+                data = json.load(f)
+                
+            # Validate the structure
+            if not isinstance(data, dict):
+                raise ValueError("Invalid domain classifications format")
+                
+            # Ensure all required keys exist
+            required_keys = ["trusted", "corporate", "personal", "public", "suspicious"]
+            for key in required_keys:
+                if key not in data:
+                    data[key] = []
+                    
+            return data
+            
+        except Exception as e:
+            self.logger.error(f"Error loading domain classifications: {str(e)}")
+            # Re-initialize with defaults
+            self.initialize_domains_file()
+            return {
                 "trusted": [
                     "company.com",
-                    "corporate.com",
+                    "corporate.com", 
                     "business.com",
                     "rdcomputers.co.za"
                 ],
@@ -59,23 +132,6 @@ class DomainManager:
                     "mailinator.com",
                     "yopmail.com"
                 ],
-                "updated_at": datetime.now().isoformat()
-            }
-            self.save_domains(default_domains)
-
-    def get_domains(self) -> Dict:
-        """Get all domain classifications"""
-        try:
-            with open(self.domains_file, 'r') as f:
-                return json.load(f)
-        except Exception as e:
-            self.logger.error(f"Error loading domain classifications: {str(e)}")
-            return {
-                "trusted": [],
-                "corporate": [],
-                "personal": [],
-                "public": [],
-                "suspicious": [],
                 "updated_at": datetime.now().isoformat()
             }
 
