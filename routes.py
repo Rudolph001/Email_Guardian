@@ -869,7 +869,8 @@ def case_action(session_id, record_id):
 def update_whitelist():
     """Update whitelist domains and reprocess existing sessions"""
     domains = request.form.get('domains', '').split('\n')
-    domains = [domain.strip() for domain in domains if domain.strip()]
+    # Convert all domains to lowercase for consistency
+    domains = [domain.strip().lower() for domain in domains if domain.strip()]
 
     session_manager = SessionManager()
     result = session_manager.update_whitelist(domains)

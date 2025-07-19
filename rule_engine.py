@@ -305,25 +305,36 @@ class RuleEngine:
 
     # Operator implementations
     def _equals(self, field_value: Any, condition_value: Any) -> bool:
+        # Convert both values to lowercase strings for comparison
+        field_str = str(field_value).lower().strip() if field_value is not None else ''
+        condition_str = str(condition_value).lower().strip() if condition_value is not None else ''
+        
         # If condition_value contains commas, treat it as a list for backwards compatibility
-        if ',' in str(condition_value):
-            values = [v.strip().lower() for v in str(condition_value).split(',') if v.strip()]
-            return str(field_value).lower() in values
-        return str(field_value).lower() == str(condition_value).lower()
+        if ',' in condition_str:
+            values = [v.strip() for v in condition_str.split(',') if v.strip()]
+            return field_str in values
+        return field_str == condition_str
 
     def _contains(self, field_value: Any, condition_value: Any) -> bool:
-        return str(condition_value).lower() in str(field_value).lower()
+        field_str = str(field_value).lower().strip() if field_value is not None else ''
+        condition_str = str(condition_value).lower().strip() if condition_value is not None else ''
+        return condition_str in field_str
 
     def _not_equals(self, field_value: Any, condition_value: Any) -> bool:
-        return str(field_value).lower() != str(condition_value).lower()
+        field_str = str(field_value).lower().strip() if field_value is not None else ''
+        condition_str = str(condition_value).lower().strip() if condition_value is not None else ''
+        return field_str != condition_str
 
     def _in_list(self, field_value: Any, condition_value: Any) -> bool:
+        field_str = str(field_value).lower().strip() if field_value is not None else ''
+        
         if isinstance(condition_value, list):
-            return str(field_value).lower() in [str(v).lower() for v in condition_value]
+            return field_str in [str(v).lower().strip() for v in condition_value]
         else:
             # Handle comma-separated string values
-            values = [v.strip().lower() for v in str(condition_value).split(',') if v.strip()]
-            return str(field_value).lower() in values
+            condition_str = str(condition_value).lower().strip() if condition_value is not None else ''
+            values = [v.strip() for v in condition_str.split(',') if v.strip()]
+            return field_str in values
 
     def _greater_than(self, field_value: Any, condition_value: Any) -> bool:
         try:
@@ -566,10 +577,10 @@ class RuleEngine:
             if record_value is None:
                 record_value = ''
             
-            record_value = str(record_value)
-            rule_value = str(rule_value)
+            record_value = str(record_value).strip()
+            rule_value = str(rule_value).strip()
             
-            # Apply case sensitivity
+            # Apply case sensitivity - default to lowercase since data is already lowercase
             if not case_sensitive:
                 record_value = record_value.lower()
                 rule_value = rule_value.lower()

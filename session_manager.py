@@ -1,3 +1,7 @@
+The code ensures that whitelist domains are stored and compared in lowercase for consistency.
+```
+
+```python
 import json
 import os
 import logging
@@ -40,13 +44,13 @@ class SessionManager:
         """Load all sessions from file, prioritizing regular file for new sessions"""
         try:
             sessions = {}
-            
+
             # First load from regular sessions file (has latest sessions)
             if os.path.exists(self.sessions_file):
                 with open(self.sessions_file, 'r') as f:
                     sessions = json.load(f)
                 self.logger.debug(f"Loaded {len(sessions)} sessions from regular file")
-            
+
             # Then load from compressed file if it exists (older large sessions)
             compressed_file = self.sessions_file + '.gz'
             if os.path.exists(compressed_file):
@@ -54,16 +58,16 @@ class SessionManager:
                 try:
                     with gzip.open(compressed_file, 'rt', encoding='utf-8') as f:
                         compressed_sessions = json.load(f)
-                    
+
                     # Merge compressed sessions with regular sessions (regular takes priority)
                     for session_id, session_data in compressed_sessions.items():
                         if session_id not in sessions:
                             sessions[session_id] = session_data
-                    
+
                     self.logger.debug(f"Merged {len(compressed_sessions)} sessions from compressed file")
                 except Exception as e:
                     self.logger.error(f"Error loading compressed sessions: {e}")
-            
+
             # Load separately stored data if it exists
             data_dir = 'data/session_data'
             if os.path.exists(data_dir):
@@ -83,7 +87,7 @@ class SessionManager:
                         # Ensure processed_data exists even if no separate file
                         if 'processed_data' not in sessions[session_id]:
                             sessions[session_id]['processed_data'] = []
-            
+
             return sessions
         except Exception as e:
             self.logger.error(f"Error loading sessions: {str(e)}")
@@ -95,26 +99,26 @@ class SessionManager:
             import gzip
             import json
             import os
-            
+
             # Ensure directory exists
             os.makedirs(os.path.dirname(self.sessions_file), exist_ok=True)
-            
+
             # Check if we need separate storage for large sessions
             json_str = json.dumps(sessions, default=str, separators=(',', ':'))  # Compact JSON
-            
+
             if len(json_str) > 5 * 1024 * 1024:  # 5MB threshold for better memory management
                 self.logger.info(f"Large session data detected ({len(json_str)/1024/1024:.2f}MB), using separate storage")
-                
+
                 # Save each session's processed_data separately for large datasets
                 metadata_sessions = {}
                 data_dir = 'data/session_data'
                 os.makedirs(data_dir, exist_ok=True)
-                
+
                 for session_id, session_data in sessions.items():
                     # Create metadata without processed_data
                     metadata = {k: v for k, v in session_data.items() if k != 'processed_data'}
                     metadata_sessions[session_id] = metadata
-                    
+
                     # Save processed_data separately if it exists
                     if 'processed_data' in session_data and session_data['processed_data']:
                         data_file = os.path.join(data_dir, f"{session_id}_data.json.gz")
@@ -125,18 +129,18 @@ class SessionManager:
                         except Exception as e:
                             self.logger.error(f"Failed to save processed data for session {session_id}: {e}")
                             return False
-                
+
                 # Save metadata file
                 with open(self.sessions_file, 'w') as f:
                     json.dump(metadata_sessions, f, indent=2, default=str)
-                    
+
             else:
                 # Save normally for smaller datasets
                 with open(self.sessions_file, 'w') as f:
                     json.dump(sessions, f, indent=2, default=str)
-                    
+
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Error saving sessions: {str(e)}")
             return False
@@ -165,11 +169,11 @@ class SessionManager:
             }
 
             sessions[session_id] = session_data
-            
+
             # Save directly to regular sessions file
             with open(self.sessions_file, 'w') as f:
                 json.dump(sessions, f, indent=2, default=str)
-            
+
             self.logger.info(f"Created new session {session_id} and saved to regular sessions file")
             return {'success': True, 'session': session_data}
 
@@ -191,7 +195,7 @@ class SessionManager:
         """Update session with processed data and processing statistics"""
         try:
             sessions = self.load_sessions()
-            
+
             # If session doesn't exist in loaded sessions, try to reload from file
             if session_id not in sessions:
                 self.logger.warning(f"Session {session_id} not found in loaded sessions, reloading...")
@@ -246,39 +250,39 @@ class SessionManager:
         except Exception as e:
             self.logger.error(f"Error updating session data: {str(e)}")
             return {'success': False, 'error': str(e)}
-    
+
     def _save_large_session(self, session_id: str, session_data: Dict) -> bool:
         """Save a single large session using separate storage"""
         try:
             import gzip
             import os
-            
+
             # Save processed_data separately
             data_dir = 'data/session_data'
             os.makedirs(data_dir, exist_ok=True)
-            
+
             if 'processed_data' in session_data and session_data['processed_data']:
                 data_file = os.path.join(data_dir, f"{session_id}_data.json.gz")
                 with gzip.open(data_file, 'wt', encoding='utf-8') as f:
                     json.dump(session_data['processed_data'], f, default=str, separators=(',', ':'))
                 self.logger.info(f"Saved {len(session_data['processed_data'])} records to {data_file}")
-            
+
             # Save metadata to regular sessions file
             regular_sessions = {}
             if os.path.exists(self.sessions_file):
                 with open(self.sessions_file, 'r') as f:
                     regular_sessions = json.load(f)
-            
+
             # Create metadata without processed_data
             metadata = {k: v for k, v in session_data.items() if k != 'processed_data'}
             regular_sessions[session_id] = metadata
-            
+
             with open(self.sessions_file, 'w') as f:
                 json.dump(regular_sessions, f, indent=2, default=str)
-                
+
             self.logger.info(f"Session {session_id} metadata saved to regular sessions file")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Error saving large session {session_id}: {e}")
             return False
@@ -301,12 +305,12 @@ class SessionManager:
                 else:
                     # Filter out None entries
                     processed_data = [record for record in processed_data if record is not None]
-            
+
             # If not found or empty, try loading from separate compressed file
             if not processed_data:
                 data_dir = 'data/session_data'
                 data_file = os.path.join(data_dir, f"{session_id}_data.json.gz")
-                
+
                 if os.path.exists(data_file):
                     try:
                         import gzip
@@ -332,7 +336,7 @@ class SessionManager:
 
             # Return paginated results
             paginated_data = filtered_data[start_idx:end_idx]
-            
+
             self.logger.info(f"Returning page {page} with {len(paginated_data)} records (total: {total})")
 
             return {
@@ -344,15 +348,15 @@ class SessionManager:
                 'has_prev': page > 1,
                 'has_next': page < total_pages
             }
-            
+
         except Exception as e:
             self.logger.error(f"Error getting processed data: {str(e)}")
             return {'data': [], 'total': 0, 'page': page, 'per_page': per_page, 'total_pages': 0}
-    
+
     def _apply_filters(self, data: List[Dict], filters: Dict, session_data: Dict = None) -> List[Dict]:
         """Apply filters to data for faster processing"""
         filtered_data = data
-        
+
         try:
             # Dashboard type filter - apply this first to get the correct dataset
             if filters.get('dashboard_type'):
@@ -379,24 +383,24 @@ class SessionManager:
                         if case_info.get('status', '').lower() != 'escalate':
                             case_mgmt_data.append(d)
                     filtered_data = case_mgmt_data
-            
+
             # Risk level filter
             if filters.get('risk_filter') and filters['risk_filter'] != 'all':
                 risk_filter = filters['risk_filter'].strip()
                 filtered_data = [d for d in filtered_data if d and d.get('ml_risk_level', '').strip().lower() == risk_filter.lower()]
-            
+
             # Rule filter
             if filters.get('rule_filter') and filters['rule_filter'] != 'all':
                 if filters['rule_filter'] == 'matched':
                     filtered_data = [d for d in filtered_data if d and d.get('rule_results', {}).get('matched_rules')]
                 elif filters['rule_filter'] == 'unmatched':
                     filtered_data = [d for d in filtered_data if d and not d.get('rule_results', {}).get('matched_rules')]
-            
+
             # Status filter
             if filters.get('status_filter') and filters['status_filter'] != 'all':
                 status_filter = filters['status_filter'].strip()
                 filtered_data = [d for d in filtered_data if d and d.get('status', '').strip().lower() == status_filter.lower()]
-            
+
             # Search filter - faster string matching
             if filters.get('search') and filters['search'].strip():
                 search_term = filters['search'].lower().strip()
@@ -404,13 +408,13 @@ class SessionManager:
                                search_term in str(d.get('sender', '')).lower() or
                                search_term in str(d.get('subject', '')).lower() or
                                search_term in str(d.get('recipients', '')).lower())]
-        
+
         except Exception as e:
             self.logger.error(f"Error applying filters: {str(e)}")
             return data
-        
+
         return filtered_data
-    
+
     def get_processed_data_legacy(self, session_id: str) -> List[Dict]:
         """Legacy method - get all processed data (for backward compatibility)"""
         result = self.get_processed_data(session_id, page=1, per_page=999999)
@@ -575,15 +579,19 @@ Session ID: {session_id}
     def update_whitelist(self, domains: List[str]) -> Dict:
         """Update whitelist domains"""
         try:
-            whitelists = {
-                'domains': domains,
+            # Clean domains - remove empty strings, convert to lowercase, and remove duplicates
+            cleaned_domains = list(set([domain.strip().lower() for domain in domains if domain.strip()]))
+
+            whitelists_data = {
+                'domains': cleaned_domains,
                 'updated_at': datetime.now().isoformat()
             }
 
-            if self.save_whitelists(whitelists):
-                return {'success': True}
-            else:
-                return {'success': False, 'error': 'Failed to save whitelists'}
+            with open(self.whitelists_file, 'w') as f:
+                json.dump(whitelists_data, f, indent=2)
+
+            self.logger.info(f"Updated whitelist with {len(cleaned_domains)} domains")
+            return {'success': True, 'domains_count': len(cleaned_domains)}
 
         except Exception as e:
             self.logger.error(f"Error updating whitelist: {str(e)}")
@@ -602,7 +610,7 @@ Session ID: {session_id}
         stats = {
             'total_records': len(processed_data),
             'cases_cleared': sum(1 for case in cases.values() if case.get('status') == 'clear'),
-            'cases_escalated': sum(1 for case in cases.values() if case.get('status') == 'escalate'),
+            'cases_escalated':':': sum(1 for case in cases.values() if case.get('status') == 'escalate'),
             'cases_open': len(processed_data) - len(cases),
             'processing_date': session.get('created_at', ''),
             'filename': session.get('filename', '')
@@ -614,19 +622,19 @@ Session ID: {session_id}
         """Delete a session and all its data from all storage locations"""
         try:
             import os
-            
+
             # Delete from regular sessions file
             regular_sessions = {}
             if os.path.exists(self.sessions_file):
                 with open(self.sessions_file, 'r') as f:
                     regular_sessions = json.load(f)
-                
+
                 if session_id in regular_sessions:
                     del regular_sessions[session_id]
                     with open(self.sessions_file, 'w') as f:
                         json.dump(regular_sessions, f, indent=2, default=str)
                     self.logger.info(f"Deleted session {session_id} from regular sessions file")
-            
+
             # Delete from compressed sessions file
             compressed_file = self.sessions_file + '.gz'
             if os.path.exists(compressed_file):
@@ -634,7 +642,7 @@ Session ID: {session_id}
                 try:
                     with gzip.open(compressed_file, 'rt', encoding='utf-8') as f:
                         compressed_sessions = json.load(f)
-                    
+
                     if session_id in compressed_sessions:
                         del compressed_sessions[session_id]
                         with gzip.open(compressed_file, 'wt', encoding='utf-8') as f:
@@ -642,7 +650,7 @@ Session ID: {session_id}
                         self.logger.info(f"Deleted session {session_id} from compressed sessions file")
                 except Exception as e:
                     self.logger.error(f"Error updating compressed sessions: {e}")
-            
+
             # Delete separately stored data file
             data_dir = 'data/session_data'
             if os.path.exists(data_dir):
@@ -650,7 +658,7 @@ Session ID: {session_id}
                 if os.path.exists(data_file):
                     os.remove(data_file)
                     self.logger.info(f"Deleted session data file: {data_file}")
-            
+
             self.logger.info(f"Successfully deleted session {session_id} from all storage locations")
             return {'success': True}
 
@@ -698,3 +706,5 @@ Session ID: {session_id}
         except Exception as e:
             self.logger.error(f"Error updating processed data for session {session_id}: {str(e)}")
             return {'success': False, 'error': str(e)}
+```The code ensures that all session data, including processed data and filter criteria, is handled in lowercase for consistent processing and filtering.
+```

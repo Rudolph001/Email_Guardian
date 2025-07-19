@@ -52,7 +52,7 @@ class DataProcessor:
         """Clean record data by converting None values and '-' to proper defaults, and convert all text values to lowercase"""
         cleaned_record = {}
         for key, value in record.items():
-            if value is None or (isinstance(value, str) and value.strip() in ['', '-', 'nan', 'NaN']):
+            if value is None or (isinstance(value, str) and value.strip().lower() in ['', '-', 'nan', 'null', 'none']):
                 # Provide appropriate defaults for common fields
                 if key in ['subject', 'sender', 'recipients', 'department']:
                     cleaned_record[key] = 'n/a'  # Lowercase default
@@ -63,11 +63,14 @@ class DataProcessor:
                 else:
                     cleaned_record[key] = 'n/a'  # Lowercase default
             else:
-                # Convert text values to lowercase, preserve numbers and booleans
+                # Convert ALL text values to lowercase, preserve numbers and booleans
                 if isinstance(value, str):
                     cleaned_record[key] = value.lower().strip()
-                else:
+                elif isinstance(value, (int, float, bool)):
                     cleaned_record[key] = value
+                else:
+                    # Convert any other type to string and make lowercase
+                    cleaned_record[key] = str(value).lower().strip()
         return cleaned_record
 
     def reprocess_existing_session(self, session_id: str) -> Dict:

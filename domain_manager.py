@@ -69,22 +69,22 @@ class DomainManager:
             if not os.path.exists(self.domains_file):
                 self.logger.info("Domain classifications file not found, initializing...")
                 self.initialize_domains_file()
-            
+
             with open(self.domains_file, 'r') as f:
                 data = json.load(f)
-                
+
             # Validate the structure
             if not isinstance(data, dict):
                 raise ValueError("Invalid domain classifications format")
-                
+
             # Ensure all required keys exist
             required_keys = ["trusted", "corporate", "personal", "public", "suspicious"]
             for key in required_keys:
                 if key not in data:
                     data[key] = []
-                    
+
             return data
-            
+
         except Exception as e:
             self.logger.error(f"Error loading domain classifications: {str(e)}")
             # Re-initialize with defaults
@@ -149,29 +149,28 @@ class DomainManager:
     def add_domain(self, category: str, domain: str) -> Dict:
         """Add a domain to a specific category"""
         try:
-            if category not in ['trusted', 'corporate', 'personal', 'public', 'suspicious']:
-                return {'success': False, 'error': 'Invalid category'}
-
-            domain = domain.lower().strip()
-            if not domain or '.' not in domain:
-                return {'success': False, 'error': 'Invalid domain format'}
-
             domains = self.get_domains()
-            
-            # Check if domain already exists in any category
-            for cat, domain_list in domains.items():
-                if cat != 'updated_at' and domain in domain_list:
-                    if cat == category:
-                        return {'success': False, 'error': f'Domain already exists in {category} category'}
-                    else:
-                        return {'success': False, 'error': f'Domain already exists in {cat} category'}
+
+            if category not in domains:
+                return {'success': False, 'error': f'Invalid category: {category}'}
+
+            # Convert domain to lowercase for consistency
+            domain = domain.strip().lower()
+            if not domain:
+                return {'success': False, 'error': 'Domain cannot be empty'}
+
+            # Check if domain already exists (case-insensitive)
+            existing_domains = [d.lower() for d in domains[category]]
+            if domain in existing_domains:
+                return {'success': False, 'error': f'Domain {domain} already exists in {category}'}
 
             domains[category].append(domain)
+
             if self.save_domains(domains):
-                self.logger.info(f"Added domain {domain} to {category} category")
-                return {'success': True, 'message': f'Domain added to {category} category'}
+                self.logger.info(f"Added domain {domain} to category {category}")
+                return {'success': True, 'message': f'Domain {domain} added to {category}'}
             else:
-                return {'success': False, 'error': 'Failed to save domain classifications'}
+                return {'success': False, 'error': 'Failed to save domains'}
 
         except Exception as e:
             self.logger.error(f"Error adding domain: {str(e)}")
@@ -180,20 +179,32 @@ class DomainManager:
     def remove_domain(self, category: str, domain: str) -> Dict:
         """Remove a domain from a specific category"""
         try:
-            if category not in ['trusted', 'corporate', 'personal', 'public', 'suspicious']:
-                return {'success': False, 'error': 'Invalid category'}
-
             domains = self.get_domains()
-            
-            if domain not in domains[category]:
-                return {'success': False, 'error': f'Domain not found in {category} category'}
 
-            domains[category].remove(domain)
+            if category not in domains:
+                return {'success': False, 'error': f'Invalid category: {category}'}
+
+            # Convert domain to lowercase for consistency
+            domain = domain.strip().lower()
+            if not domain:
+                return {'success': False, 'error': 'Domain cannot be empty'}
+
+            # Find and remove domain (case-insensitive)
+            domain_found = False
+            for i, existing_domain in enumerate(domains[category]):
+                if existing_domain.lower() == domain:
+                    domains[category].pop(i)
+                    domain_found = True
+                    break
+
+            if not domain_found:
+                return {'success': False, 'error': f'Domain {domain} not found in {category}'}
+
             if self.save_domains(domains):
-                self.logger.info(f"Removed domain {domain} from {category} category")
-                return {'success': True, 'message': f'Domain removed from {category} category'}
+                self.logger.info(f"Removed domain {domain} from category {category}")
+                return {'success': True, 'message': f'Domain {domain} removed from {category}'}
             else:
-                return {'success': False, 'error': 'Failed to save domain classifications'}
+                return {'success': False, 'error': 'Failed to save domains'}
 
         except Exception as e:
             self.logger.error(f"Error removing domain: {str(e)}")
@@ -219,7 +230,7 @@ class DomainManager:
                 return 'Suspicious'
             elif domain in ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com']:
                 return 'Personal'
-            
+
             return 'Unknown'
 
         except Exception as e:
@@ -232,12 +243,12 @@ class DomainManager:
             domains = self.get_domains()
             stats = {}
             total = 0
-            
+
             for category in ['trusted', 'corporate', 'personal', 'public', 'suspicious']:
                 count = len(domains.get(category, []))
                 stats[category] = count
                 total += count
-            
+
             stats['total'] = total
             return stats
 

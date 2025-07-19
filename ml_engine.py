@@ -20,7 +20,7 @@ class MLEngine:
         self.label_encoder = LabelEncoder()
         self.logger = logging.getLogger(__name__)
 
-        # Attachment classification keywords
+        # Attachment classification keywords - all in lowercase since data is lowercase
         self.business_keywords = [
             'contract', 'agreement', 'proposal', 'invoice', 'report', 'presentation', 
             'budget', 'financial', 'quarterly', 'annual', 'meeting', 'agenda', 
