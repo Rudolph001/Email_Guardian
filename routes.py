@@ -767,16 +767,40 @@ def rules():
 def create_rule():
     """Create a new rule and reprocess existing sessions"""
     try:
+        rule_name = request.form.get('name', '').strip()
+        
+        # Check if rule name is provided
+        if not rule_name:
+            flash('Rule name is required.', 'error')
+            return redirect(url_for('rules'))
+        
+        # Check for duplicate rule names to prevent accidental duplicates
+        rule_engine = RuleEngine()
+        existing_rules = rule_engine.get_all_rules()
+        
+        for existing_rule in existing_rules:
+            if existing_rule.get('name', '').lower() == rule_name.lower():
+                flash(f'A rule with the name "{rule_name}" already exists. Please choose a different name.', 'error')
+                return redirect(url_for('rules'))
+        
         rule_data = {
-            'name': request.form.get('name'),
-            'description': request.form.get('description'),
+            'name': rule_name,
+            'description': request.form.get('description', '').strip(),
             'conditions': json.loads(request.form.get('conditions', '[]')),
             'actions': json.loads(request.form.get('actions', '[]')),
             'priority': int(request.form.get('priority', 1)),
             'active': request.form.get('active') == 'on'
         }
 
-        rule_engine = RuleEngine()
+        # Validate that conditions and actions are not empty
+        if not rule_data['conditions']:
+            flash('At least one condition is required for the rule.', 'error')
+            return redirect(url_for('rules'))
+            
+        if not rule_data['actions']:
+            flash('At least one action is required for the rule.', 'error')
+            return redirect(url_for('rules'))
+
         result = rule_engine.create_rule(rule_data)
 
         if result['success']:
@@ -790,6 +814,10 @@ def create_rule():
         else:
             flash(f'Error creating rule: {result["error"]}', 'error')
 
+    except json.JSONDecodeError as e:
+        flash('Invalid rule data format. Please check your conditions and actions.', 'error')
+    except ValueError as e:
+        flash('Invalid priority value. Please select a valid priority.', 'error')
     except Exception as e:
         flash(f'Error creating rule: {str(e)}', 'error')
 

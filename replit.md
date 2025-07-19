@@ -21,11 +21,14 @@ Upload limit preference: High capacity (500MB) for large email data files.
   - Visual representation helps identify optimization opportunities and system behavior analysis
   - Professional diagram shows: User actions → File processing → Session creation → Processing pipeline → Storage → Dashboard operations
   - Highlights current bottlenecks (large file processing) and implemented optimizations (chunked processing, compression)
-- **Fixed "Create Rule" Button Functionality** (July 19, 2025):
-  - Resolved issue where processing rule creation button wasn't submitting forms properly
-  - Enhanced buildRuleData() function with proper form validation
-  - Added validation to ensure at least one condition and action before rule creation
-  - Fixed form submission flow to properly populate hidden JSON fields before sending to backend
+- **Fixed Duplicate Rule Creation Bug** (July 19, 2025):
+  - Resolved issue where "Create Rule" button was creating multiple identical rules in a loop
+  - Added frontend prevention for duplicate form submissions with submission flag and button disabling
+  - Implemented form reset functionality when modals are opened/closed to prevent state issues
+  - Added backend validation to prevent duplicate rule names (case-insensitive check)
+  - Enhanced error handling with proper validation for required fields (name, conditions, actions)
+  - Added visual feedback during rule creation with spinner and disabled submit button
+  - Improved form stability with proper event handling and modal lifecycle management
 - **Enhanced Exclusion Rules with Advanced Input Support** (July 19, 2025):
   - Added support for multi-word phrases in quotes (e.g., "bank branch", "urgent payment")
   - Implemented comma-separated value input for multiple keywords in single field
