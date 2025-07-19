@@ -48,24 +48,45 @@ h5 { font-size: 1.25rem; font-weight: 500; }
 h6 { font-size: 1.1rem; font-weight: 500; }
 
 /* Attachment Risk Intelligence Styles */
-.risk-factors-list {
-    max-height: 200px;
+.risk-factors-compact {
+    max-height: 120px;
     overflow-y: auto;
+    font-size: 0.85rem;
 }
 
-.risk-factors-list .flex-grow-1 {
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    line-height: 1.3;
+.risk-factors-compact .risk-factor-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    margin-bottom: 3px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    border-left: 3px solid #dee2e6;
 }
 
-.risk-factors-list .d-flex {
-    align-items: flex-start;
+.risk-factors-compact .risk-factor-text {
+    flex: 1;
+    margin-right: 8px;
+    font-size: 0.8rem;
+    line-height: 1.2;
+    color: #495057;
+    word-break: break-word;
 }
 
-.risk-factors-list .badge {
-    flex-shrink: 0;
-    margin-top: 2px;
+.risk-factors-compact .risk-factor-count {
+    background-color: #6c757d;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    min-width: 30px;
+    text-align: center;
+}
+
+.metric-small {
+    padding: 8px 4px;
 }
 
 /* Navigation */

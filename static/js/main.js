@@ -761,13 +761,11 @@ function updateAttachmentRiskDisplay(data) {
     // Update top risk factors
     if (Object.keys(data.top_risk_factors || {}).length > 0) {
         const factorsList = Object.entries(data.top_risk_factors)
-            .slice(0, 5)
+            .slice(0, 4)
             .map(([factor, count]) => 
-                `<div class="d-flex justify-content-between align-items-start mb-2">
-                    <div class="flex-grow-1 me-2">
-                        <small class="text-dark" title="${factor}">${factor}</small>
-                    </div>
-                    <span class="badge bg-secondary">${count}</span>
+                `<div class="risk-factor-item">
+                    <div class="risk-factor-text" title="${factor}">${factor}</div>
+                    <div class="risk-factor-count">${count}</div>
                 </div>`)
             .join('');
         

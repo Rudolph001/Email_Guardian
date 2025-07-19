@@ -203,35 +203,37 @@
 <div class="col-md-6">
     <div class="card border-danger">
         <div class="card-header bg-danger text-white">
-            <h5 class="card-title mb-0">
+            <h6 class="card-title mb-0">
                 <i class="fas fa-shield-virus"></i> Attachment Risk Intelligence
-            </h5>
+            </h6>
         </div>
-        <div class="card-body">
-            <canvas id="attachmentRiskChart" width="400" height="300"></canvas>
-            <div class="mt-3">
-                <div class="row text-center">
-                    <div class="col-4">
-                        <div class="border-end">
-                            <h6 class="text-danger" id="criticalAttachments">0</h6>
-                            <small class="text-muted">Critical Risk</small>
-                        </div>
+        <div class="card-body p-3">
+            <!-- Risk Metrics Row -->
+            <div class="row text-center mb-3">
+                <div class="col-4">
+                    <div class="metric-small">
+                        <h6 class="text-danger mb-0" id="criticalAttachments">0</h6>
+                        <small class="text-muted">Critical</small>
                     </div>
-                    <div class="col-4">
-                        <div class="border-end">
-                            <h6 class="text-warning" id="highRiskAttachments">0</h6>
-                            <small class="text-muted">High Risk</small>
-                        </div>
+                </div>
+                <div class="col-4">
+                    <div class="metric-small">
+                        <h6 class="text-warning mb-0" id="highRiskAttachments">0</h6>
+                        <small class="text-muted">High Risk</small>
                     </div>
-                    <div class="col-4">
-                        <h6 class="text-info" id="avgRiskScore">0.0</h6>
-                        <small class="text-muted">Avg Risk Score</small>
+                </div>
+                <div class="col-4">
+                    <div class="metric-small">
+                        <h6 class="text-info mb-0" id="avgRiskScore">0.0</h6>
+                        <small class="text-muted">Avg Score</small>
                     </div>
                 </div>
             </div>
-            <div class="mt-3">
-                <h6>Top Risk Factors:</h6>
-                <div id="topRiskFactors" class="risk-factors-list">
+            
+            <!-- Top Risk Factors -->
+            <div>
+                <h6 class="mb-2">Top Risk Factors:</h6>
+                <div id="topRiskFactors" class="risk-factors-compact">
                     <div class="text-muted small">Loading risk analysis...</div>
                 </div>
             </div>
