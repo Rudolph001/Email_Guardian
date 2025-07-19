@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Email Guardian - Admin Panel{% endblock %}
@@ -62,7 +61,7 @@
 
     <!-- Tab Content -->
     <div class="tab-content" id="adminTabContent">
-        
+
         <!-- Whitelist Management Tab -->
         <div class="tab-pane fade show active" id="whitelist" role="tabpanel">
             <div class="row">
@@ -106,7 +105,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="col-lg-4">
                     <div class="card shadow-sm">
                         <div class="card-header bg-info text-white">
@@ -129,7 +128,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             {% if whitelists.domains %}
                             <hr>
                             <h6 class="fw-bold mb-2">Recent Domains:</h6>
@@ -184,7 +183,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Personal Keywords -->
                             <div class="col-md-4">
                                 <div class="border rounded p-3 h-100">
@@ -205,7 +204,7 @@
                                     </div>
                                 </div>
                             </div>
-                            
+
                             <!-- Suspicious Keywords -->
                             <div class="col-md-4">
                                 <div class="border rounded p-3 h-100">
@@ -227,9 +226,9 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <hr class="my-4">
-                        
+
                         <div class="d-flex justify-content-between align-items-center">
                             <button type="submit" class="btn btn-warning text-dark">
                                 <i class="fas fa-save me-2"></i>Update Keywords Configuration
@@ -551,7 +550,7 @@
                                 <h4 class="text-primary">{{ (domain_classifications.trusted|length + domain_classifications.corporate|length + domain_classifications.personal|length + domain_classifications.public|length + domain_classifications.suspicious|length) if domain_classifications else 0 }}</h4>
                                 <small class="text-muted">Total Classified Domains</small>
                             </div>
-                            
+
                             <div class="mb-3">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <small><i class="fas fa-shield-alt me-1 text-success"></i>Trusted</small>
@@ -670,7 +669,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Processing Statistics -->
                 <div class="col-md-6">
                     <div class="card shadow-sm">
@@ -709,7 +708,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Configuration Overview -->
                 <div class="col-12">
                     <div class="card shadow-sm">
@@ -806,7 +805,7 @@ function reprocessAllSessions() {
         const originalText = reprocessBtn.innerHTML;
         reprocessBtn.disabled = true;
         reprocessBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Reprocessing...';
-        
+
         // Create and submit form
         const form = document.createElement('form');
         form.method = 'POST';
@@ -820,18 +819,18 @@ function reprocessAllSessions() {
 function addDomain(category) {
     const inputId = `new${category.charAt(0).toUpperCase() + category.slice(1)}Domain`;
     const domain = document.getElementById(inputId).value.trim();
-    
+
     if (!domain) {
         alert('Please enter a domain name');
         return;
     }
-    
+
     // Basic domain validation
     if (!domain.includes('.') || domain.includes(' ')) {
         alert('Please enter a valid domain (e.g., example.com)');
         return;
     }
-    
+
     fetch('/admin/domains/add', {
         method: 'POST',
         headers: {
@@ -861,7 +860,7 @@ function removeDomain(category, domain) {
     if (!confirm(`Are you sure you want to remove ${domain} from ${category} domains?`)) {
         return;
     }
-    
+
     fetch('/admin/domains/remove', {
         method: 'POST',
         headers: {
@@ -909,7 +908,7 @@ function resetToDefaults() {
     if (!confirm('This will reset all domain classifications to default values. All custom domains will be lost. Continue?')) {
         return;
     }
-    
+
     fetch('/admin/domains/reset', {
         method: 'POST'
     })
