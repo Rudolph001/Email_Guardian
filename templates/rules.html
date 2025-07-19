@@ -233,6 +233,18 @@
                         <textarea class="form-control" id="exclusionRuleDescription" rows="2"></textarea>
                     </div>
 
+                    <!-- Value Input Help -->
+                    <div class="alert alert-info mb-3">
+                        <h6><i class="fas fa-info-circle me-2"></i>Value Input Examples:</h6>
+                        <ul class="mb-0">
+                            <li><strong>Single word:</strong> payment</li>
+                            <li><strong>Phrase in quotes:</strong> "bank branch"</li>
+                            <li><strong>Multiple values:</strong> "bank name", payment, transfer</li>
+                            <li><strong>Mixed:</strong> urgent, "priority task", escalation</li>
+                        </ul>
+                        <small class="text-muted">Multiple values are automatically connected with OR logic.</small>
+                    </div>
+
                     <!-- Conditions Section -->
                     <div class="mb-3">
                         <label class="form-label d-flex justify-content-between align-items-center">
@@ -1126,7 +1138,10 @@ function addExclusionCondition(existingCondition = null) {
             </div>
             <div class="col-md-3">
                 <label class="form-label">Value</label>
-                <input type="text" class="form-control condition-value" placeholder="Enter value..." value="${existingCondition ? existingCondition.value : ''}" required>
+                <input type="text" class="form-control condition-value" placeholder='e.g. "bank branch", payment' value="${existingCondition ? existingCondition.value : ''}" required>
+                <div class="form-text">
+                    <small>Use quotes for phrases: "bank branch". Separate multiple values with commas.</small>
+                </div>
             </div>
             <div class="col-md-1 d-flex align-items-end">
                 <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeExclusionCondition(${exclusionConditionCounter})" title="Remove condition">
@@ -1164,6 +1179,46 @@ function removeExclusionCondition(conditionId) {
     }
 }
 
+/**
+ * Parse value input to handle quoted phrases and comma-separated terms
+ * Examples:
+ * - "bank branch", payment -> ["bank branch", "payment"] 
+ * - single word -> ["single word"]
+ * - "quoted phrase" -> ["quoted phrase"]
+ */
+function parseValueInput(valueInput) {
+    const values = [];
+    let currentValue = '';
+    let inQuotes = false;
+    let i = 0;
+
+    while (i < valueInput.length) {
+        const char = valueInput[i];
+        
+        if (char === '"' && (i === 0 || valueInput[i-1] !== '\\')) {
+            inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+            // End of current value
+            const trimmed = currentValue.trim();
+            if (trimmed) {
+                values.push(trimmed);
+            }
+            currentValue = '';
+        } else {
+            currentValue += char;
+        }
+        i++;
+    }
+    
+    // Add the last value
+    const trimmed = currentValue.trim();
+    if (trimmed) {
+        values.push(trimmed);
+    }
+    
+    return values.length > 0 ? values : [valueInput.trim()];
+}
+
 function saveExclusionRule() {
     const name = document.getElementById('exclusionRuleName').value;
     const description = document.getElementById('exclusionRuleDescription').value;
@@ -1176,14 +1231,20 @@ function saveExclusionRule() {
         const logic = index === 0 ? 'AND' : (row.querySelector('.condition-logic')?.value || 'AND');
         const field = row.querySelector('.condition-field').value;
         const operator = row.querySelector('.condition-operator').value;
-        const value = row.querySelector('.condition-value').value;
+        const valueInput = row.querySelector('.condition-value').value;
 
-        if (field && operator && value) {
-            conditions.push({
-                field: field,
-                operator: operator,
-                value: value,
-                logic: logic
+        if (field && operator && valueInput) {
+            // Parse the value input to handle quoted phrases and comma-separated terms
+            const parsedValues = parseValueInput(valueInput);
+            
+            // Create a condition for each parsed value
+            parsedValues.forEach((value, valueIndex) => {
+                conditions.push({
+                    field: field,
+                    operator: operator,
+                    value: value,
+                    logic: (index === 0 && valueIndex === 0) ? 'AND' : 'OR' // First condition is AND, others are OR
+                });
             });
         }
     });
@@ -1438,19 +1499,25 @@ function updateExclusionRule(ruleId) {
     conditionRows.forEach((row, index) => {
         const field = row.querySelector('.condition-field').value;
         const operator = row.querySelector('.condition-operator').value;
-        const value = row.querySelector('.condition-value').value.trim();
+        const valueInput = row.querySelector('.condition-value').value.trim();
         const logic = row.querySelector('.condition-logic') ? row.querySelector('.condition-logic').value : 'AND';
 
-        if (!field || !operator || !value) {
+        if (!field || !operator || !valueInput) {
             showAlert('All fields in each condition must be filled', 'error');
             return;
         }
 
-        conditions.push({
-            field: field,
-            operator: operator,
-            value: value,
-            logic: logic
+        // Parse the value input to handle quoted phrases and comma-separated terms
+        const parsedValues = parseValueInput(valueInput);
+        
+        // Create a condition for each parsed value
+        parsedValues.forEach((value, valueIndex) => {
+            conditions.push({
+                field: field,
+                operator: operator,
+                value: value,
+                logic: (index === 0 && valueIndex === 0) ? 'AND' : 'OR' // First condition is AND, others are OR
+            });
         });
     });
 
