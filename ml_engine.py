@@ -334,31 +334,37 @@ class MLEngine:
             # Pattern 2: High-risk domain patterns
             if 'recipients_email_domain' in df.columns:
                 domain_counts = df['recipients_email_domain'].value_counts()
-                suspicious_domains = domain_counts[domain_counts == 1].index  # Single-use domains
-                if len(suspicious_domains) > 5:
-                    patterns.append({
-                        'type': 'domain',
-                        'description': f'Multiple single-use domains detected: {len(suspicious_domains)} domains',
-                        'severity': 'High'
-                    })
+                single_use_mask = domain_counts == 1
+                if single_use_mask.any():
+                    suspicious_domains = domain_counts[single_use_mask].index
+                    if len(suspicious_domains) > 5:
+                        patterns.append({
+                            'type': 'domain',
+                            'description': f'Multiple single-use domains detected: {len(suspicious_domains)} domains',
+                            'severity': 'High'
+                        })
 
             # Pattern 3: Wordlist pattern analysis
             if 'wordlist_attachment' in df.columns and 'wordlist_subject' in df.columns:
-                both_matches = df[(df['wordlist_attachment'] == 'Yes') & (df['wordlist_subject'] == 'Yes')]
-                if len(both_matches) > 0:
+                attachment_matches = df['wordlist_attachment'] == 'Yes'
+                subject_matches = df['wordlist_subject'] == 'Yes'
+                both_matches_mask = attachment_matches & subject_matches
+                if both_matches_mask.any():
+                    both_matches_count = both_matches_mask.sum()
                     patterns.append({
                         'type': 'content',
-                        'description': f'{len(both_matches)} emails with both subject and attachment wordlist matches',
+                        'description': f'{both_matches_count} emails with both subject and attachment wordlist matches',
                         'severity': 'Critical'
                     })
 
             # Pattern 4: Leaver activity patterns
             if 'leaver' in df.columns:
-                leaver_emails = df[df['leaver'] == 'Yes']
-                if len(leaver_emails) > 0:
+                leaver_mask = df['leaver'] == 'Yes'
+                if leaver_mask.any():
+                    leaver_count = leaver_mask.sum()
                     patterns.append({
                         'type': 'behavioral',
-                        'description': f'{len(leaver_emails)} emails from users marked as leavers',
+                        'description': f'{leaver_count} emails from users marked as leavers',
                         'severity': 'High'
                     })
 
