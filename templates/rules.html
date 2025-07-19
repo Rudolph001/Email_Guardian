@@ -12,7 +12,7 @@
                     <i class="fas fa-filter me-2"></i>Create Exclusion Rule
                 </button>
                 <button class="btn btn-primary" onclick="createRule()">
-                    <i class="fas fa-plus me-2"></i>Create Rule
+                    <i class="fas fa-plus me-2"></i>Processing Rule Creation
                 </button>
             </div>
         </div>
@@ -182,7 +182,7 @@
                         <h5>No Rules Configured</h5>
                         <p class="text-muted">Create your first rule to start automated email processing.</p>
                         <button class="btn btn-primary" onclick="createRule()">
-                            <i class="fas fa-plus me-2"></i>Create First Rule
+                            <i class="fas fa-plus me-2"></i>Create First Processing Rule
                         </button>
                     </div>
                 {% endif %}
@@ -914,7 +914,7 @@ function showAlert(message, type) {
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary" onclick="buildRuleData()">Create Rule</button>
+                    <button type="button" class="btn btn-primary" onclick="submitCreateRule()">Create Rule</button>
                 </div>
             </form>
         </div>
@@ -1325,6 +1325,29 @@ function buildRuleData() {
     // Set hidden fields
     document.getElementById('conditions').value = JSON.stringify(conditions);
     document.getElementById('actions').value = JSON.stringify(actions);
+}
+
+function submitCreateRule() {
+    // Build the rule data first
+    buildRuleData();
+    
+    // Validate that we have at least one condition and one action
+    const conditions = JSON.parse(document.getElementById('conditions').value);
+    const actions = JSON.parse(document.getElementById('actions').value);
+    
+    if (conditions.length === 0) {
+        alert('Please add at least one condition to the rule.');
+        return;
+    }
+    
+    if (actions.length === 0) {
+        alert('Please add at least one action to the rule.');
+        return;
+    }
+    
+    // Submit the form
+    const form = document.querySelector('#createRuleModal form');
+    form.submit();
 }
 
 function viewRuleFromData(button) {
