@@ -501,6 +501,70 @@
                                         {% endif %}
                                     </div>
                                 </div>
+
+                                <!-- Public/Government Domains -->
+                                <div class="mb-4">
+                                    <h6 class="text-info">
+                                        <i class="fas fa-university me-2"></i>Public/Government Domains 
+                                        <span class="badge bg-info ms-2">{{ domain_classifications.public|length if domain_classifications and domain_classifications.public else 0 }}</span>
+                                    </h6>
+                                    <div class="mb-2">
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" class="form-control" id="newPublicDomain" placeholder="Enter public domain (e.g., gov.uk)">
+                                            <button class="btn btn-info" onclick="addDomain('public')">
+                                                <i class="fas fa-plus"></i> Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                        {% if domain_classifications and domain_classifications.public %}
+                                            {% for domain in domain_classifications.public %}
+                                            <div class="d-flex justify-content-between align-items-center py-1 px-2 mb-1 bg-light rounded">
+                                                <span class="small">
+                                                    <i class="fas fa-university me-2 text-info"></i>{{ domain }}
+                                                </span>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="removeDomain('public', '{{ domain }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <div class="text-muted text-center py-2">No public domains configured</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Suspicious Domains -->
+                                <div class="mb-4">
+                                    <h6 class="text-danger">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>Suspicious Domains 
+                                        <span class="badge bg-danger ms-2">{{ domain_classifications.suspicious|length if domain_classifications and domain_classifications.suspicious else 0 }}</span>
+                                    </h6>
+                                    <div class="mb-2">
+                                        <div class="input-group input-group-sm">
+                                            <input type="text" class="form-control" id="newSuspiciousDomain" placeholder="Enter suspicious domain (e.g., tempmail.com)">
+                                            <button class="btn btn-danger" onclick="addDomain('suspicious')">
+                                                <i class="fas fa-plus"></i> Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="border rounded p-2" style="max-height: 150px; overflow-y: auto;">
+                                        {% if domain_classifications and domain_classifications.suspicious %}
+                                            {% for domain in domain_classifications.suspicious %}
+                                            <div class="d-flex justify-content-between align-items-center py-1 px-2 mb-1 bg-light rounded">
+                                                <span class="small">
+                                                    <i class="fas fa-exclamation-triangle me-2 text-danger"></i>{{ domain }}
+                                                </span>
+                                                <button class="btn btn-sm btn-outline-danger" onclick="removeDomain('suspicious', '{{ domain }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                            {% endfor %}
+                                        {% else %}
+                                            <div class="text-muted text-center py-2">No suspicious domains configured</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -536,6 +600,22 @@
                                         <div class="progress-bar bg-warning" style="width: {{ ((domain_classifications.personal|length / ((domain_classifications.trusted|length + domain_classifications.corporate|length + domain_classifications.personal|length + domain_classifications.public|length + domain_classifications.suspicious|length) or 1)) * 100) if domain_classifications else 0 }}%"></div>
                                     </div>
                                     <span class="badge bg-warning">{{ domain_classifications.personal|length if domain_classifications and domain_classifications.personal else 0 }}</span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <small class="text-info"><i class="fas fa-university me-1"></i>Public</small>
+                                    <div class="progress mb-1" style="height: 8px;">
+                                        <div class="progress-bar bg-info" style="width: {{ ((domain_classifications.public|length / ((domain_classifications.trusted|length + domain_classifications.corporate|length + domain_classifications.personal|length + domain_classifications.public|length + domain_classifications.suspicious|length) or 1)) * 100) if domain_classifications else 0 }}%"></div>
+                                    </div>
+                                    <span class="badge bg-info">{{ domain_classifications.public|length if domain_classifications and domain_classifications.public else 0 }}</span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <small class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>Suspicious</small>
+                                    <div class="progress mb-1" style="height: 8px;">
+                                        <div class="progress-bar bg-danger" style="width: {{ ((domain_classifications.suspicious|length / ((domain_classifications.trusted|length + domain_classifications.corporate|length + domain_classifications.personal|length + domain_classifications.public|length + domain_classifications.suspicious|length) or 1)) * 100) if domain_classifications else 0 }}%"></div>
+                                    </div>
+                                    <span class="badge bg-danger">{{ domain_classifications.suspicious|length if domain_classifications and domain_classifications.suspicious else 0 }}</span>
                                 </div>
                             </div>
                         </div>
@@ -966,6 +1046,24 @@ function confirmSessionDeletion(sessionId) {
         '• ML analysis results'
     );
 }
+
+// Allow Enter key to add domains
+document.addEventListener('DOMContentLoaded', function() {
+    const domainInputs = ['newTrustedDomain', 'newCorporateDomain', 'newPersonalDomain', 'newPublicDomain', 'newSuspiciousDomain'];
+    const categories = ['trusted', 'corporate', 'personal', 'public', 'suspicious'];
+    
+    domainInputs.forEach(function(inputId, index) {
+        const input = document.getElementById(inputId);
+        if (input) {
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    addDomain(categories[index]);
+                }
+            });
+        }
+    });
+});
 
 // Reprocess all sessions function
 function reprocessAllSessions() {
