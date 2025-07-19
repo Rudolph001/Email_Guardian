@@ -258,7 +258,7 @@ class DataProcessor:
 
             # Extract sample data for preview (first 10 records)
             sample_data = []
-            if all_processed_data:
+            if all_processed_data is not None and len(all_processed_data) > 0:
                 sample_data = all_processed_data[:10]
                 # Clean sample data for JSON serialization
                 for record in sample_data:
@@ -886,7 +886,7 @@ class DataProcessor:
                 escalated_data, remaining_data = self._apply_rules_with_escalation(df_filtered)
 
                 # STEP 3 & 4: ML analysis and sorting (in smaller batches)
-                if remaining_data:
+                if remaining_data is not None and len(remaining_data) > 0:
                     ml_results = self._run_ml_analysis(remaining_data)
                     case_management_data = self._prepare_case_management_data(remaining_data, ml_results)
                     all_processed_data.extend(escalated_data + case_management_data)
@@ -912,7 +912,7 @@ class DataProcessor:
 
             # Extract sample data for preview (first 10 records)
             sample_data = []
-            if all_processed_data:
+            if all_processed_data is not None and len(all_processed_data) > 0:
                 sample_data = all_processed_data[:10]
                 # Clean sample data for JSON serialization
                 for record in sample_data:

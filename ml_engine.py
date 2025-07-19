@@ -173,7 +173,7 @@ class MLEngine:
             features.append(df['wordlist_subject'].map({'Yes': 1, 'No': 0}).fillna(0))
 
         # Convert to numpy array
-        if features:
+        if len(features) > 0:
             return np.column_stack(features)
         else:
             return np.array([]).reshape(len(df), 0)
@@ -817,7 +817,7 @@ class MLEngine:
                 features.extend([tfidf_df[col] for col in tfidf_df.columns])
 
             # Combine features into a DataFrame
-            if features:
+            if len(features) > 0:
                 feature_df = pd.DataFrame(features).T  # Transpose to align columns properly
                 return feature_df.fillna(0)  # Fill any remaining missing values
             else:

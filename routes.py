@@ -349,7 +349,7 @@ def escalation_dashboard(session_id):
 
     # Filter only manually escalated cases - check case status in session data
     escalated_cases = []
-    if processed_data:
+    if processed_data is not None and len(processed_data) > 0:
         session_cases = session_data.get('cases', {})
         for i, d in enumerate(processed_data):
             # Skip None records
