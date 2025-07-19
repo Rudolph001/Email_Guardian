@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 """
 Email Guardian - Quick Installation Script
@@ -11,16 +12,22 @@ import os
 def install_dependencies():
     """Install dependencies with proper error handling"""
     dependencies = [
-        'flask>=2.3.0',
-        'flask-sqlalchemy>=3.0.0', 
-        'flask-login>=0.6.0',
-        'werkzeug>=2.3.0',
-        'pandas>=2.0.0',
-        'numpy>=1.24.0',
-        'scikit-learn>=1.3.0',
-        'sqlalchemy>=2.0.0',
-        'email-validator>=2.0.0',
-        'gunicorn>=21.0.0'
+        'flask>=3.1.1',
+        'flask-sqlalchemy>=3.1.1', 
+        'flask-login>=0.6.3',
+        'werkzeug>=3.1.3',
+        'pandas>=2.3.1',
+        'numpy>=2.3.1',
+        'scikit-learn>=1.7.1',
+        'sqlalchemy>=2.0.41',
+        'email-validator>=2.2.0',
+        'gunicorn>=23.0.0',
+        'psycopg2-binary>=2.9.10',
+        'openai>=1.0.0',
+        'anthropic>=0.7.0',
+        'networkx>=3.0',
+        'textblob>=0.17.0',
+        'vaderSentiment>=3.3.2'
     ]
 
     print("Installing Python dependencies...")
@@ -60,7 +67,12 @@ def test_imports():
         ('sklearn', 'Scikit-learn'),
         ('sqlalchemy', 'SQLAlchemy'),
         ('werkzeug', 'Werkzeug'),
-        ('email_validator', 'Email-Validator')
+        ('email_validator', 'Email-Validator'),
+        ('openai', 'OpenAI'),
+        ('anthropic', 'Anthropic'),
+        ('networkx', 'NetworkX'),
+        ('textblob', 'TextBlob'),
+        ('vaderSentiment', 'VaderSentiment')
     ]
 
     print("\nTesting module imports...")

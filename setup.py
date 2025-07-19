@@ -58,33 +58,25 @@ def install_dependencies():
     """Install Python dependencies with version compatibility"""
     version = sys.version_info
     
-    # Base dependencies that should work with Python 3.13
-    if version.major == 3 and version.minor >= 13:
-        # For Python 3.13+, use more flexible version requirements
-        dependencies = [
-            "flask>=2.3.0",
-            "flask-sqlalchemy>=3.0.0",
-            "pandas>=2.0.0",
-            "numpy>=1.24.0",
-            "scikit-learn>=1.3.0",
-            "sqlalchemy>=2.0.0",
-            "werkzeug>=2.3.0",
-            "email-validator>=2.0.0",
-            "gunicorn>=21.0.0"
-        ]
-    else:
-        # For older Python versions, use stricter requirements
-        dependencies = [
-            "flask>=3.1.1",
-            "flask-sqlalchemy>=3.1.1",
-            "pandas>=2.3.1",
-            "numpy>=2.3.1",
-            "scikit-learn>=1.7.1",
-            "sqlalchemy>=2.0.41",
-            "werkzeug>=3.1.3",
-            "email-validator>=2.2.0",
-            "gunicorn>=23.0.0"
-        ]
+    # Updated dependencies for better compatibility
+    dependencies = [
+        "flask>=3.1.1",
+        "flask-sqlalchemy>=3.1.1",
+        "flask-login>=0.6.3",
+        "werkzeug>=3.1.3",
+        "pandas>=2.3.1",
+        "numpy>=2.3.1",
+        "scikit-learn>=1.7.1",
+        "sqlalchemy>=2.0.41",
+        "email-validator>=2.2.0",
+        "gunicorn>=23.0.0",
+        "psycopg2-binary>=2.9.10",
+        "openai>=1.0.0",
+        "anthropic>=0.7.0",
+        "networkx>=3.0",
+        "textblob>=0.17.0",
+        "vaderSentiment>=3.3.2"
+    ]
     
     # Upgrade pip first
     upgrade_pip()
@@ -147,7 +139,8 @@ def initialize_data_files():
 def test_imports():
     """Test if all required modules can be imported"""
     required_modules = [
-        'flask', 'pandas', 'numpy', 'sklearn', 'sqlalchemy', 'werkzeug'
+        'flask', 'pandas', 'numpy', 'sklearn', 'sqlalchemy', 'werkzeug',
+        'openai', 'anthropic', 'networkx', 'textblob', 'vaderSentiment'
     ]
     
     print("\nTesting module imports...")
