@@ -1294,45 +1294,276 @@ window.runAdvancedMLAnalysis = async function() {
 
 window.loadJustificationAnalysisML = async function() {
     const sessionId = window.location.pathname.split('/').pop();
+    
+    // Show loading in results container
+    const resultsContainer = document.getElementById('mlAnalysisResults');
+    if (!resultsContainer) {
+        alert('Please open Advanced ML Analysis first by clicking "Advanced ML Analysis" button');
+        return;
+    }
+    
+    resultsContainer.innerHTML = '<div class="col-12 text-center"><div class="spinner-border text-success"></div><p class="mt-2">Loading justification analysis...</p></div>';
+    
     try {
         const response = await fetch(`/api/justification_analysis/${sessionId}`);
         const data = await response.json();
-        console.log('Justification analysis loaded:', data);
+        
+        if (data.error) {
+            resultsContainer.innerHTML = `<div class="col-12"><div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> ${data.error}</div></div>`;
+            return;
+        }
+        
+        const analysis = data.justification_analysis;
+        let html = '<div class="col-12"><div class="card border-success"><div class="card-header bg-success text-white"><h6 class="mb-0"><i class="fas fa-comments"></i> Justification Risk Analysis Results</h6></div><div class="card-body">';
+        
+        if (analysis && analysis.risk_scores && analysis.risk_scores.length > 0) {
+            const avgRiskScore = (analysis.risk_scores.reduce((a, b) => a + b, 0) / analysis.risk_scores.length).toFixed(2);
+            const highRiskCount = analysis.risk_scores.filter(score => score > 5).length;
+            const urgentCount = analysis.urgency_indicators ? analysis.urgency_indicators.filter(Boolean).length : 0;
+            
+            html += `
+                <div class="row text-center mb-3">
+                    <div class="col-4">
+                        <h5 class="text-primary">${avgRiskScore}</h5>
+                        <small>Average Risk Score</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="text-danger">${highRiskCount}</h5>
+                        <small>High Risk Items</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="text-warning">${urgentCount}</h5>
+                        <small>Urgent Indicators</small>
+                    </div>
+                </div>
+                <div class="progress mb-2">
+                    <div class="progress-bar bg-danger" style="width: ${(highRiskCount / analysis.risk_scores.length * 100).toFixed(1)}%"></div>
+                </div>
+                <small class="text-muted">${highRiskCount} of ${analysis.risk_scores.length} justifications flagged as high risk</small>
+                <div class="mt-3">
+                    <h6>Risk Patterns Detected:</h6>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-clock text-warning"></i> Urgency indicators: ${urgentCount}</li>
+                        <li><i class="fas fa-exclamation-triangle text-danger"></i> Deception markers: ${analysis.deception_indicators ? analysis.deception_indicators.filter(Boolean).length : 0}</li>
+                    </ul>
+                </div>
+            `;
+        } else {
+            html += '<div class="alert alert-info">No justification data available for analysis</div>';
+        }
+        
+        html += '</div></div></div>';
+        resultsContainer.innerHTML = html;
+        
     } catch (error) {
         console.error('Error loading justification analysis:', error);
+        resultsContainer.innerHTML = '<div class="col-12"><div class="alert alert-danger">Error loading justification analysis: ' + error.message + '</div></div>';
     }
 };
 
 window.loadDomainIntelligenceML = async function() {
     const sessionId = window.location.pathname.split('/').pop();
+    
+    const resultsContainer = document.getElementById('mlAnalysisResults');
+    if (!resultsContainer) {
+        alert('Please open Advanced ML Analysis first by clicking "Advanced ML Analysis" button');
+        return;
+    }
+    
+    resultsContainer.innerHTML = '<div class="col-12 text-center"><div class="spinner-border text-info"></div><p class="mt-2">Loading domain intelligence...</p></div>';
+    
     try {
         const response = await fetch(`/api/recipient_domain_intelligence/${sessionId}`);
         const data = await response.json();
-        console.log('Domain intelligence loaded:', data);
+        
+        if (data.error) {
+            resultsContainer.innerHTML = `<div class="col-12"><div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> ${data.error}</div></div>`;
+            return;
+        }
+        
+        const analysis = data.domain_intelligence;
+        let html = '<div class="col-12"><div class="card border-info"><div class="card-header bg-info text-white"><h6 class="mb-0"><i class="fas fa-globe"></i> Domain Intelligence Results</h6></div><div class="card-body">';
+        
+        if (analysis && analysis.domain_frequency) {
+            const totalDomains = Object.keys(analysis.domain_frequency).length;
+            const externalDomains = analysis.external_domains ? analysis.external_domains.size || analysis.external_domains.length : 0;
+            const suspiciousDomains = analysis.suspicious_domains ? analysis.suspicious_domains.length : 0;
+            
+            html += `
+                <div class="row text-center mb-3">
+                    <div class="col-4">
+                        <h5 class="text-info">${totalDomains}</h5>
+                        <small>Total Domains</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="text-warning">${externalDomains}</h5>
+                        <small>External Domains</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="text-danger">${suspiciousDomains}</h5>
+                        <small>Suspicious Domains</small>
+                    </div>
+                </div>
+            `;
+            
+            if (analysis.top_external_domains && Object.keys(analysis.top_external_domains).length > 0) {
+                html += '<h6>Top External Domains:</h6><ul class="list-unstyled">';
+                Object.entries(analysis.top_external_domains).slice(0, 5).forEach(([domain, count]) => {
+                    html += `<li><small><span class="badge bg-secondary me-2">${count}</span>${domain}</small></li>`;
+                });
+                html += '</ul>';
+            }
+        } else {
+            html += '<div class="alert alert-info">No domain data available for analysis</div>';
+        }
+        
+        html += '</div></div></div>';
+        resultsContainer.innerHTML = html;
+        
     } catch (error) {
         console.error('Error loading domain intelligence:', error);
+        resultsContainer.innerHTML = '<div class="col-12"><div class="alert alert-danger">Error loading domain intelligence: ' + error.message + '</div></div>';
     }
 };
 
 window.loadCommunicationPatternsML = async function() {
     const sessionId = window.location.pathname.split('/').pop();
+    
+    const resultsContainer = document.getElementById('mlAnalysisResults');
+    if (!resultsContainer) {
+        alert('Please open Advanced ML Analysis first by clicking "Advanced ML Analysis" button');
+        return;
+    }
+    
+    resultsContainer.innerHTML = '<div class="col-12 text-center"><div class="spinner-border text-warning"></div><p class="mt-2">Analyzing communication patterns...</p></div>';
+    
     try {
         const response = await fetch(`/api/communication_patterns/${sessionId}`);
         const data = await response.json();
-        console.log('Communication patterns loaded:', data);
+        
+        if (data.error) {
+            resultsContainer.innerHTML = `<div class="col-12"><div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> ${data.error}</div></div>`;
+            return;
+        }
+        
+        const patterns = data.communication_patterns;
+        const network = data.network_analysis;
+        let html = '<div class="col-12"><div class="card border-warning"><div class="card-header bg-warning text-dark"><h6 class="mb-0"><i class="fas fa-network-wired"></i> Communication Pattern Results</h6></div><div class="card-body">';
+        
+        if (patterns && patterns.volume_patterns) {
+            const topSenders = patterns.volume_patterns.top_senders || {};
+            const uniqueSenders = patterns.volume_patterns.total_unique_senders || 0;
+            const uniqueRecipients = patterns.volume_patterns.total_unique_recipients || 0;
+            
+            html += `
+                <div class="row text-center mb-3">
+                    <div class="col-4">
+                        <h5 class="text-primary">${uniqueSenders}</h5>
+                        <small>Unique Senders</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="text-success">${uniqueRecipients}</h5>
+                        <small>Recipients</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="text-info">${network && network.network_size ? network.network_size : 0}</h5>
+                        <small>Network Size</small>
+                    </div>
+                </div>
+            `;
+            
+            if (Object.keys(topSenders).length > 0) {
+                html += '<h6>Top Senders:</h6><ul class="list-unstyled">';
+                Object.entries(topSenders).slice(0, 3).forEach(([sender, count]) => {
+                    html += `<li><small><span class="badge bg-primary me-2">${count}</span>${sender}</small></li>`;
+                });
+                html += '</ul>';
+            }
+            
+            if (network && network.network_metrics) {
+                html += '<div class="mt-3"><h6>Network Metrics:</h6>';
+                html += `<p><small>Network connections analyzed and patterns identified</small></p>`;
+                html += '</div>';
+            }
+        } else {
+            html += '<div class="alert alert-info">No communication pattern data available</div>';
+        }
+        
+        html += '</div></div></div>';
+        resultsContainer.innerHTML = html;
+        
     } catch (error) {
         console.error('Error loading communication patterns:', error);
+        resultsContainer.innerHTML = '<div class="col-12"><div class="alert alert-danger">Error loading communication patterns: ' + error.message + '</div></div>';
     }
 };
 
 window.loadTemporalAnalysisML = async function() {
     const sessionId = window.location.pathname.split('/').pop();
+    
+    const resultsContainer = document.getElementById('mlAnalysisResults');
+    if (!resultsContainer) {
+        alert('Please open Advanced ML Analysis first by clicking "Advanced ML Analysis" button');
+        return;
+    }
+    
+    resultsContainer.innerHTML = '<div class="col-12 text-center"><div class="spinner-border text-secondary"></div><p class="mt-2">Analyzing temporal patterns...</p></div>';
+    
     try {
         const response = await fetch(`/api/temporal_anomalies/${sessionId}`);
         const data = await response.json();
-        console.log('Temporal analysis loaded:', data);
+        
+        if (data.error) {
+            resultsContainer.innerHTML = `<div class="col-12"><div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> ${data.error}</div></div>`;
+            return;
+        }
+        
+        const temporal = data.temporal_analysis;
+        let html = '<div class="col-12"><div class="card border-secondary"><div class="card-header bg-secondary text-white"><h6 class="mb-0"><i class="fas fa-clock"></i> Temporal Pattern Results</h6></div><div class="card-body">';
+        
+        if (temporal && temporal.weekend_percentage !== undefined) {
+            const weekendPct = temporal.weekend_percentage.toFixed(1);
+            const afterHoursPct = temporal.after_hours_percentage ? temporal.after_hours_percentage.toFixed(1) : '0.0';
+            const anomalousCount = temporal.anomalous_times ? temporal.anomalous_times.length : 0;
+            
+            html += `
+                <div class="row text-center mb-3">
+                    <div class="col-4">
+                        <h5 class="text-warning">${weekendPct}%</h5>
+                        <small>Weekend Activity</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="text-danger">${afterHoursPct}%</h5>
+                        <small>After Hours</small>
+                    </div>
+                    <div class="col-4">
+                        <h5 class="text-info">${anomalousCount}</h5>
+                        <small>Time Anomalies</small>
+                    </div>
+                </div>
+            `;
+            
+            if (parseFloat(weekendPct) > 15 || parseFloat(afterHoursPct) > 25) {
+                html += '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle"></i> High off-hours activity detected - potential security concern</div>';
+            } else {
+                html += '<div class="alert alert-success"><i class="fas fa-check-circle"></i> Normal temporal patterns observed</div>';
+            }
+            
+            if (temporal.peak_hours && temporal.peak_hours.length > 0) {
+                html += '<div class="mt-3"><h6>Peak Activity Hours:</h6>';
+                html += `<p><small>Most active times: ${temporal.peak_hours.slice(0, 3).join(', ')}</small></p>`;
+                html += '</div>';
+            }
+        } else {
+            html += '<div class="alert alert-info">No temporal data available for analysis</div>';
+        }
+        
+        html += '</div></div></div>';
+        resultsContainer.innerHTML = html;
+        
     } catch (error) {
         console.error('Error loading temporal analysis:', error);
+        resultsContainer.innerHTML = '<div class="col-12"><div class="alert alert-danger">Error loading temporal analysis: ' + error.message + '</div></div>';
     }
 };
 </script>
