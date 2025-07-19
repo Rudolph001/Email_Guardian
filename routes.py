@@ -989,15 +989,20 @@ def update_attachment_keywords():
 @app.route('/delete_session/<session_id>', methods=['POST'])
 def delete_session(session_id):
     """Delete a processing session"""
-    session_manager = SessionManager()
-    result = session_manager.delete_session(session_id)
+    try:
+        session_manager = SessionManager()
+        result = session_manager.delete_session(session_id)
 
-    if result['success']:
-        flash(f'Session {session_id} deleted successfully', 'success')
-    else:
-        flash(f'Error deleting session: {result["error"]}', 'error')
-
-    return redirect(url_for('admin'))
+        if result['success']:
+            app.logger.info(f'Session {session_id} deleted successfully')
+            # Use a simple return instead of flash to avoid session issues
+            return redirect(url_for('admin'))
+        else:
+            app.logger.error(f'Error deleting session: {result["error"]}')
+            return redirect(url_for('admin'))
+    except Exception as e:
+        app.logger.error(f'Unexpected error deleting session {session_id}: {str(e)}')
+        return redirect(url_for('admin'))
 
 @app.route('/export/<session_id>')
 def export_session(session_id):
