@@ -703,11 +703,15 @@ class DataProcessor:
             })
             return safe_record
 
-    def _classify_domain(self, recipient_domain: str, sender_email: str) -> str:
+    def _classify_domain(self, recipient_domain: str, sender_email: str = '') -> str:
         """Classify domain using the new domain manager system"""
         try:
             from domain_manager import DomainManager
             domain_manager = DomainManager()
+
+            # Ensure domain is lowercase for consistent classification
+            if recipient_domain:
+                recipient_domain = str(recipient_domain).lower().strip()
 
             # Use the domain manager for classification
             classification = domain_manager.classify_domain(recipient_domain)
@@ -715,7 +719,8 @@ class DataProcessor:
             # Fall back to whitelist check if unknown
             if classification == 'Unknown':
                 whitelists = self.session_manager.get_whitelists()
-                if recipient_domain.lower() in whitelists.get('domains', []):
+                whitelist_domains = [d.lower().strip() for d in whitelists.get('domains', [])]
+                if recipient_domain in whitelist_domains:
                     return 'Trusted'
 
             return classification

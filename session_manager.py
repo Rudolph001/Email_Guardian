@@ -286,6 +286,23 @@ class SessionManager:
             self.logger.error(f"Error saving large session {session_id}: {e}")
             return False
 
+    def _normalize_field_names(self, data: List[Dict]) -> List[Dict]:
+        """Normalize field names to lowercase for consistent access"""
+        normalized_data = []
+        for record in data:
+            if isinstance(record, dict):
+                normalized_record = {}
+                for key, value in record.items():
+                    # Keep original key but also add lowercase version for compatibility
+                    normalized_record[key] = value
+                    normalized_key = str(key).lower().strip()
+                    if normalized_key != key:
+                        normalized_record[normalized_key] = value
+                normalized_data.append(normalized_record)
+            else:
+                normalized_data.append(record)
+        return normalized_data
+
     def get_processed_data(self, session_id: str, page: int = 1, per_page: int = 50, filters: Dict = None) -> Dict:
         """Get processed data for a session with pagination and filtering for faster loading"""
         try:

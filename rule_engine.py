@@ -238,13 +238,18 @@ class RuleEngine:
         if not conditions:
             return True
 
+        # Create case-insensitive mapping of email data
+        email_data_lower = {}
+        for key, value in email_data.items():
+            email_data_lower[key.lower().strip()] = value
+
         if len(conditions) == 1:
             # Single condition
             condition = conditions[0]
-            field = condition.get('field', '')
+            field = condition.get('field', '').lower().strip()
             operator = condition.get('operator', 'equals')
             value = condition.get('value', '')
-            field_value = email_data.get(field, '')
+            field_value = email_data_lower.get(field, '')
             
             if operator in self.operators:
                 return self.operators[operator](field_value, value)
@@ -254,13 +259,13 @@ class RuleEngine:
         result = None
         
         for i, condition in enumerate(conditions):
-            field = condition.get('field', '')
+            field = condition.get('field', '').lower().strip()
             operator = condition.get('operator', 'equals')
             value = condition.get('value', '')
             logic = condition.get('logic', 'AND')
             
-            # Get field value from email data
-            field_value = email_data.get(field, '')
+            # Get field value from email data (case-insensitive)
+            field_value = email_data_lower.get(field, '')
             
             # Evaluate current condition
             if operator in self.operators:

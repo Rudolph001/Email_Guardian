@@ -1364,11 +1364,32 @@ def bau_analysis(session_id):
 
 
 
-        # Convert to DataFrame for BAU analysis
+        # Convert to DataFrame for BAU analysis with case-insensitive column handling
         df = pd.DataFrame(processed_data)
-        app.logger.info(f"DataFrame shape: {df.shape}")
-        app.logger.info(f"DataFrame columns: {list(df.columns)}")
-
+        
+        # Log original columns
+        app.logger.info(f"Original DataFrame shape: {df.shape}")
+        app.logger.info(f"Original DataFrame columns: {list(df.columns)}")
+        
+        # Ensure we have the required columns (case-insensitive check)
+        required_columns = ['sender', 'recipients', 'recipients_email_domain']
+        missing_columns = []
+        column_mapping = {}
+        
+        # Create case-insensitive column mapping
+        for col in df.columns:
+            col_lower = str(col).lower().strip()
+            column_mapping[col_lower] = col
+        
+        # Check for required columns and log what we find
+        for req_col in required_columns:
+            if req_col.lower() not in column_mapping:
+                missing_columns.append(req_col)
+        
+        if missing_columns:
+            app.logger.warning(f"Missing required columns for BAU analysis: {missing_columns}")
+            app.logger.info(f"Available columns: {list(df.columns)}")
+        
         ml_engine = MLEngine()
         bau_results = ml_engine.detect_bau_emails(df)
 

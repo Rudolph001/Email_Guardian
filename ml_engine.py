@@ -551,25 +551,25 @@ class MLEngine:
             # Map column names (case-insensitive)
             col_mapping = {}
             for col in df.columns:
-                col_lower = str(col).lower()
+                col_lower = str(col).lower().strip()
                 col_mapping[col_lower] = col
 
-            # Find sender column
-            for possible_name in ['sender', 'from', 'sender_email', 'from_email']:
-                if possible_name in col_mapping:
-                    sender_col = col_mapping[possible_name]
+            # Find sender column (case-insensitive)
+            for possible_name in ['sender', 'from', 'sender_email', 'from_email', 'send_from', 'email_from']:
+                if possible_name.lower() in col_mapping:
+                    sender_col = col_mapping[possible_name.lower()]
                     break
 
-            # Find recipients column  
-            for possible_name in ['recipients', 'to', 'recipient', 'to_email', 'recipients_email']:
-                if possible_name in col_mapping:
-                    recipients_col = col_mapping[possible_name]
+            # Find recipients column (case-insensitive)
+            for possible_name in ['recipients', 'to', 'recipient', 'to_email', 'recipients_email', 'send_to', 'email_to']:
+                if possible_name.lower() in col_mapping:
+                    recipients_col = col_mapping[possible_name.lower()]
                     break
 
-            # Find recipients domain column
-            for possible_name in ['recipients_email_domain', 'recipient_domain', 'to_domain', 'recipients_domain']:
-                if possible_name in col_mapping:
-                    recipients_domain_col = col_mapping[possible_name]
+            # Find recipients domain column (case-insensitive)  
+            for possible_name in ['recipients_email_domain', 'recipient_domain', 'to_domain', 'recipients_domain', 'recipient_email_domain', 'destination_domain']:
+                if possible_name.lower() in col_mapping:
+                    recipients_domain_col = col_mapping[possible_name.lower()]
                     break
 
             self.logger.info(f"BAU Analysis - Found columns: sender='{sender_col}', recipients='{recipients_col}', recipients_domain='{recipients_domain_col}'")
