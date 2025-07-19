@@ -126,7 +126,7 @@ def upload_file():
                     'error': result.get('error', 'Unknown error occurred'),
                     'error_type': result.get('error_type', 'unknown')
                 }
-                
+
                 # Add validation details if available
                 if 'validation_details' in result:
                     validation_details = result['validation_details']
@@ -134,9 +134,9 @@ def upload_file():
                     error_response['total_errors'] = validation_details.get('total_errors', 0)
                     error_response['missing_columns'] = validation_details.get('missing_columns', [])
                     error_response['available_columns'] = validation_details.get('available_columns', [])
-                
+
                 return jsonify(error_response)
-                
+
         except Exception as e:
             app.logger.error(f"Upload exception: {str(e)}")
             return jsonify({
@@ -176,11 +176,11 @@ def dashboard(session_id):
     for i, record in enumerate(processed_data):
         if record is None:
             continue
-        
+
         record_id = record.get('record_id', i)
         case_info = session_cases.get(str(record_id), {})
         case_status = case_info.get('status', '').lower()
-        
+
         if case_status == 'escalate':
             record['status'] = 'Escalated'
             escalated_data.append(record)
@@ -198,14 +198,14 @@ def dashboard(session_id):
     # Calculate risk level distributions from actual data
     risk_distribution = {}
     rule_matches_count = 0
-    
+
     all_data = escalated_data + case_management_data
     for record in all_data:
         if record and isinstance(record, dict):
             # Count risk levels
             risk_level = record.get('ml_risk_level', 'Low')
             risk_distribution[risk_level] = risk_distribution.get(risk_level, 0) + 1
-            
+
             # Count rule matches
             rule_results = record.get('rule_results', {})
             if rule_results.get('matched_rules'):
@@ -260,32 +260,32 @@ def case_management(session_id):
         'status_filter': request.args.get('status_filter', 'all'),
         'search': request.args.get('search', '').strip()
     }
-    
+
     result = session_manager.get_processed_data(session_id, page=page, per_page=per_page, filters=filters)
 
     # Extract paginated data and metadata
     processed_data = result.get('data', [])
     total_records = result.get('total', 0)
     total_pages = result.get('total_pages', 0)
-    
+
     # Debug logging for filtering
     app.logger.info(f"Case management filters applied: {filters}")
     app.logger.info(f"Filtered results: {total_records} records from {len(processed_data)} shown")
-    
+
     # Count escalated cases from session data for badge
     session_cases = session_data.get('cases', {})
     escalated_count = sum(1 for case in session_cases.values() if case.get('status', '').lower() == 'escalate')
-    
+
     # Ensure records have proper IDs and status for display
     for i, record in enumerate(processed_data):
         if 'record_id' not in record:
             record['record_id'] = str(i)
-        
+
         # Set status for display
         record_id = record.get('record_id', i)
         case_info = session_cases.get(str(record_id), {})
         case_status = case_info.get('status', '').lower()
-        
+
         if case_status and case_status != 'escalate':
             record['status'] = case_status.title()
         elif 'status' not in record:
@@ -297,10 +297,10 @@ def case_management(session_id):
     rule_filter = request.args.get('rule_filter', 'all')
     status_filter = request.args.get('status_filter', 'all')
     search_query = request.args.get('search', '')
-    
+
     # Data is already filtered and paginated by session manager for performance
     filtered_data = processed_data
-    
+
     # Pagination info from result
     has_prev = result.get('has_prev', False)
     has_next = result.get('has_next', False)
@@ -728,29 +728,29 @@ def admin():
     session_manager = SessionManager()
     domain_manager = DomainManager()
     whitelists = session_manager.get_whitelists()
-    attachment_keywords = session_manager.get_attachment_keywords()
+    attachment_keywords = session_manager.get_attachmentkeywords()
     sessions = session_manager.get_all_sessions()
     domain_classifications = domain_manager.get_domains()
-    
+
     # Debug logging to check domain classifications
     app.logger.info(f"Domain classifications loaded: {domain_classifications}")
-    
+
     # Ensure we have default structure if data is missing
     if not domain_classifications or not isinstance(domain_classifications, dict):
         app.logger.warning("Domain classifications empty or invalid, initializing defaults")
         domain_manager.initialize_domains_file()
         domain_classifications = domain_manager.get_domains()
-    
+
     # Ensure all required keys exist with proper structure
     required_keys = ['trusted', 'corporate', 'personal', 'public', 'suspicious']
     for key in required_keys:
         if key not in domain_classifications or not isinstance(domain_classifications[key], list):
             domain_classifications[key] = []
-    
+
     # Additional debug logging
     app.logger.info(f"Final domain classifications structure: {domain_classifications}")
     app.logger.info(f"Trusted domains count: {len(domain_classifications.get('trusted', []))}")
-    
+
     return render_template('admin.html', 
                          whitelists=whitelists, 
                          attachment_keywords=attachment_keywords, 
@@ -768,21 +768,21 @@ def create_rule():
     """Create a new rule and reprocess existing sessions"""
     try:
         rule_name = request.form.get('name', '').strip()
-        
+
         # Check if rule name is provided
         if not rule_name:
             flash('Rule name is required.', 'error')
             return redirect(url_for('rules'))
-        
+
         # Check for duplicate rule names to prevent accidental duplicates
         rule_engine = RuleEngine()
         existing_rules = rule_engine.get_all_rules()
-        
+
         for existing_rule in existing_rules:
             if existing_rule.get('name', '').lower() == rule_name.lower():
                 flash(f'A rule with the name "{rule_name}" already exists. Please choose a different name.', 'error')
                 return redirect(url_for('rules'))
-        
+
         rule_data = {
             'name': rule_name,
             'description': request.form.get('description', '').strip(),
@@ -796,7 +796,7 @@ def create_rule():
         if not rule_data['conditions']:
             flash('At least one condition is required for the rule.', 'error')
             return redirect(url_for('rules'))
-            
+
         if not rule_data['actions']:
             flash('At least one action is required for the rule.', 'error')
             return redirect(url_for('rules'))
@@ -1060,6 +1060,16 @@ def api_ml_insights(session_id):
     processed_data = session_manager.get_processed_data(session_id)
     ml_engine = MLEngine()
     insights = ml_engine.get_insights(processed_data)
+
+    # Add BAU analysis with proper structure
+    insights['bau_analysis'] = {
+        'bau_candidates_count': len(insights.get('bau_analysis', {}).get('bau_candidates', [])),
+        'bau_percentage': insights.get('bau_analysis', {}).get('bau_percentage', 0),
+        'high_volume_pairs': insights.get('bau_analysis', {}).get('high_volume_pairs', [])[:10],
+        'bau_candidates': insights.get('bau_analysis', {}).get('bau_candidates', []),
+        'unique_domains': insights.get('bau_analysis', {}).get('unique_domains', 0),
+        'recommendations': insights.get('bau_analysis', {}).get('recommendations', [])
+    }
     return jsonify(insights)
 
 @app.route('/api/session_stats/<session_id>')
@@ -1113,7 +1123,7 @@ def get_processing_errors(session_id):
     try:
         data_processor = DataProcessor()
         error_details = data_processor.get_processing_errors(session_id)
-        
+
         return jsonify(error_details)
 
     except Exception as e:
@@ -1144,7 +1154,7 @@ def bau_analysis(session_id):
 
         # Debug logging
         app.logger.info(f"BAU Analysis for session {session_id}: {len(processed_data)} records")
-        
+
         # Sample a few records for debugging
         if len(processed_data) > 0:
             sample_record = processed_data[0]
@@ -1156,10 +1166,10 @@ def bau_analysis(session_id):
         df = pd.DataFrame(processed_data)
         app.logger.info(f"DataFrame shape: {df.shape}")
         app.logger.info(f"DataFrame columns: {list(df.columns)}")
-        
+
         ml_engine = MLEngine()
         bau_results = ml_engine.detect_bau_emails(df)
-        
+
         # Add debug information
         bau_results['debug_info'] = {
             'total_records': len(processed_data),
@@ -1192,12 +1202,12 @@ def get_processing_status(session_id):
     try:
         session_manager = SessionManager()
         session_data = session_manager.get_session(session_id)
-        
+
         if not session_data:
             return jsonify({'error': 'Session not found'}), 404
-        
+
         processed_data = session_manager.get_processed_data(session_id)
-        
+
         status = {
             'session_id': session_id,
             'total_records': session_data.get('total_records', 0),
@@ -1210,9 +1220,9 @@ def get_processing_status(session_id):
             'created_at': session_data.get('created_at'),
             'updated_at': session_data.get('updated_at')
         }
-        
+
         return jsonify(status)
-        
+
     except Exception as e:
         app.logger.error(f"Error getting processing status: {str(e)}")
         return jsonify({'error': str(e)}), 500
@@ -1304,18 +1314,18 @@ def add_domain():
         data = request.json
         category = data.get('category')
         domain = data.get('domain')
-        
+
         if not category or not domain:
             return jsonify({'success': False, 'error': 'Category and domain are required'}), 400
-        
+
         domain_manager = DomainManager()
         result = domain_manager.add_domain(category, domain)
-        
+
         if result['success']:
             return jsonify(result)
         else:
             return jsonify(result), 400
-            
+
     except Exception as e:
         app.logger.error(f"Error adding domain: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1327,18 +1337,18 @@ def remove_domain():
         data = request.json
         category = data.get('category')
         domain = data.get('domain')
-        
+
         if not category or not domain:
             return jsonify({'success': False, 'error': 'Category and domain are required'}), 400
-        
+
         domain_manager = DomainManager()
         result = domain_manager.remove_domain(category, domain)
-        
+
         if result['success']:
             return jsonify(result)
         else:
             return jsonify(result), 400
-            
+
     except Exception as e:
         app.logger.error(f"Error removing domain: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1349,14 +1359,14 @@ def export_domains():
     try:
         domain_manager = DomainManager()
         config = domain_manager.export_config()
-        
+
         from flask import make_response
         response = make_response(json.dumps(config, indent=2))
         response.headers['Content-Type'] = 'application/json'
         response.headers['Content-Disposition'] = 'attachment; filename=domain_classifications.json'
-        
+
         return response
-        
+
     except Exception as e:
         app.logger.error(f"Error exporting domain config: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1367,16 +1377,16 @@ def reprocess_sessions_with_domains():
     try:
         session_manager = SessionManager()
         data_processor = DataProcessor()
-        
+
         sessions = session_manager.get_all_sessions()
         sessions_updated = 0
         failed_sessions = []
-        
+
         for session in sessions:
             session_id = session.get('session_id')
             if not session_id:
                 continue
-                
+
             try:
                 # Reprocess the session with new domain classifications
                 result = data_processor.reprocess_existing_session(session_id)
@@ -1384,11 +1394,11 @@ def reprocess_sessions_with_domains():
                     sessions_updated += 1
                 else:
                     failed_sessions.append(session_id)
-                    
+
             except Exception as e:
                 app.logger.error(f"Error reprocessing session {session_id}: {str(e)}")
                 failed_sessions.append(session_id)
-        
+
         if failed_sessions:
             return jsonify({
                 'success': False,
@@ -1400,7 +1410,7 @@ def reprocess_sessions_with_domains():
                 'success': True,
                 'sessions_updated': sessions_updated
             })
-            
+
     except Exception as e:
         app.logger.error(f"Error reprocessing sessions: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1411,12 +1421,12 @@ def reset_domains():
     try:
         domain_manager = DomainManager()
         result = domain_manager.reset_to_defaults()
-        
+
         if result['success']:
             return jsonify(result)
         else:
             return jsonify(result), 500
-            
+
     except Exception as e:
         app.logger.error(f"Error resetting domains: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1429,13 +1439,13 @@ def get_exclusion_rules():
         rule_engine = RuleEngine()
         exclusion_rules = rule_engine.get_all_exclusion_rules()
         field_names = RuleEngine.get_field_names()
-        
+
         return jsonify({
             'success': True,
             'exclusion_rules': exclusion_rules,
             'field_names': field_names
         })
-        
+
     except Exception as e:
         app.logger.error(f"Error getting exclusion rules: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1446,7 +1456,7 @@ def add_exclusion_rule():
     try:
         data = request.json
         rule_engine = RuleEngine()
-        
+
         # Handle both single condition (backward compatibility) and multiple conditions
         conditions = data.get('conditions', [])
         if not conditions and 'field' in data:
@@ -1457,19 +1467,19 @@ def add_exclusion_rule():
                 'value': data.get('value'),
                 'logic': 'AND'
             }]
-        
+
         result = rule_engine.add_exclusion_rule(
             name=data.get('name'),
             description=data.get('description'),
             conditions=conditions,
             case_sensitive=data.get('case_sensitive', False)
         )
-        
+
         if result['success']:
             return jsonify(result)
         else:
             return jsonify(result), 400
-            
+
     except Exception as e:
         app.logger.error(f"Error adding exclusion rule: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1480,12 +1490,12 @@ def delete_exclusion_rule(rule_id):
     try:
         rule_engine = RuleEngine()
         result = rule_engine.delete_exclusion_rule(rule_id)
-        
+
         if result['success']:
             return jsonify(result)
         else:
             return jsonify(result), 400
-            
+
     except Exception as e:
         app.logger.error(f"Error deleting exclusion rule: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1496,12 +1506,12 @@ def toggle_exclusion_rule(rule_id):
     try:
         rule_engine = RuleEngine()
         result = rule_engine.toggle_exclusion_rule(rule_id)
-        
+
         if result['success']:
             return jsonify(result)
         else:
             return jsonify(result), 400
-            
+
     except Exception as e:
         app.logger.error(f"Error toggling exclusion rule: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1512,14 +1522,14 @@ def get_exclusion_rule(rule_id):
     try:
         rule_engine = RuleEngine()
         result = rule_engine.get_exclusion_rule(rule_id)
-        
+
         if result['success']:
             field_names = RuleEngine.get_field_names()
             result['field_names'] = field_names
             return jsonify(result)
         else:
             return jsonify(result), 404
-            
+
     except Exception as e:
         app.logger.error(f"Error getting exclusion rule {rule_id}: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -1533,21 +1543,21 @@ def update_exclusion_rule_api(rule_id):
         description = data.get('description', '')
         conditions = data.get('conditions', [])
         case_sensitive = data.get('case_sensitive', False)
-        
+
         if not name.strip():
             return jsonify({'success': False, 'error': 'Rule name is required'}), 400
-        
+
         if not conditions:
             return jsonify({'success': False, 'error': 'At least one condition is required'}), 400
-        
+
         rule_engine = RuleEngine()
         result = rule_engine.update_exclusion_rule(rule_id, name, description, conditions, case_sensitive)
-        
+
         if result['success']:
             return jsonify(result)
         else:
             return jsonify(result), 400
-            
+
     except Exception as e:
         app.logger.error(f"Error updating exclusion rule {rule_id}: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500

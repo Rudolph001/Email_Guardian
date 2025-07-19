@@ -648,7 +648,12 @@ class MLEngine:
                 'unique_domains': unique_domains,
                 'recommendations': recommendations,
                 'total_communications': total_pairs,
-                'unique_patterns': total_unique_pairs
+                'unique_patterns': total_unique_pairs,
+                'bau_stats': {
+                    'bau_candidates_count': len(bau_candidates),
+                    'bau_percentage': round(bau_percentage, 1),
+                    'high_volume_pairs': high_volume_pairs[:10]
+                }
             }
 
         except Exception as e:
