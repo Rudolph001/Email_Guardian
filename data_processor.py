@@ -256,13 +256,24 @@ class DataProcessor:
                 self.logger.error(f"Failed to save processed data: {save_result.get('error')}")
                 return {'success': False, 'error': f'Failed to save processed data: {save_result.get("error", "Unknown error")}'}
 
+            # Extract sample data for preview (first 10 records)
+            sample_data = []
+            if all_processed_data:
+                sample_data = all_processed_data[:10]
+                # Clean sample data for JSON serialization
+                for record in sample_data:
+                    for key, value in record.items():
+                        if pd.isna(value):
+                            record[key] = None
+
             return {
                 'success': True,
                 'total_records': len(df),
                 'filtered_records': len(df_filtered),
                 'processed_records': len(all_processed_data),
                 'session_id': session_id,
-                'processing_stats': processing_stats
+                'processing_stats': processing_stats,
+                'sample_data': sample_data
             }
 
         except Exception as e:
@@ -897,12 +908,23 @@ class DataProcessor:
                 self.logger.error(f"Failed to save large CSV processed data: {save_result.get('error')}")
                 return {'success': False, 'error': f'Failed to save processed data: {save_result.get("error", "Unknown error")}'}
             
+            # Extract sample data for preview (first 10 records)
+            sample_data = []
+            if all_processed_data:
+                sample_data = all_processed_data[:10]
+                # Clean sample data for JSON serialization
+                for record in sample_data:
+                    for key, value in record.items():
+                        if pd.isna(value):
+                            record[key] = None
+
             return {
                 'success': True,
                 'total_records': total_records,
                 'processed_records': len(all_processed_data),
                 'session_id': session_id,
-                'processing_stats': processing_stats
+                'processing_stats': processing_stats,
+                'sample_data': sample_data
             }
             
         except Exception as e:

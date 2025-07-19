@@ -829,6 +829,29 @@ code {
 }
 
 /* Custom styles for Email Guardian */
+
+/* Sample data table styles */
+#sampleDataTable {
+    font-size: 0.85rem;
+}
+
+#sampleDataTable th {
+    background-color: #343a40 !important;
+    color: white;
+    border-color: #454d55;
+    font-size: 0.8rem;
+    padding: 0.5rem;
+}
+
+#sampleDataTable td {
+    padding: 0.5rem;
+    vertical-align: middle;
+}
+
+.table-responsive {
+    max-height: 60vh;
+    overflow-y: auto;
+}
 .navbar-brand {
     font-weight: bold;
 }

@@ -183,7 +183,7 @@
                         </div>
                     </div>
 
-    
+
 
                 </div>
                 <div class="modal-footer">
@@ -196,6 +196,66 @@
         </div>
     </div>
 </div>
+
+<!-- Upload Progress Modal -->
+    <div class="modal fade" id="uploadProgressModal" tabindex="-1" aria-labelledby="uploadProgressModalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadProgressModalLabel">
+                        <i class="fas fa-cloud-upload-alt me-2"></i>Processing Your Data
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="progress mb-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <p class="text-muted text-center mb-0" id="progressText">Initializing upload...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sample Data Preview Modal -->
+    <div class="modal fade" id="sampleDataModal" tabindex="-1" aria-labelledby="sampleDataModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="sampleDataModalLabel">
+                        <i class="fas fa-table me-2"></i>Data Sample Preview (First 10 Records)
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        This is a preview of the first 10 records from your uploaded data. Review the structure and content before proceeding to the full dashboard.
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="sampleDataTable">
+                            <thead class="table-dark">
+                                <!-- Headers will be populated by JavaScript -->
+                            </thead>
+                            <tbody>
+                                <!-- Sample data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close Preview</button>
+                    <button type="button" class="btn btn-primary" id="proceedToDashboard">
+                        <i class="fas fa-arrow-right me-2"></i>Proceed to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -242,10 +302,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 try {
                     const response = JSON.parse(xhr.responseText);
                     if (response.success) {
-                        updateUploadProgress(100, 'Upload complete! Starting processing...');
+                        updateUploadProgress(100, 'Processing completed successfully!');
+                        uploadProgressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+                        uploadProgressBar.classList.add('bg-success');
 
-                        // Start monitoring processing progress
-                        monitorProcessing(response.session_id);
+                        // Show sample data if available
+                        if (data.sample_data && data.sample_data.length > 0) {
+                            setTimeout(() => {
+                                showSampleDataPreview(data.sample_data, data.session_id);
+                            }, 1500);
+                        } else {
+                            setTimeout(() => {
+                                window.location.href = `/dashboard/${data.session_id}`;
+                            }, 1500);
+                        }
                     } else {
                         let errorMessage = response.error || 'Unknown error';
 
@@ -366,6 +436,47 @@ document.addEventListener('DOMContentLoaded', function() {
         uploadProgressBar.style.width = '0%';
         uploadProgressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
         uploadProgressBar.classList.remove('bg-success');
+    }
+
+    function showSampleDataPreview(sampleData, sessionId) {
+        const sampleDataTable = document.getElementById('sampleDataTable');
+        const sampleDataTableHead = sampleDataTable.querySelector('thead');
+        const sampleDataTableBody = sampleDataTable.querySelector('tbody');
+        const proceedToDashboardBtn = document.getElementById('proceedToDashboard');
+
+        // Clear existing table content
+        sampleDataTableHead.innerHTML = '';
+        sampleDataTableBody.innerHTML = '';
+
+        // Create table headers
+        const headers = Object.keys(sampleData[0]);
+        const headerRow = document.createElement('tr');
+        headers.forEach(headerText => {
+            const header = document.createElement('th');
+            header.textContent = headerText;
+            headerRow.appendChild(header);
+        });
+        sampleDataTableHead.appendChild(headerRow);
+
+        // Create table rows
+        sampleData.forEach(dataRow => {
+            const row = document.createElement('tr');
+            headers.forEach(headerText => {
+                const cell = document.createElement('td');
+                cell.textContent = dataRow[headerText];
+                row.appendChild(cell);
+            });
+            sampleDataTableBody.appendChild(row);
+        });
+
+        // Add event listener to proceed to dashboard button
+        proceedToDashboardBtn.addEventListener('click', function() {
+            window.location.href = `/dashboard/${sessionId}`;
+        });
+
+        // Show the sample data modal
+        const sampleDataModal = new bootstrap.Modal(document.getElementById('sampleDataModal'));
+        sampleDataModal.show();
     }
 });
 </script>
