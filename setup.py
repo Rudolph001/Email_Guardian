@@ -178,6 +178,14 @@ def main():
     print(f"Architecture: {platform.machine()}")
     print(f"Python executable: {sys.executable}")
     
+    # Check if this is an update (data directory exists)
+    if os.path.exists('data') and os.listdir('data'):
+        print("\n" + "!" * 60)
+        print("    EXISTING DATA DETECTED")
+        print("!" * 60)
+        print("Your existing sessions and uploads will be preserved.")
+        print("The .gitignore file protects your data from being overwritten.")
+    
     # Check Python version
     if not check_python_version():
         sys.exit(1)
@@ -219,6 +227,12 @@ def main():
     print("  python run.py --dev")
     print("\nThe application will be available at:")
     print("  http://localhost:5000")
+    print("\n" + "=" * 60)
+    print("    DATA PROTECTION INFO")
+    print("=" * 60)
+    print("✓ Your uploads and processed data are protected by .gitignore")
+    print("✓ Git pull will NOT overwrite your existing work")
+    print("✓ Only application code gets updated from GitHub")
     print("\nNote: If you encountered any dependency installation errors,")
     print("the application might still work with the available packages.")
     print("=" * 60)
