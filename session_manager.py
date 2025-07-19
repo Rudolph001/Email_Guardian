@@ -283,15 +283,16 @@ class SessionManager:
             self.logger.error(f"Error saving large session {session_id}: {e}")
             return False
 
-    def get_processed_data(self, session_id: str) -> List[Dict]:
-        """Get processed data for a session"""
+    def get_processed_data(self, session_id: str, page: int = 1, per_page: int = 50, filters: Dict = None) -> Dict:
+        """Get processed data for a session with pagination and filtering for faster loading"""
         try:
             session_data = self.get_session(session_id)
             self.logger.info(f"Session data keys: {list(session_data.keys()) if session_data else 'No session data'}")
 
+            # Try to get processed_data from session first
+            processed_data = []
             if session_data and 'processed_data' in session_data:
                 processed_data = session_data['processed_data']
-                # Filter out None values and ensure we have a valid list
                 if processed_data is None:
                     processed_data = []
                 elif not isinstance(processed_data, list):
@@ -300,15 +301,112 @@ class SessionManager:
                 else:
                     # Filter out None entries
                     processed_data = [record for record in processed_data if record is not None]
+            
+            # If not found or empty, try loading from separate compressed file
+            if not processed_data:
+                data_dir = 'data/session_data'
+                data_file = os.path.join(data_dir, f"{session_id}_data.json.gz")
                 
-                self.logger.info(f"Found {len(processed_data)} valid processed records in session {session_id}")
-                return processed_data
-            else:
-                self.logger.warning(f"No processed_data found in session {session_id}")
-                return []
+                if os.path.exists(data_file):
+                    try:
+                        import gzip
+                        with gzip.open(data_file, 'rt', encoding='utf-8') as f:
+                            processed_data = json.load(f)
+                        self.logger.info(f"Loaded {len(processed_data)} records from compressed file for session {session_id}")
+                    except Exception as e:
+                        self.logger.error(f"Error loading compressed data file: {e}")
+
+            if not processed_data:
+                return {'data': [], 'total': 0, 'page': page, 'per_page': per_page, 'total_pages': 0}
+
+            # Apply filters for better performance
+            filtered_data = processed_data
+            if filters:
+                filtered_data = self._apply_filters(processed_data, filters, session_data)
+
+            # Calculate pagination
+            total = len(filtered_data)
+            total_pages = (total + per_page - 1) // per_page if total > 0 else 0
+            start_idx = (page - 1) * per_page
+            end_idx = start_idx + per_page
+
+            # Return paginated results
+            paginated_data = filtered_data[start_idx:end_idx]
+            
+            self.logger.info(f"Returning page {page} with {len(paginated_data)} records (total: {total})")
+
+            return {
+                'data': paginated_data,
+                'total': total,
+                'page': page,
+                'per_page': per_page,
+                'total_pages': total_pages,
+                'has_prev': page > 1,
+                'has_next': page < total_pages
+            }
+            
         except Exception as e:
             self.logger.error(f"Error getting processed data: {str(e)}")
-            return []
+            return {'data': [], 'total': 0, 'page': page, 'per_page': per_page, 'total_pages': 0}
+    
+    def _apply_filters(self, data: List[Dict], filters: Dict, session_data: Dict = None) -> List[Dict]:
+        """Apply filters to data for faster processing"""
+        filtered_data = data
+        
+        try:
+            # Risk level filter
+            if filters.get('risk_filter') and filters['risk_filter'] != 'all':
+                filtered_data = [d for d in filtered_data if d.get('ml_risk_level', '').lower() == filters['risk_filter'].lower()]
+            
+            # Rule filter
+            if filters.get('rule_filter'):
+                if filters['rule_filter'] == 'matched':
+                    filtered_data = [d for d in filtered_data if d.get('rule_results', {}).get('matched_rules')]
+                elif filters['rule_filter'] == 'unmatched':
+                    filtered_data = [d for d in filtered_data if not d.get('rule_results', {}).get('matched_rules')]
+            
+            # Status filter
+            if filters.get('status_filter') and filters['status_filter'] != 'all':
+                filtered_data = [d for d in filtered_data if d.get('status', '').lower() == filters['status_filter'].lower()]
+            
+            # Search filter - faster string matching
+            if filters.get('search'):
+                search_term = filters['search'].lower()
+                filtered_data = [d for d in filtered_data if 
+                               search_term in str(d.get('sender', '')).lower() or
+                               search_term in str(d.get('subject', '')).lower() or
+                               search_term in str(d.get('recipients', '')).lower()]
+            
+            # Dashboard type filter
+            if filters.get('dashboard_type'):
+                session_cases = session_data.get('cases', {}) if session_data else {}
+                if filters['dashboard_type'] == 'escalation':
+                    # Only escalated cases
+                    filtered_data = []
+                    for i, d in enumerate(data):
+                        record_id = d.get('record_id', i)
+                        case_info = session_cases.get(str(record_id), {})
+                        if case_info.get('status', '').lower() == 'escalate':
+                            filtered_data.append(d)
+                elif filters['dashboard_type'] == 'case_management':
+                    # Exclude escalated cases
+                    filtered_data = []
+                    for i, d in enumerate(data):
+                        record_id = d.get('record_id', i)
+                        case_info = session_cases.get(str(record_id), {})
+                        if case_info.get('status', '').lower() != 'escalate':
+                            filtered_data.append(d)
+        
+        except Exception as e:
+            self.logger.error(f"Error applying filters: {str(e)}")
+            return data
+        
+        return filtered_data
+    
+    def get_processed_data_legacy(self, session_id: str) -> List[Dict]:
+        """Legacy method - get all processed data (for backward compatibility)"""
+        result = self.get_processed_data(session_id, page=1, per_page=999999)
+        return result.get('data', [])
 
     def update_case_status(self, session_id: str, record_id: int, status: str) -> Dict:
         """Update case status (cleared, escalated)"""

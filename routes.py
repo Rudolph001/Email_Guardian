@@ -161,83 +161,60 @@ def dashboard(session_id):
         flash('Session not found', 'error')
         return redirect(url_for('index'))
 
-    # Get processed data with None safety
-    all_processed_data = session_manager.get_processed_data(session_id)
-    if all_processed_data is None:
-        all_processed_data = []
-    app.logger.info(f"Retrieved {len(all_processed_data)} processed records for session {session_id}")
+    # Get basic statistics without loading all data for better performance
+    result = session_manager.get_processed_data(session_id, page=1, per_page=1)
+    total_records = result.get('total', 0)
+    app.logger.info(f"Session {session_id} has {total_records} processed records")
 
     # Separate data based on manual escalation status
     escalated_data = []
     case_management_data = []
     session_cases = session_data.get('cases', {}) if session_data else {}
 
-    if all_processed_data:
-        for i, record in enumerate(all_processed_data):
-            # Skip None records and ensure record is a valid dict
-            if record is None or not isinstance(record, dict):
-                continue
-
-            # Check if this specific record was manually escalated
-            record_id = record.get('record_id', i)
-            case_info = session_cases.get(str(record_id), {})
-            case_status = case_info.get('status', '').lower()
-
-            if case_status == 'escalate':
-                escalated_data.append(record)
-            else:
-                case_management_data.append(record)
+    # Count escalated cases from session data efficiently
+    escalated_count = 0
+    case_management_count = 0
+    session_cases = session_data.get('cases', {})
+    
+    for case_info in session_cases.values():
+        if case_info.get('status', '').lower() == 'escalate':
+            escalated_count += 1
+        else:
+            case_management_count += 1
+    
+    # If no cases in session data, all records are in case management
+    if not session_cases:
+        case_management_count = total_records
 
     # Get processing statistics
     processing_stats = session_data.get('processing_stats', {})
     processing_steps = processing_stats.get('processing_steps', [])
 
-    # Get ML insights for case management data only
-    ml_engine = MLEngine()
-    try:
-        if case_management_data:
-            ml_insights = ml_engine.get_insights(case_management_data)
-            app.logger.info(f"ML insights generated: {ml_insights.get('total_emails', 0)} emails analyzed")
-        else:
-            ml_insights = {
-                'total_emails': 0,
-                'risk_distribution': {},
-                'anomaly_summary': {
-                    'high_anomaly_count': 0,
-                    'anomaly_percentage': 0
-                },
-                'pattern_summary': {
-                    'total_patterns': 0,
-                    'critical_patterns': 0,
-                    'high_patterns': 0
-                },
-                'recommendations': []
-            }
-    except Exception as e:
-        app.logger.error(f"Error getting ML insights: {str(e)}")
-        ml_insights = {
-            'total_emails': len(case_management_data),
-            'risk_distribution': {},
-            'anomaly_summary': {
-                'high_anomaly_count': 0,
-                'anomaly_percentage': 0
-            },
-            'pattern_summary': {
-                'total_patterns': 0,
-                'critical_patterns': 0,
-                'high_patterns': 0
-            },
-            'recommendations': []
-        }
+    # Get ML insights from processing stats if available (faster than recalculating)
+    ml_insights = processing_stats.get('ml_insights', {
+        'total_emails': case_management_count,
+        'risk_distribution': {},
+        'anomaly_summary': {
+            'high_anomaly_count': 0,
+            'anomaly_percentage': 0
+        },
+        'pattern_summary': {
+            'total_patterns': 0,
+            'critical_patterns': 0,
+            'high_patterns': 0
+        },
+        'recommendations': []
+    })
 
     return render_template('dashboard.html',
                          session=session_data,
-                         escalated_data=escalated_data,
-                         case_management_data=case_management_data,
+                         escalated_data=[],  # Empty arrays for dashboard performance
+                         case_management_data=[],  # Data loaded on demand via pagination
                          processing_steps=processing_steps,
                          ml_insights=ml_insights,
-                         escalated_count=len(escalated_data),
-                         case_management_count=len(case_management_data))
+                         escalated_count=escalated_count,
+                         case_management_count=case_management_count,
+                         total_records=total_records)
 
 @app.route('/cases/<session_id>')
 def case_management(session_id):
@@ -252,221 +229,55 @@ def case_management(session_id):
     page = request.args.get('page', 1, type=int)
     per_page = min(request.args.get('per_page', 50, type=int), 200)  # Limit max per page
 
-    # Get processed data
-    all_processed_data = session_manager.get_processed_data(session_id)
+    # Get processed data with optimized filtering and pagination
+    filters = {
+        'dashboard_type': 'case_management',
+        'session_id': session_id,
+        'risk_filter': request.args.get('risk_filter', 'all'),
+        'rule_filter': request.args.get('rule_filter', 'all'),
+        'status_filter': request.args.get('status_filter', 'all'),
+        'search': request.args.get('search', '')
+    }
+    
+    result = session_manager.get_processed_data(session_id, page=page, per_page=per_page, filters=filters)
 
-    # Count manually escalated cases for the badge and filter case management data
-    escalated_count = 0
-    non_escalated_data = []
+    # Extract paginated data and metadata
+    processed_data = result.get('data', [])
+    total_records = result.get('total', 0)
+    total_pages = result.get('total_pages', 0)
+    
+    # Count escalated cases from session data for badge
     session_cases = session_data.get('cases', {})
+    escalated_count = sum(1 for case in session_cases.values() if case.get('status', '').lower() == 'escalate')
+    
+    # Ensure records have proper IDs and status for display
+    for i, record in enumerate(processed_data):
+        if 'record_id' not in record:
+            record['record_id'] = str(i)
+        
+        # Set status for display
+        record_id = record.get('record_id', i)
+        case_info = session_cases.get(str(record_id), {})
+        case_status = case_info.get('status', '').lower()
+        
+        if case_status and case_status != 'escalate':
+            record['status'] = case_status.title()
+        elif 'status' not in record:
+            record['status'] = 'Active'
 
-    if all_processed_data:
-        for i, d in enumerate(all_processed_data):
-            # Skip None records and ensure record is a valid dict
-            if d is None or not isinstance(d, dict):
-                continue
-
-            # Check if this specific record was manually escalated
-            record_id = d.get('record_id', i)
-            case_info = session_cases.get(str(record_id), {})
-            case_status = case_info.get('status', '').lower()
-
-            # Count and exclude manually escalated cases
-            if case_status == 'escalate':
-                escalated_count += 1
-            else:
-                # Include in case management if not manually escalated
-                # Ensure record has an ID for actions
-                if 'record_id' not in d:
-                    d['record_id'] = str(i)
-
-                # Set status for display if it exists in session cases
-                if case_status:
-                    d['status'] = case_status.title()
-                elif 'status' not in d:
-                    d['status'] = 'Active'
-
-                non_escalated_data.append(d)
-
-    processed_data = non_escalated_data
-
-    # Get all filter parameters
+    # Filtering is now handled efficiently in the session manager
+    # Extract filter parameters for template context
     risk_filter = request.args.get('risk_filter', 'all')
     rule_filter = request.args.get('rule_filter', 'all')
     status_filter = request.args.get('status_filter', 'all')
     search_query = request.args.get('search', '')
-
-    # Advanced filters
-    sender_filter = request.args.get('sender_filter', '')
-    recipient_filter = request.args.get('recipient_filter', '')
-    domain_filter = request.args.get('domain_filter', '')
-    subject_filter = request.args.get('subject_filter', '')
-    attachment_filter = request.args.get('attachment_filter', 'all')
-    ml_score_min = request.args.get('ml_score_min', '')
-    ml_score_max = request.args.get('ml_score_max', '')
-    date_from = request.args.get('date_from', '')
-    date_to = request.args.get('date_to', '')
-    time_from = request.args.get('time_from', '')
-    time_to = request.args.get('time_to', '')
-    size_filter = request.args.get('size_filter', 'all')
-    has_links = request.args.get('has_links', 'all')
-
-    # Apply filters with comprehensive null checks
-    filtered_data = []
-    if processed_data:
-        for item in processed_data:
-            if item is not None and isinstance(item, dict) and len(item) > 0:
-                filtered_data.append(item)
-
-    if risk_filter != 'all':
-        filtered_data = [d for d in filtered_data if d is not None and isinstance(d, dict) and d.get('ml_risk_level', '').lower() == risk_filter.lower()]
-
-    if rule_filter != 'all':
-        if rule_filter == 'matched':
-            filtered_data = [d for d in filtered_data if d is not None and isinstance(d, dict) and d.get('rule_results', {}).get('matched_rules')]
-        elif rule_filter == 'unmatched':
-            filtered_data = [d for d in filtered_data if d is not None and isinstance(d, dict) and not d.get('rule_results', {}).get('matched_rules')]
-
-    if status_filter != 'all':
-        filtered_data = [d for d in filtered_data if d is not None and isinstance(d, dict) and d.get('status', '').lower() == status_filter.lower()]
-
-    # Apply advanced filters
-    if sender_filter:
-        filtered_data = [d for d in filtered_data if sender_filter.lower() in d.get('sender', '').lower()]
-
-    if recipient_filter:
-        filtered_data = [d for d in filtered_data if recipient_filter.lower() in d.get('recipient', '').lower()]
-
-    if domain_filter:
-        filtered_data = [d for d in filtered_data if domain_filter.lower() in d.get('sender', '').lower() or 
-                        domain_filter.lower() in d.get('recipient', '').lower()]
-
-    if subject_filter:
-        filtered_data = [d for d in filtered_data if subject_filter.lower() in d.get('subject', '').lower()]
-
-    if attachment_filter != 'all':
-        if attachment_filter == 'has_attachments':
-            filtered_data = [d for d in filtered_data if d.get('has_attachments', False)]
-        elif attachment_filter == 'no_attachments':
-            filtered_data = [d for d in filtered_data if not d.get('has_attachments', False)]
-        else:
-            filtered_data = [d for d in filtered_data if d.get('attachment_classification', '').lower() == attachment_filter.lower()]
-
-    if ml_score_min:
-        try:
-            min_score = float(ml_score_min)
-            filtered_data = [d for d in filtered_data if d.get('ml_anomaly_score', 0) >= min_score]
-        except ValueError:
-            pass
-
-    if ml_score_max:
-        try:
-            max_score = float(ml_score_max)
-            filtered_data = [d for d in filtered_data if d.get('ml_anomaly_score', 0) <= max_score]
-        except ValueError:
-            pass
-
-    if date_from or date_to:
-        from datetime import datetime
-        filtered_data_by_date = []
-        for d in filtered_data:
-            email_date = d.get('_time', d.get('sent_timestamp', ''))
-            if email_date:
-                try:
-                    # Parse various date formats
-                    if 'T' in email_date:
-                        email_dt = datetime.fromisoformat(email_date.replace('Z', '+00:00'))
-                    else:
-                        email_dt = datetime.strptime(email_date[:19], '%Y-%m-%d %H:%M:%S')
-
-                    email_date_only = email_dt.date()
-
-                    include = True
-                    if date_from:
-                        from_date = datetime.strptime(date_from, '%Y-%m-%d').date()
-                        if email_date_only < from_date:
-                            include = False
-
-                    if date_to and include:
-                        to_date = datetime.strptime(date_to, '%Y-%m-%d').date()
-                        if email_date_only > to_date:
-                            include = False
-
-                    if include:
-                        filtered_data_by_date.append(d)
-                except (ValueError, TypeError):
-                    continue
-        filtered_data = filtered_data_by_date
-
-    if time_from or time_to:
-        from datetime import datetime
-        filtered_data_by_time = []
-        for d in filtered_data:
-            email_time = d.get('_time', d.get('sent_timestamp', ''))
-            if email_time:
-                try:
-                    # Extract time portion
-                    if 'T' in email_time:
-                        time_part = email_time.split('T')[1][:8]  # HH:MM:SS
-                    else:
-                        time_part = email_time.split(' ')[1][:8] if ' ' in email_time else '00:00:00'
-
-                    email_time_obj = datetime.strptime(time_part, '%H:%M:%S').time()
-
-                    include = True
-                    if time_from:
-                        from_time = datetime.strptime(time_from, '%H:%M').time()
-                        if email_time_obj < from_time:
-                            include = False
-
-                    if time_to and include:
-                        to_time = datetime.strptime(time_to, '%H:%M').time()
-                        if email_time_obj > to_time:
-                            include = False
-
-                    if include:
-                        filtered_data_by_time.append(d)
-                except (ValueError, TypeError):
-                    continue
-        filtered_data = filtered_data_by_time
-
-    if size_filter != 'all':
-        # Note: Email size filtering would require size information in the data
-        # For now, we'll filter based on attachment presence as a proxy
-        if size_filter == 'large':
-            filtered_data = [d for d in filtered_data if d.get('has_attachments', False)]
-        elif size_filter == 'small':
-            filtered_data = [d for d in filtered_data if not d.get('has_attachments', False)]
-
-    if has_links != 'all':
-        # Check if email contains links (look for http/https in subject or content)
-        if has_links == 'yes':
-            filtered_data = [d for d in filtered_data if 'http' in d.get('subject', '').lower() or 
-                            'www.' in d.get('subject', '').lower()]
-        elif has_links == 'no':
-            filtered_data = [d for d in filtered_data if 'http' not in d.get('subject', '').lower() and 
-                            'www.' not in d.get('subject', '').lower()]
-
-    # Apply general search query
-    if search_query:
-        search_lower = search_query.lower()
-        filtered_data = [d for d in filtered_data if 
-                        search_lower in d.get('sender', '').lower() or 
-                        search_lower in d.get('subject', '').lower() or 
-                        search_lower in d.get('recipient', '').lower() or
-                        search_lower in d.get('recipients', '').lower() or
-                        search_lower in d.get('attachment_classification', '').lower()]
-
-    # Calculate pagination with additional safety check
-    total_filtered = len(filtered_data)
-    start_idx = (page - 1) * per_page
-    end_idx = start_idx + per_page
-    paginated_data = [item for item in filtered_data[start_idx:end_idx] if item is not None and isinstance(item, dict)]
-
-    # Calculate pagination info
-    total_pages = (total_filtered + per_page - 1) // per_page
-    has_prev = page > 1
-    has_next = page < total_pages
+    
+    # Data is already filtered and paginated by session manager for performance
+    filtered_data = processed_data
+    
+    # Pagination info from result
+    has_prev = result.get('has_prev', False)
+    has_next = result.get('has_next', False)
 
     # Get unique values for filter dropdowns (exclude 'Escalated' since those cases are in escalation dashboard)
     risk_levels = list(set(d.get('ml_risk_level', 'Unknown') for d in processed_data if processed_data))
@@ -474,15 +285,15 @@ def case_management(session_id):
 
     return render_template('case_management.html', 
                          session=session_data,
-                         cases=paginated_data,
+                         cases=filtered_data,
                          escalated_count=escalated_count,
-                         risk_levels=risk_levels,
-                         statuses=statuses,
-                         total_cases=len(processed_data),
-                         # Pagination info
+                         risk_levels=['Critical', 'High', 'Medium', 'Low'],
+                         statuses=['Active', 'Cleared'],
+                         total_cases=total_records,
+                         # Pagination info (optimized)
                          page=page,
                          per_page=per_page,
-                         total_filtered=total_filtered,
+                         total_filtered=total_records,
                          total_pages=total_pages,
                          has_prev=has_prev,
                          has_next=has_next,
@@ -490,20 +301,7 @@ def case_management(session_id):
                              'risk_filter': risk_filter,
                              'rule_filter': rule_filter,
                              'status_filter': status_filter,
-                             'search': search_query,
-                             'sender_filter': sender_filter,
-                             'recipient_filter': recipient_filter,
-                             'domain_filter': domain_filter,
-                             'subject_filter': subject_filter,
-                             'attachment_filter': attachment_filter,
-                             'ml_score_min': ml_score_min,
-                             'ml_score_max': ml_score_max,
-                             'date_from': date_from,
-                             'date_to': date_to,
-                             'time_from': time_from,
-                             'time_to': time_to,
-                             'size_filter': size_filter,
-                             'has_links': has_links
+                             'search': search_query
                          })
 
 @app.route('/escalations/<session_id>')
@@ -515,8 +313,9 @@ def escalation_dashboard(session_id):
         flash('Session not found', 'error')
         return redirect(url_for('index'))
 
-    # Get processed data
-    processed_data = session_manager.get_processed_data(session_id)
+    # Get processed data using optimized method for escalations
+    result = session_manager.get_processed_data(session_id, filters={'dashboard_type': 'escalation', 'session_id': session_id})
+    processed_data = result.get('data', [])
 
     # Debug logging
     app.logger.info(f"Escalation dashboard - Total records: {len(processed_data) if processed_data else 0}")
@@ -600,7 +399,8 @@ def escalation_dashboard(session_id):
 def get_case_details(session_id, record_id):
     """API endpoint to get detailed case information for popup"""
     session_manager = SessionManager()
-    processed_data = session_manager.get_processed_data(session_id)
+    result = session_manager.get_processed_data(session_id, page=1, per_page=999999)  # Get all data for search
+    processed_data = result.get('data', [])
 
     if not processed_data:
         return jsonify({'error': 'Session not found'}), 404
