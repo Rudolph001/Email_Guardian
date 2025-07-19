@@ -364,8 +364,16 @@ class DataProcessor:
 
             # Check for completely empty rows
             empty_rows = df.isnull().all(axis=1)
-            if len(empty_rows) > 0 and empty_rows.sum() > 0:
-                empty_row_numbers = [idx + 2 for idx in empty_rows[empty_rows].index]
+            if hasattr(empty_rows, 'size'):
+                empty_rows_count = empty_rows.sum() if empty_rows.size > 0 else 0
+            else:
+                empty_rows_count = sum(empty_rows) if empty_rows else 0
+            
+            if empty_rows_count > 0:
+                if hasattr(empty_rows, 'index'):
+                    empty_row_numbers = [idx + 2 for idx in empty_rows[empty_rows].index]
+                else:
+                    empty_row_numbers = []
                 self.logger.warning(f"Found completely empty rows at: {empty_row_numbers}")
                 validation_errors.append({
                     'row': empty_row_numbers[0] if empty_row_numbers else 'unknown',
@@ -722,6 +730,16 @@ class DataProcessor:
             clusters = ml_results.get('clusters', []) if ml_results else []
             attachment_classifications = ml_results.get('attachment_classifications', []) if ml_results else []
 
+            # Convert NumPy arrays to Python lists immediately to avoid boolean ambiguity
+            if hasattr(anomaly_scores, 'tolist'):
+                anomaly_scores = anomaly_scores.tolist()
+            if hasattr(risk_levels, 'tolist'):
+                risk_levels = risk_levels.tolist()
+            if hasattr(clusters, 'tolist'):
+                clusters = clusters.tolist()
+            if hasattr(attachment_classifications, 'tolist'):
+                attachment_classifications = attachment_classifications.tolist()
+
             # Debug logging for attachment data
             self.logger.info(f"Debug: Processing {len(processed_data)} records for ML merge")
             for i, record in enumerate(processed_data[:3] if len(processed_data) >= 3 else processed_data):  # Show first 3 records safely
@@ -730,18 +748,43 @@ class DataProcessor:
                     self.logger.info(f"Debug: Record {i} - attachments field: '{attachments}' (type: {type(attachments)})")
 
             # Ensure we have lists, not other types (including bool, dict, str, etc.)
+            # Handle NumPy arrays properly to avoid boolean ambiguity
             if not isinstance(anomaly_scores, (list, tuple)):
-                self.logger.warning(f"anomaly_scores is not a list/tuple, got {type(anomaly_scores)}: {anomaly_scores}")
-                anomaly_scores = []
+                if hasattr(anomaly_scores, 'size'):  # NumPy array
+                    if anomaly_scores.size > 0:
+                        anomaly_scores = anomaly_scores.tolist()
+                    else:
+                        anomaly_scores = []
+                else:
+                    self.logger.warning(f"anomaly_scores is not a list/tuple, got {type(anomaly_scores)}: {anomaly_scores}")
+                    anomaly_scores = []
             if not isinstance(risk_levels, (list, tuple)):
-                self.logger.warning(f"risk_levels is not a list/tuple, got {type(risk_levels)}: {risk_levels}")
-                risk_levels = []
+                if hasattr(risk_levels, 'size'):  # NumPy array
+                    if risk_levels.size > 0:
+                        risk_levels = risk_levels.tolist()
+                    else:
+                        risk_levels = []
+                else:
+                    self.logger.warning(f"risk_levels is not a list/tuple, got {type(risk_levels)}: {risk_levels}")
+                    risk_levels = []
             if not isinstance(clusters, (list, tuple)):
-                self.logger.warning(f"clusters is not a list/tuple, got {type(clusters)}: {clusters}")
-                clusters = []
+                if hasattr(clusters, 'size'):  # NumPy array
+                    if clusters.size > 0:
+                        clusters = clusters.tolist()
+                    else:
+                        clusters = []
+                else:
+                    self.logger.warning(f"clusters is not a list/tuple, got {type(clusters)}: {clusters}")
+                    clusters = []
             if not isinstance(attachment_classifications, (list, tuple)):
-                self.logger.warning(f"attachment_classifications is not a list/tuple, got {type(attachment_classifications)}: {attachment_classifications}")
-                attachment_classifications = []
+                if hasattr(attachment_classifications, 'size'):  # NumPy array
+                    if attachment_classifications.size > 0:
+                        attachment_classifications = attachment_classifications.tolist()
+                    else:
+                        attachment_classifications = []
+                else:
+                    self.logger.warning(f"attachment_classifications is not a list/tuple, got {type(attachment_classifications)}: {attachment_classifications}")
+                    attachment_classifications = []
 
             # Convert to lists if they are tuples
             anomaly_scores = list(anomaly_scores) if isinstance(anomaly_scores, tuple) else anomaly_scores

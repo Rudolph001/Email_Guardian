@@ -814,7 +814,7 @@ class MLEngine:
             if 'subject' in df.columns:
                 tfidf = self.tfidf_vectorizer.fit_transform(df['subject'].fillna(''))
                 tfidf_df = pd.DataFrame(tfidf.toarray(), columns=self.tfidf_vectorizer.get_feature_names_out())
-                features.extend([tfidf_df[col] for col in tfidf_df.columns])
+                features.append([tfidf_df[col] for col in tfidf_df.columns])
 
             # Combine features into a DataFrame
             if len(features) > 0:
