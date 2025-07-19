@@ -11,6 +11,13 @@ Upload limit preference: High capacity (500MB) for large email data files.
 
 ## Recent Changes
 
+- **Automatic Lowercase Data Conversion During Import** (July 19, 2025):
+  - Implemented automatic conversion of all imported data values to lowercase during CSV processing
+  - Added `_convert_dataframe_to_lowercase()` function to process both regular and large CSV files
+  - Column headers are preserved in original case, only data values are converted to lowercase
+  - Applies to both standard CSV processing and chunked processing for large files (>10MB)
+  - Updated `_clean_record_data()` to provide lowercase default values ('n/a' instead of 'N/A')
+  - Ensures consistent data formatting for better matching and filtering operations
 - **JSON Performance Optimization for Large File Handling** (July 19, 2025):
   - Added paginated data loading in session manager to handle large datasets efficiently
   - Implemented `get_processed_data()` with page, per_page, and filters parameters for faster loading

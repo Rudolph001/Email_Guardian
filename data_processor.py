@@ -33,22 +33,41 @@ class DataProcessor:
         str_value = str(value).strip()
         return str_value != '' and str_value != '-' and str_value.lower() != 'nan'
 
+    def _convert_dataframe_to_lowercase(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Convert all text data in DataFrame to lowercase, preserving column headers"""
+        df_copy = df.copy()
+        
+        # Convert all string columns to lowercase
+        for column in df_copy.columns:
+            if df_copy[column].dtype == 'object':  # Object dtype usually indicates string data
+                # Apply lowercase conversion only to non-null string values
+                df_copy[column] = df_copy[column].apply(
+                    lambda x: x.lower().strip() if isinstance(x, str) and pd.notna(x) else x
+                )
+        
+        self.logger.info(f"Converted text data to lowercase for {len(df_copy.columns)} columns")
+        return df_copy
+
     def _clean_record_data(self, record):
-        """Clean record data by converting None values and '-' to proper defaults"""
+        """Clean record data by converting None values and '-' to proper defaults, and convert all text values to lowercase"""
         cleaned_record = {}
         for key, value in record.items():
             if value is None or (isinstance(value, str) and value.strip() in ['', '-', 'nan', 'NaN']):
                 # Provide appropriate defaults for common fields
                 if key in ['subject', 'sender', 'recipients', 'department']:
-                    cleaned_record[key] = 'N/A'
+                    cleaned_record[key] = 'n/a'  # Lowercase default
                 elif key in ['has_attachments']:
                     cleaned_record[key] = False
                 elif key in ['ml_anomaly_score', 'ml_risk_score']:
                     cleaned_record[key] = 0.0
                 else:
-                    cleaned_record[key] = 'N/A'
+                    cleaned_record[key] = 'n/a'  # Lowercase default
             else:
-                cleaned_record[key] = value
+                # Convert text values to lowercase, preserve numbers and booleans
+                if isinstance(value, str):
+                    cleaned_record[key] = value.lower().strip()
+                else:
+                    cleaned_record[key] = value
         return cleaned_record
 
     def reprocess_existing_session(self, session_id: str) -> Dict:
@@ -172,6 +191,10 @@ class DataProcessor:
                     'error': 'CSV file contains no data rows',
                     'error_type': 'no_data'
                 }
+
+            # Convert all text data to lowercase (preserving column headers)
+            self.logger.info("Converting all imported data values to lowercase...")
+            df = self._convert_dataframe_to_lowercase(df)
 
             # Validate CSV structure with detailed error reporting
             validation_result = self._validate_csv(df)
@@ -823,6 +846,9 @@ class DataProcessor:
             
             for chunk_num, chunk_df in enumerate(chunk_iter):
                 self.logger.info(f"Processing chunk {chunk_num + 1}")
+                
+                # Convert chunk data to lowercase
+                chunk_df = self._convert_dataframe_to_lowercase(chunk_df)
                 
                 total_records += len(chunk_df)
                 
