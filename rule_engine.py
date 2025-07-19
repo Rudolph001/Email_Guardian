@@ -477,6 +477,46 @@ class RuleEngine:
             self.logger.error(f"Error toggling exclusion rule: {str(e)}")
             return {'success': False, 'error': str(e)}
 
+    def get_exclusion_rule(self, rule_id: int) -> Dict:
+        """Get a specific exclusion rule by ID"""
+        try:
+            rules = self.get_all_exclusion_rules()
+            
+            for rule in rules:
+                if rule.get('id') == rule_id:
+                    return {'success': True, 'rule': rule}
+            
+            return {'success': False, 'error': 'Rule not found'}
+                
+        except Exception as e:
+            self.logger.error(f"Error getting exclusion rule: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
+    def update_exclusion_rule(self, rule_id: int, name: str, description: str, conditions: List[Dict], case_sensitive: bool = False) -> Dict:
+        """Update an existing exclusion rule"""
+        try:
+            rules = self.get_all_exclusion_rules()
+            
+            for rule in rules:
+                if rule.get('id') == rule_id:
+                    rule['name'] = name.strip()
+                    rule['description'] = description.strip()
+                    rule['conditions'] = conditions
+                    rule['case_sensitive'] = case_sensitive
+                    rule['updated_at'] = datetime.now().isoformat()
+                    
+                    if self.save_exclusion_rules(rules):
+                        self.logger.info(f"Updated exclusion rule: {name}")
+                        return {'success': True, 'rule': rule}
+                    else:
+                        return {'success': False, 'error': 'Failed to save changes'}
+            
+            return {'success': False, 'error': 'Rule not found'}
+                
+        except Exception as e:
+            self.logger.error(f"Error updating exclusion rule: {str(e)}")
+            return {'success': False, 'error': str(e)}
+
     def should_exclude_record(self, record: Dict) -> bool:
         """Check if a record should be excluded based on exclusion rules"""
         try:

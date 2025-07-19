@@ -1,25 +1,11 @@
 #!/usr/bin/env python3
 """
-Start Email Guardian on port 8080
+Start the Email Guardian application on port 8080
 """
 import os
 import sys
-import subprocess
+from app import app
 
-def main():
+if __name__ == '__main__':
     print("Starting Email Guardian on port 8080...")
-    print("=" * 50)
-    
-    # Change to the project directory
-    os.chdir('/home/runner/workspace')
-    
-    # Start the application
-    try:
-        subprocess.run([sys.executable, 'main.py'], check=True)
-    except KeyboardInterrupt:
-        print("\nApplication stopped by user")
-    except Exception as e:
-        print(f"Error starting application: {e}")
-
-if __name__ == "__main__":
-    main()
+    app.run(host='0.0.0.0', port=8080, debug=True)

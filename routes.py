@@ -1436,6 +1436,52 @@ def toggle_exclusion_rule(rule_id):
         app.logger.error(f"Error toggling exclusion rule: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/exclusion-rules/<int:rule_id>', methods=['GET'])
+def get_exclusion_rule(rule_id):
+    """Get a specific exclusion rule by ID"""
+    try:
+        rule_engine = RuleEngine()
+        result = rule_engine.get_exclusion_rule(rule_id)
+        
+        if result['success']:
+            field_names = RuleEngine.get_field_names()
+            result['field_names'] = field_names
+            return jsonify(result)
+        else:
+            return jsonify(result), 404
+            
+    except Exception as e:
+        app.logger.error(f"Error getting exclusion rule {rule_id}: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/exclusion-rules/<int:rule_id>', methods=['PUT'])
+def update_exclusion_rule_api(rule_id):
+    """Update an existing exclusion rule"""
+    try:
+        data = request.json
+        name = data.get('name', '')
+        description = data.get('description', '')
+        conditions = data.get('conditions', [])
+        case_sensitive = data.get('case_sensitive', False)
+        
+        if not name.strip():
+            return jsonify({'success': False, 'error': 'Rule name is required'}), 400
+        
+        if not conditions:
+            return jsonify({'success': False, 'error': 'At least one condition is required'}), 400
+        
+        rule_engine = RuleEngine()
+        result = rule_engine.update_exclusion_rule(rule_id, name, description, conditions, case_sensitive)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        app.logger.error(f"Error updating exclusion rule {rule_id}: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 # Error handlers
 @app.errorhandler(404)
 def not_found_error(error):
