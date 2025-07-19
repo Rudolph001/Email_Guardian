@@ -370,15 +370,46 @@
 
         <!-- Domain Classifier Tab -->
         <div class="tab-pane fade" id="domains" role="tabpanel">
-            <h4>Domain Classification Management</h4>
-            <p>Organize domains into categories for better email analysis.</p>
-            
-            <div class="alert alert-success">
-                <strong>Data Status:</strong> 
-                Trusted: {{ domain_classifications.trusted|length if domain_classifications and domain_classifications.trusted else 0 }} domains, 
-                Corporate: {{ domain_classifications.corporate|length if domain_classifications and domain_classifications.corporate else 0 }} domains, 
-                Personal: {{ domain_classifications.personal|length if domain_classifications and domain_classifications.personal else 0 }} domains
+            <div class="container-fluid">
+                <h3>Domain Classification Management</h3>
+                <p>Organize domains into categories for better email analysis.</p>
+                
+                <!-- Simple test content -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Domain Categories</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Trusted Domains</h6>
+                                <ul class="list-group">
+                                    {% if domain_classifications and domain_classifications.trusted %}
+                                        {% for domain in domain_classifications.trusted %}
+                                        <li class="list-group-item">{{ domain }}</li>
+                                        {% endfor %}
+                                    {% else %}
+                                        <li class="list-group-item">No domains configured</li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Corporate Domains</h6>
+                                <ul class="list-group">
+                                    {% if domain_classifications and domain_classifications.corporate %}
+                                        {% for domain in domain_classifications.corporate %}
+                                        <li class="list-group-item">{{ domain }}</li>
+                                        {% endfor %}
+                                    {% else %}
+                                        <li class="list-group-item">No domains configured</li>
+                                    {% endif %}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
+        </div>
             
             <div class="row">
                 <div class="col-lg-8">
